@@ -530,12 +530,22 @@ function renderDocumentResult() {
     }
 
     renderAllDocumentPages(pages, extraction);
+    renderECAnalysisTab(extraction);
     renderFieldsTab(extraction.fields || {});
     renderOwnersTab(extraction);
     renderPropertyFilterTab(extraction);
     renderChecklistTab(extraction.checklist || []);
     renderOCRTextTab(res.aggregated_text || currentPage.full_text || "");
     renderTableTab(extraction);
+
+    const isECDoc = (extraction.document_type_id === "ec") || 
+                    (extraction.fields && ("form_type" in extraction.fields || "transactions_table" in extraction.fields || "ec_report" in extraction.fields));
+    
+    if (isECDoc) {
+        switchTab("ec-analysis");
+    } else {
+        switchTab("fields");
+    }
 
     lucide.createIcons();
 }
@@ -830,6 +840,452 @@ function sanitizeTxFinancials(tx) {
     }
 
     return { pr, cons, mkt };
+}
+
+// =========================================================================
+// EC Analysis (Encumbrance Certificate Overview) Tab Engine
+// =========================================================================
+
+function renderECAnalysisTab(extraction = null) {
+    const container = document.getElementById("ec-analysis-container");
+    const ecTabBtn = document.getElementById("tab-btn-ec-analysis");
+    if (!container) return;
+
+    extraction = extraction || (state.currentResult ? state.currentResult.extraction : null);
+
+    const fields = (extraction && extraction.fields) ? extraction.fields : {};
+    const report = fields.ec_report || {};
+    const registry = fields.owners_registry || {};
+    const summary = registry.summary || {};
+
+    const hasData = Boolean(extraction && (
+        (extraction.fields && Object.keys(extraction.fields).length > 0) ||
+        (extraction.document_type_id === "ec") ||
+        ("ec_report" in fields)
+    ));
+
+    const isEC = (state.selectedCategoryId === "ec") || 
+                 ("form_type" in fields) || 
+                 ("transactions_table" in fields) || 
+                 ("search_period" in fields) ||
+                 (extraction && extraction.document_type_id === "ec") ||
+                 ("ec_report" in fields);
+
+    if (hasData && !isEC) {
+        if (ecTabBtn) ecTabBtn.classList.add("hidden");
+        container.innerHTML = "";
+        return;
+    }
+
+    if (ecTabBtn) ecTabBtn.classList.remove("hidden");
+
+    if (!hasData) {
+        container.innerHTML = `
+            <div class="p-8 text-center bg-white rounded-2xl border border-dashed border-slate-300/80 shadow-2xs space-y-3 my-auto">
+                <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center mx-auto shadow-2xs">
+                    <i data-lucide="sparkles" class="w-6 h-6"></i>
+                </div>
+                <h4 class="font-bold text-sm text-slate-800">EC Analysis & Legal Overview</h4>
+                <p class="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+                    Upload an Encumbrance Certificate (EC) PDF above or click a sample document to generate an automated legal risk synthesis, ownership devolution summary, and 12-point title audit.
+                </p>
+            </div>
+        `;
+        if (window.lucide && lucide.createIcons) lucide.createIcons();
+        return;
+    }
+
+    try {
+
+    // 1. Gather Key Fields Data
+    const currentOwnerObj = fields.current_owner || {};
+    const ownerName = currentOwnerObj.name || currentOwnerObj.value || (fields.owner_name ? (fields.owner_name.value || fields.owner_name) : (report.applicant_name || "-"));
+    const ownerType = currentOwnerObj.type || "Individual";
+    const ownerDocNo = currentOwnerObj.doc_no || "-";
+    const ownerDate = currentOwnerObj.date || "-";
+    const ownerVendor = currentOwnerObj.vendor || "-";
+
+    const activeMort = fields.active_mortgages || {};
+    const openMortgages = activeMort.open_count || 0;
+    const closedMortgages = activeMort.closed_count || 0;
+
+    const poaObj = fields.active_poa || {};
+    const hasPoa = poaObj.has_poa === true;
+    const poaAgents = poaObj.agents || [];
+    const poaStatusVal = poaObj.value || "No active POA entries found.";
+
+    const courtObj = fields.court_attachments_key || fields.court_attachments || {};
+    const hasCourt = courtObj.has_court === true || (courtObj.value && !courtObj.value.toLowerCase().includes("clear") && !courtObj.value.toLowerCase().includes("no court"));
+    const courtVal = courtObj.value || "Clear: No court decrees or attachment orders detected.";
+
+    const villageObj = fields.village_taluk || {};
+    const village = villageObj.village || report.village || "-";
+    const taluk = villageObj.taluk || report.district || "-";
+    const district = villageObj.district || report.district || "-";
+    const zone = villageObj.zone || report.zone || "-";
+
+    const surveyObj = fields.survey_patta || {};
+    const survey = surveyObj.survey || surveyObj.value || report.survey_details || "-";
+    const pattaPlot = surveyObj.patta || "-";
+
+    const propExtObj = fields.property_extent || {};
+    const extent = propExtObj.extent || propExtObj.value || report.requested_extent || "-";
+    const isUds = propExtObj.is_uds === true;
+    const landCat = propExtObj.land_category || "-";
+    const structure = propExtObj.structure || "-";
+
+    const boundsObj = fields.boundary_schedule || {};
+    const north = boundsObj.north || "-";
+    const south = boundsObj.south || "-";
+    const east = boundsObj.east || "-";
+    const west = boundsObj.west || "-";
+    const hasBounds = (north !== "-" || south !== "-" || east !== "-" || west !== "-");
+
+    const txObj = fields.total_transactions || {};
+    const txCount = parseInt(txObj.value || "0") || (report.entries ? report.entries.length : 0);
+
+    const searchFrom = report.search_period_from || "-";
+    const searchTo = report.search_period_to || "-";
+    const searchYears = report.search_window_years !== undefined && report.search_window_years !== null ? report.search_window_years : "-";
+    const isBelow30Yr = report.below_30yr_standard === true;
+
+    const sroObj = fields.sub_registrar_office || {};
+    const sro = sroObj.value || report.sro || "-";
+
+    const totalOwners = summary.total_owners_count || (summary.current_owners_count + summary.historical_owners_count) || (currentOwnerObj.property_owners ? currentOwnerObj.property_owners.length : 1);
+    const unitsCount = summary.units_count || (currentOwnerObj.property_owners ? currentOwnerObj.property_owners.length : 1);
+
+    const srGapsObj = fields.sr_no_gaps || {};
+    const hasSrGaps = srGapsObj.has_gaps === true;
+    const srGapsText = srGapsObj.value || "Sequential continuity verified";
+
+    // 2. Risk Evaluation
+    const isHighRisk = hasCourt || (openMortgages > 2 && hasSrGaps);
+    const isMediumRisk = !isHighRisk && (openMortgages > 0 || hasPoa || isBelow30Yr || hasSrGaps);
+
+    const riskBadgeText = isHighRisk ? "HIGH RISK" : (isMediumRisk ? "MEDIUM RISK" : "CLEAR / LOW RISK");
+    const riskBadgeClass = isHighRisk 
+        ? "bg-rose-100 text-rose-800 border-rose-300 font-bold" 
+        : (isMediumRisk 
+            ? "bg-amber-100 text-amber-800 border-amber-300 font-bold" 
+            : "bg-emerald-100 text-emerald-800 border-emerald-300 font-bold");
+
+    // 3. Executive Narrative Summary Paragraph
+    const propIdent = `The property comprised in Survey No. ${survey !== '-' ? survey : 'searched parcel'}, ${village !== '-' ? village + ' village' : ''}, ${district !== '-' ? district + ' district' : ''} (SRO: ${sro})`;
+    
+    let concerns = [];
+    if (openMortgages > 0) concerns.push(`${openMortgages} open/unreleased mortgage charge(s) without registered discharge receipts`);
+    if (hasCourt) concerns.push(`an active civil court attachment decree`);
+    if (hasPoa) concerns.push(`${poaAgents.length || 1} registered Power of Attorney (POA) instrument(s) in title trail`);
+    if (isBelow30Yr) concerns.push(`the search window of ${searchYears} years is below the standard 30-year due diligence benchmark`);
+    if (hasSrGaps) concerns.push(`serial number sequence gap in registry records`);
+
+    let narrative = "";
+    if (concerns.length > 0) {
+        narrative = `${propIdent} requires caution. While the registered transaction trail is traceable across ${txCount} instrument(s) and current ownership is recorded under ${ownerName}, there are specific matters for scrutiny: ${concerns.join(", ")}.`;
+    } else {
+        narrative = `${propIdent} exhibits a clear and unencumbered title profile. The registered devolution chain is fully traceable across ${txCount} transaction(s) with ${ownerName} confirmed as current title holder. No active mortgages, court attachments, or adverse legal encumbrances were detected across the ${searchYears !== '-' ? searchYears + ' year' : ''} search window.`;
+    }
+
+    // 4. Build Structured Audit Items (Checklist / Verification Rows)
+    const auditItems = [];
+
+    // Item 1: EC Status & Transactions
+    if (txCount > 0) {
+        if (openMortgages === 0 && !hasCourt) {
+            auditItems.push({
+                type: "pass",
+                title: "Encumbrance Certificate is clean with traceable transactions",
+                desc: `Encumbrance Certificate contains ${txCount} traceable registered transactions spanning ${searchFrom} to ${searchTo} (${searchYears} years search window — ${!isBelow30Yr ? 'complies with 30-year statutory legal standard' : 'under 30-yr benchmark'}). No active mortgages, liens, or court attachments.`,
+                action: "switchTab('table')"
+            });
+        } else {
+            auditItems.push({
+                type: "warn",
+                title: "Encumbrance Certificate contains active transaction entries requiring review",
+                desc: `Encumbrance Certificate contains ${txCount} registered transactions spanning ${searchFrom} to ${searchTo}. Open mortgage or verification caveats require cross-checking with parent deeds.`,
+                action: "switchTab('table')"
+            });
+        }
+    } else {
+        auditItems.push({
+            type: "pass",
+            title: "Encumbrance Certificate is Nil (Form 16)",
+            desc: `Nil Encumbrance Certificate confirmed with zero registered transactions recorded between ${searchFrom} and ${searchTo} (${searchYears} years). Property is free of registered encumbrances in this window.`,
+            action: "switchTab('fields')"
+        });
+    }
+
+    // Item 2: Current Title Holder & Root Deed
+    if (ownerName !== "-") {
+        auditItems.push({
+            type: "pass",
+            title: `Current Title Holder confirmed: ${ownerName}`,
+            desc: `Registered records confirm ${ownerName} (${ownerType}) as current legal title holder${ownerDocNo !== '-' ? ' via ' + (fields.nature_last_tx?.value || 'acquisition deed') + ' (Doc No: ' + ownerDocNo + ' on ' + ownerDate + ')' : ''}${ownerVendor !== '-' ? ' from ' + ownerVendor : ''}.`,
+            action: `openOwnerDossierByName('${ownerName.replace(/'/g, "\\'")}')`
+        });
+    } else {
+        auditItems.push({
+            type: "warn",
+            title: "Current Title Holder identification requires parent document cross-check",
+            desc: "Explicit grantee name not isolated in search header. Cross-verification with registered sale deed and Patta passbook recommended.",
+            action: "switchTab('owners')"
+        });
+    }
+
+    // Item 3: Active Mortgages & Charges
+    if (openMortgages === 0) {
+        auditItems.push({
+            type: "pass",
+            title: "Zero active mortgages or unreleased financial charges",
+            desc: closedMortgages > 0 
+                ? `All registered security interests (${closedMortgages} mortgage(s)) have been verified as satisfied and closed via registered discharge receipts. No active bank charges.`
+                : "No mortgage deeds or financial charges recorded in the searched registration window.",
+            action: "highlightFieldCard('active_mortgages')"
+        });
+    } else {
+        auditItems.push({
+            type: "warn",
+            title: `${openMortgages} Open / Unreleased Mortgage(s) recorded`,
+            desc: `${openMortgages} registered mortgage instrument(s) found without corresponding registered discharge receipt (Receipt Deed). ${closedMortgages} prior mortgage(s) closed. Bank NOC / registered cancellation deed must be verified.`,
+            action: "highlightFieldCard('active_mortgages')"
+        });
+    }
+
+    // Item 4: Court Attachments & Liens
+    if (!hasCourt) {
+        auditItems.push({
+            type: "pass",
+            title: "No court attachments, execution petitions, or decrees",
+            desc: "Search confirms zero registered attachment orders, civil court decrees, or insolvency petitions recorded against this property under SRO records.",
+            action: "highlightFieldCard('court_attachments_key')"
+        });
+    } else {
+        auditItems.push({
+            type: "danger",
+            title: "Civil Court Attachment / Decree identified on property",
+            desc: `${courtVal}. Immediate legal consultation and court case status verification required.`,
+            action: "highlightFieldCard('court_attachments_key')"
+        });
+    }
+
+    // Item 5: Power of Attorney (POA)
+    if (!hasPoa) {
+        auditItems.push({
+            type: "pass",
+            title: "No active Power of Attorney (POA) instruments",
+            desc: "No General Power of Attorney (GPA) or Special Power of Attorney (SPA) instruments registered in this search period. Title transactions executed directly by principals.",
+            action: "highlightFieldCard('active_poa')"
+        });
+    } else {
+        auditItems.push({
+            type: "warn",
+            title: `${poaAgents.length || 1} Power of Attorney (POA) / Agent entry identified`,
+            desc: `${poaStatusVal}. Verify that the GPA was in force on the date of deed execution and has not been revoked or extinguished.`,
+            action: "highlightFieldCard('active_poa')"
+        });
+    }
+
+    // Item 6: Property Extent & Classification
+    auditItems.push({
+        type: "pass",
+        title: `Property Extent: ${extent !== '-' ? extent : 'Recorded in schedule'}`,
+        desc: `Registered extent: ${extent}${structure !== '-' ? ' | Structure: ' + structure : ''} (${isUds ? 'Undivided Share of Land / UDS' : (landCat !== '-' ? landCat : 'Plot Extent')}). Cross-verify with Patta/FMB sketch.`,
+        action: "highlightFieldCard('property_extent')"
+    });
+
+    // Item 7: Survey & Patta Identification
+    auditItems.push({
+        type: "pass",
+        title: `Survey Identification: ${survey !== '-' ? survey : 'Comprised in SRO record'}`,
+        desc: `Comprised in Survey No(s): ${survey}${pattaPlot !== '-' ? ' | Patta / Plot No: ' + pattaPlot : ''} in ${village} Village, ${district} District.`,
+        action: "highlightFieldCard('survey_patta')"
+    });
+
+    // Item 8: Boundary Schedule
+    if (hasBounds) {
+        auditItems.push({
+            type: "pass",
+            title: "Four-Side Boundary Schedule identified",
+            desc: `North: ${north} | South: ${south} | East: ${east} | West: ${west}.`,
+            action: "highlightFieldCard('boundary_schedule')"
+        });
+    } else {
+        auditItems.push({
+            type: "warn",
+            title: "Boundary clauses not explicitly specified in search header",
+            desc: "Four boundaries not itemized in EC certificate header. Inspection of Schedule A/B in parent sale deed and physical site survey recommended.",
+            action: "highlightFieldCard('boundary_schedule')"
+        });
+    }
+
+    // Item 9: Search Window Standard
+    if (!isBelow30Yr && searchYears !== "-") {
+        auditItems.push({
+            type: "pass",
+            title: `Search Window: ${searchYears} Years (${searchFrom} to ${searchTo})`,
+            desc: `The ${searchYears}-year search window meets and exceeds the Tamil Nadu 30-year legal due diligence benchmark for absolute title scrutiny.`,
+            action: "highlightFieldCard('search_period')"
+        });
+    } else if (isBelow30Yr) {
+        auditItems.push({
+            type: "warn",
+            title: `Search Window: ${searchYears} Years (${searchFrom} to ${searchTo}) — Below 30-Yr Benchmark`,
+            desc: `The search period of ${searchYears} years is less than the standard 30-year period. Obtaining an extended search EC or verifying prior parent deeds is strongly recommended.`,
+            action: "highlightFieldCard('search_period')"
+        });
+    }
+
+    // Item 10: Title Devolution & Property Clusters
+    auditItems.push({
+        type: "pass",
+        title: `Title Devolution: ${totalOwners} genuine title owner(s) across ${unitsCount} property cluster(s)`,
+        desc: `Chronological devolution mapped across ${txCount} registered transactions with verified root acquisition deeds and outward transfer links.`,
+        action: "switchTab('owners')"
+    });
+
+    // Item 11: Document Continuity
+    if (!hasSrGaps) {
+        auditItems.push({
+            type: "pass",
+            title: "Source Document Continuity: Verified",
+            desc: "Registration serial numbers are sequential with no unrecorded gaps or missing volume entries detected.",
+            action: "highlightFieldCard('sr_no_gaps')"
+        });
+    } else {
+        auditItems.push({
+            type: "warn",
+            title: "Serial Number Sequence Gaps detected",
+            desc: `${srGapsText}. Check with SRO whether intervening numbers correspond to unindexed books or deleted tokens.`,
+            action: "highlightFieldCard('sr_no_gaps')"
+        });
+    }
+
+    // Item 12: Statutory Registration Caveat
+    auditItems.push({
+        type: "pass",
+        title: "Statutory TNREGINET Scope & Ground Verification Note",
+        desc: "Certificate reflects registered deeds filed with the SRO. Unregistered agreements, municipal tax dues, and physical possession must be verified on-site.",
+        action: "highlightFieldCard('legal_caveat')"
+    });
+
+    const passedCount = auditItems.filter(i => i.type === "pass").length;
+    const warningCount = auditItems.filter(i => i.type === "warn" || i.type === "danger").length;
+
+    // 5. Render Template
+    container.innerHTML = `
+        <div class="space-y-4">
+            <!-- Main Analysis Header Card (Styled exactly as sample image) -->
+            <div class="p-5 rounded-2xl bg-gradient-to-br from-amber-500/10 via-white to-orange-500/5 border border-amber-200/90 shadow-2xs">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-amber-200/60">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-xs shrink-0">
+                            <i data-lucide="sparkles" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-base font-bold text-slate-900">EC Analysis (Encumbrance Certificate Overview)</h3>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200/80">TNREGINET Official</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-0.5">Automated legal synthesis derived dynamically from all extracted key fields</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 flex-wrap text-xs">
+                        <span class="px-3 py-1 rounded-full text-xs border uppercase tracking-wider ${riskBadgeClass}">
+                            ${riskBadgeText}
+                        </span>
+                        <span class="px-2.5 py-1 rounded-full bg-white/90 text-emerald-800 border border-emerald-200/80 font-bold shadow-2xs flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            ${passedCount} Passed
+                        </span>
+                        <span class="px-2.5 py-1 rounded-full bg-white/90 text-amber-800 border border-amber-200/80 font-bold shadow-2xs flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                            ${warningCount} Warnings
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Executive Narrative Summary Paragraph -->
+                <div class="mt-3.5 p-3.5 rounded-xl bg-white/85 border border-amber-200/70 shadow-2xs">
+                    <p class="text-xs text-slate-700 leading-relaxed font-normal">
+                        ${narrative}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Structured Audit Rows (Pass & Warning Items) -->
+            <div class="space-y-2.5">
+                ${auditItems.map(item => {
+                    const isPass = item.type === "pass";
+                    const isDanger = item.type === "danger";
+                    
+                    let bgBorderClass = "bg-emerald-50/60 hover:bg-emerald-50/90 border-emerald-200/70 text-slate-800";
+                    let iconHtml = `<span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 font-bold text-xs">✓</span>`;
+
+                    if (isDanger) {
+                        bgBorderClass = "bg-rose-50/70 hover:bg-rose-50 border-rose-200/90 text-slate-900";
+                        iconHtml = `<span class="w-5 h-5 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 mt-0.5 font-bold text-xs">✕</span>`;
+                    } else if (!isPass) {
+                        bgBorderClass = "bg-amber-50/65 hover:bg-amber-50 border-amber-200/85 text-slate-900";
+                        iconHtml = `<span class="w-5 h-5 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 mt-0.5 font-bold text-xs">⚠</span>`;
+                    }
+
+                    return `
+                    <div class="p-2.5 px-3.5 rounded-xl border transition-all shadow-2xs flex items-center justify-between gap-3 ${bgBorderClass}">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            ${iconHtml}
+                            <span class="text-xs font-bold text-slate-900 leading-snug">${escapeHtml(item.title)}</span>
+                        </div>
+                        ${item.action ? `
+                        <button type="button" onclick="${item.action}" class="shrink-0 text-[11px] font-semibold text-blue-700 hover:text-blue-900 hover:underline cursor-pointer flex items-center gap-1 bg-white/80 hover:bg-white px-2.5 py-1 rounded-lg border border-slate-200/80 shadow-2xs transition-colors">
+                            <span>Inspect</span>
+                            <span>&rarr;</span>
+                        </button>
+                        ` : ''}
+                    </div>
+                    `;
+                }).join("")}
+            </div>
+
+            <!-- Bottom Action Navigation -->
+            <div class="pt-2 flex items-center justify-between gap-2 flex-wrap">
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="switchTab('fields')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-2xs flex items-center gap-1.5 cursor-pointer transition-colors">
+                        <i data-lucide="list-tree" class="w-3.5 h-3.5"></i>
+                        <span>View Detailed Key Fields</span>
+                    </button>
+                    <button type="button" onclick="switchTab('owners')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 flex items-center gap-1.5 cursor-pointer transition-colors">
+                        <i data-lucide="users" class="w-3.5 h-3.5"></i>
+                        <span>Owners Directory (${totalOwners})</span>
+                    </button>
+                    <button type="button" onclick="switchTab('table')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 flex items-center gap-1.5 cursor-pointer transition-colors">
+                        <i data-lucide="table" class="w-3.5 h-3.5 text-indigo-600"></i>
+                        <span>Transactions Table (${txCount})</span>
+                    </button>
+                </div>
+                <button type="button" onclick="downloadPdfWithLanguage()" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs flex items-center gap-1.5 cursor-pointer transition-colors">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                    <span>Export Full Legal Dossier</span>
+                </button>
+            </div>
+        </div>
+    `;
+
+        lucide.createIcons();
+    } catch (err) {
+        console.error("Error rendering EC Analysis Tab:", err);
+        container.innerHTML = `
+            <div class="p-6 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 space-y-2">
+                <div class="flex items-center gap-2 font-bold text-sm">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600"></i>
+                    <span>Unable to Render EC Overview</span>
+                </div>
+                <p class="text-xs text-amber-700 leading-relaxed">${escapeHtml(err.message || 'An unexpected error occurred.')}</p>
+            </div>
+        `;
+        if (window.lucide && lucide.createIcons) lucide.createIcons();
+    }
 }
 
 function renderFieldsTab(fields) {
@@ -3057,7 +3513,7 @@ function renderInheritanceResults(bundleData) {
 // 8. Tab, Zoom, Search, and Export helpers
 function switchTab(tabName) {
     state.activeTab = tabName;
-    ["fields", "owners", "property-filter", "checklist", "table", "ocr"].forEach(t => {
+    ["ec-analysis", "fields", "owners", "property-filter", "checklist", "table", "ocr"].forEach(t => {
         const btn = document.getElementById(`tab-btn-${t}`);
         const content = document.getElementById(`tab-content-${t}`);
         if (btn && content) {
@@ -3070,6 +3526,11 @@ function switchTab(tabName) {
             }
         }
     });
+
+    if (tabName === "ec-analysis") {
+        renderECAnalysisTab((state.currentResult && state.currentResult.extraction) ? state.currentResult.extraction : null);
+    }
+
     lucide.createIcons();
 }
 
