@@ -210,6 +210,18 @@ def _translate_cached(text: str, source: str, target: str) -> Tuple[str, str]:
 
     result = _indictrans2_translate(text, source, target)
     engine = "indictrans2"
+
+    # Try deep-translator / neural engine if IndicTrans2 is not running
+    if not result:
+        try:
+            from app.translator import translate_legal_phrase_deeptranslator
+            res_dt = translate_legal_phrase_deeptranslator(text, source=source, target=target)
+            if res_dt and res_dt.strip() and res_dt.strip() != text.strip():
+                result = res_dt.strip()
+                engine = "deeptranslator"
+        except Exception:
+            pass
+
     if not result:
         result = dynamic_transliterate_tamil(text) if target == "en" else dynamic_english_to_tamil(text)
         engine = "local"

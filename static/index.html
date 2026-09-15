@@ -474,6 +474,7 @@
 
                         <div class="flex space-x-2 pt-3 pb-2 border-b border-slate-200/80 text-xs overflow-x-auto">
                             <button id="tab-btn-fields" onclick="switchTab('fields')" class="px-3 py-1.5 font-semibold rounded-lg bg-blue-600 text-white shadow-sm flex items-center gap-1.5 shrink-0"><i data-lucide="list-tree" class="w-3.5 h-3.5"></i><span>Key Fields</span></button>
+                            <button id="tab-btn-owners" onclick="switchTab('owners')" class="px-3 py-1.5 font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center gap-1.5 shrink-0"><i data-lucide="users" class="w-3.5 h-3.5 text-purple-600"></i><span>Owners Directory</span><span id="owners-count-badge" class="px-1.5 py-0.2 bg-purple-100 text-purple-800 rounded-full text-[10px] font-bold">0</span></button>
                             <button id="tab-btn-property-filter" onclick="switchTab('property-filter')" class="px-3 py-1.5 font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center gap-1.5 shrink-0"><i data-lucide="filter" class="w-3.5 h-3.5 text-blue-600"></i><span>Property Title Filter</span><span id="prop-filter-match-badge" class="hidden px-1.5 py-0.2 bg-blue-100 text-blue-800 rounded-full text-[10px] font-bold">0</span></button>
                             <button id="tab-btn-checklist" onclick="switchTab('checklist')" class="px-3 py-1.5 font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center gap-1.5 shrink-0"><i data-lucide="check-square" class="w-3.5 h-3.5 text-emerald-600"></i><span>Verification Checklist</span><span id="checklist-badge-count" class="px-1.5 py-0.2 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-bold">7/7</span></button>
                             <button id="tab-btn-table" onclick="switchTab('table')" class="px-3 py-1.5 font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center gap-1.5 shrink-0"><i data-lucide="table" class="w-3.5 h-3.5 text-indigo-600"></i><span>Table Records</span></button>
@@ -482,6 +483,7 @@
 
                         <div class="flex-1 overflow-y-auto pt-3 pr-1 space-y-3">
                             <div id="tab-content-fields" class="space-y-3"><div id="extracted-fields-container" class="grid grid-cols-1 gap-2.5"></div></div>
+                            <div id="tab-content-owners" class="hidden space-y-3"><div id="owners-directory-container"></div></div>
                             <div id="tab-content-property-filter" class="hidden space-y-3"><div id="property-filter-container"></div></div>
                             <div id="tab-content-checklist" class="hidden space-y-2.5"><div id="checklist-items-container" class="space-y-2"></div></div>
                             <div id="tab-content-ocr" class="hidden space-y-2">
@@ -625,6 +627,45 @@
         </div>
 
     </main>
+
+    <!-- Owner Title Dossier Modal -->
+    <div id="owner-dossier-modal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden my-auto transform transition-all">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 via-purple-50/30 to-slate-50 flex items-start justify-between">
+                <div class="flex items-start space-x-3">
+                    <div id="dossier-role-icon" class="p-2.5 rounded-xl bg-purple-100 text-purple-700 mt-0.5 shadow-2xs">
+                        <i data-lucide="shield-check" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+                            <h3 id="dossier-owner-name" class="font-bold text-base text-slate-900">Owner Name</h3>
+                            <span id="dossier-role-badge" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200">Current Legal Owner</span>
+                            <span id="dossier-entity-badge" class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200">Individual</span>
+                        </div>
+                        <p id="dossier-owner-sub" class="text-xs text-slate-500 mt-0.5">Title Dossier & Transaction Trail</p>
+                    </div>
+                </div>
+                <button onclick="closeOwnerDossier()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors" title="Close">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <!-- Modal Body -->
+            <div id="dossier-modal-body" class="p-6 overflow-y-auto space-y-5 text-xs text-slate-700">
+                <!-- Dynamically populated by app.js -->
+            </div>
+            <!-- Modal Footer -->
+            <div class="px-6 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+                <span class="text-[11px] text-slate-500 flex items-center gap-1.5">
+                    <i data-lucide="award" class="w-3.5 h-3.5 text-purple-600"></i>
+                    <span>Government Registered Title Dossier &bull; Verified via TNREGINET EC</span>
+                </span>
+                <button onclick="closeOwnerDossier()" class="px-4 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-900 text-white shadow-xs transition-colors">
+                    Close Dossier
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Footer -->
     <footer class="bg-white border-t border-slate-200 mt-12 py-4 no-print">

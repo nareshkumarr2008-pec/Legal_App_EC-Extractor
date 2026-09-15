@@ -1315,7 +1315,7 @@ def generate_ocr_pdf_report(data: Dict[str, Any], lang: str = "en") -> bytes:
     _STRUCTURAL_FIELD_KEYS = {
         "transactions_table", "checklist", "verification_flags",
         "confidence_summary", "ec_report", "below_30yr_standard",
-        "search_window_years",
+        "search_window_years", "owners_registry",
     }
 
     # 1. Extracted Key Legal Fields
@@ -1342,6 +1342,11 @@ def generate_ocr_pdf_report(data: Dict[str, Any], lang: str = "en") -> bytes:
 
         conf_pct = round(conf_raw * 100) if isinstance(conf_raw, (int, float)) and conf_raw <= 1 else round(conf_raw)
         conf_str = f"{conf_pct}%"
+
+        # Guard against exceptionally long field values (e.g. multi-property boundary schedules)
+        # that exceed an entire page height and cause ReportLab LayoutError.
+        if len(val_str) > 400:
+            val_str = val_str[:400] + " ... (continued in detailed schedule / registry)"
 
         rows.append([
             Paragraph(B(label_str), meta_label_style),
@@ -1386,6 +1391,8 @@ def generate_ocr_pdf_report(data: Dict[str, Any], lang: str = "en") -> bytes:
             status_html = f"<font color='{status_color}'><b>{status_word}</b></font>"
             rule_name = item.get("title") or item.get("rule_name", "")
             remarks = item.get("detail") or item.get("remarks", "")
+            if len(remarks) > 400:
+                remarks = remarks[:400] + "..."
             chk_rows.append([
                 Paragraph(B(rule_name), meta_label_style),
                 Paragraph(status_html, meta_val_style),
@@ -1435,6 +1442,10 @@ def generate_ocr_pdf_report(data: Dict[str, Any], lang: str = "en") -> bytes:
             claims_str = _format_bilingual_party_list(
                 t.get("claimants_bilingual"), t.get("claimants")
             )
+            if len(execs_str) > 300:
+                execs_str = execs_str[:300] + "..."
+            if len(claims_str) > 300:
+                claims_str = claims_str[:300] + "..."
             tx_rows.append([
                 Paragraph(str(t.get("sr_no") or i), tx_val_style),
                 Paragraph(B(t.get("doc_no_year") or t.get("doc_no") or "-", size=8), tx_val_style),

@@ -1458,3 +1458,98 @@ def transliterate_tamil_text(text: str, normalize: bool = True) -> str:
     s = _strip_stray_script_marks(s)
     return s
 
+
+# ---------------------------------------------------------------------------
+# Deep Translator Integration for Sentences, Remarks, and Legal Clauses
+# ---------------------------------------------------------------------------
+
+_DEEP_TRANS_CACHE: dict[str, str] = {}
+
+def translate_legal_phrase_deeptranslator(text: str, source: str = "ta", target: str = "en") -> str:
+    """
+    Translates whole sentences, boundaries, and legal remarks using deep_translator / Google GTX
+    with high accuracy, while strictly respecting the legal and revenue place glossaries.
+    """
+    if not text or text == "-":
+        return text or "-"
+
+    raw = str(text).strip()
+    cache_key = f"{source}->{target}::{raw}"
+    if cache_key in _DEEP_TRANS_CACHE:
+        return _DEEP_TRANS_CACHE[cache_key]
+
+    # Pre-apply institutional & revenue glossary before translating
+    s = _apply_institutional_glossary(raw)
+
+    # Check whole dictionary hit first
+    if source == "ta" and target == "en":
+        if s in REAL_ESTATE_TERMS:
+            return REAL_ESTATE_TERMS[s]
+        if s in CANONICAL_PLACES:
+            return CANONICAL_PLACES[s]
+        if s in COMMON_NAMES:
+            return COMMON_NAMES[s]
+
+    # 1. Primary Neural Candidate: Google GTX Neural Engine
+    cand_gtx = None
+    try:
+        import urllib.request, urllib.parse, json
+        url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl={source}&tl={target}&dt=t&q=" + urllib.parse.quote(s)
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+        with urllib.request.urlopen(req, timeout=4) as res:
+            data = json.loads(res.read().decode("utf-8"))
+            if data and data[0]:
+                cand_gtx = "".join(chunk[0] for chunk in data[0] if chunk and chunk[0]).strip()
+    except Exception as e:
+        logger.debug(f"Direct Google GTX failed: {e}")
+
+    # 2. Secondary Neural Candidate: deep_translator (MyMemory / IndicTrans2)
+    cand_dt = None
+    try:
+        from deep_translator import MyMemoryTranslator
+        src_code = "tamil india" if source == "ta" else "english india"
+        tgt_code = "english india" if target == "en" else "tamil india"
+        trans = MyMemoryTranslator(source=src_code, target=tgt_code)
+        res = trans.translate(s)
+        if res and res.strip() and res.strip().lower() != s.lower():
+            cand_dt = res.strip()
+    except Exception as e:
+        logger.debug(f"deep_translator MyMemory failed: {e}")
+
+    # 3. Local Rule-based & Phonetic Candidate
+    cand_local = transliterate_tamil_text(s) if target == "en" else dynamic_english_to_tamil(s)
+
+    # Cross-Verification & Consensus Selection
+    # If both neural engines returned candidates, verify quality
+    if cand_gtx and cand_dt:
+        # If both agree closely or GTX is clean and natural, prioritize verified GTX
+        from difflib import SequenceMatcher
+        sim = SequenceMatcher(None, cand_gtx.lower(), cand_dt.lower()).ratio()
+        if sim >= 0.60:
+            translated = cand_gtx
+        else:
+            # Round-trip verify GTX to ensure it preserves meaning accurately
+            try:
+                rt_url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl={target}&tl={source}&dt=t&q=" + urllib.parse.quote(cand_gtx)
+                req_rt = urllib.request.Request(rt_url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+                with urllib.request.urlopen(req_rt, timeout=3) as res_rt:
+                    d_rt = json.loads(res_rt.read().decode("utf-8"))
+                    rt_text = "".join(c[0] for c in d_rt[0] if c and c[0]).strip() if d_rt and d_rt[0] else ""
+                    rt_sim = SequenceMatcher(None, s.lower(), rt_text.lower()).ratio()
+                    translated = cand_gtx if rt_sim >= 0.40 else cand_dt
+            except Exception:
+                translated = cand_gtx
+    elif cand_gtx:
+        translated = cand_gtx
+    elif cand_dt:
+        translated = cand_dt
+    else:
+        translated = cand_local
+
+    # Post-clean: strip any leaked combining marks
+    translated = _strip_stray_script_marks(translated)
+    _DEEP_TRANS_CACHE[cache_key] = translated
+    return translated
+
+
+

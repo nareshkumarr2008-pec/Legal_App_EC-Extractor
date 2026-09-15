@@ -100,6 +100,19 @@ async def health_check():
     return {"status": "ok", "service": "PlotChoice OCR & Legal Title Engine", "version": "2.5"}
 
 
+@app.post("/api/shutdown")
+@app.get("/api/shutdown")
+async def shutdown_server():
+    """Gracefully terminate the server process."""
+    import threading
+    def _exit():
+        import time
+        time.sleep(0.5)
+        os._exit(0)
+    threading.Thread(target=_exit, daemon=True).start()
+    return {"status": "shutting down"}
+
+
 @app.get("/api/llm/status")
 async def get_llm_status():
     """Check availability of local Qwen2.5-7B LLM service via llama.cpp."""

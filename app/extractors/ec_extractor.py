@@ -17,10 +17,16 @@ import io
 import re
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
+from collections import defaultdict
 from typing import Dict, Any, List, Optional, Tuple
 
 import pdfplumber
-from app.translator import format_bilingual_entity, transliterate_tamil_text, normalize_tamil_visual_order
+from app.translator import (
+    format_bilingual_entity,
+    transliterate_tamil_text,
+    normalize_tamil_visual_order,
+    translate_legal_phrase_deeptranslator,
+)
 from app.deep_translate_verifier import bilingual_party_list
 
 
@@ -43,11 +49,15 @@ class ECEntry:
     market_value: str = ""
     pr_numbers: str = ""
     remarks: str = ""
+    schedules: list = field(default_factory=list)
 
 
 @dataclass
 class ECReport:
     sro: str = ""
+    certificate_no: str = ""
+    application_no: str = ""
+    applicant_name: str = ""
     village: str = ""
     zone: str = ""
     district: str = ""
@@ -59,6 +69,9 @@ class ECReport:
     search_period_to: str = ""
     search_window_years: Optional[float] = None
     below_30yr_standard: Optional[bool] = None
+    requested_extent: str = ""
+    requested_door_no: str = ""
+    requested_boundaries: str = ""
     form_type: str = ""
     total_entries_declared: Optional[int] = None
     total_entries_parsed: int = 0
@@ -71,6 +84,7 @@ class ECReport:
         "feature, not by text extraction."
     )
     entries: list = field(default_factory=list)
+    owners_registry: dict = field(default_factory=dict)
 
 
 # --------------------------------------------------------------------------
@@ -249,7 +263,7 @@ def _clean_party_cell(s: str) -> str:
     # Normalize legacy Tamil visual ordering first
     s = normalize_tamil_visual_order(s)
     # Strip Schedule Remarks, boundary text, plot/layout metadata, property extent, survey, prior doc metadata that bleed into party cells
-    s = re.split(r'(?:Schedule\s*Remarks|Boundary\s*Details|எல்லை\s*விவரங்கள்|Plot\s*No\.|மனை\s*எண்|மைன\s*எண்|Layout\s*Name|மனைப்பிரிவு\s*பெயர்|விஸ்தீர்ணம்|புல\s*எண்|முந்தைய\s*ஆவண\s*எண்|சொத்தின்|சொத்து\s*தொடர்பான)', s, flags=re.I)[0]
+    s = re.split(r'(?:Schedule\s*Remarks|Boundary\s*Details|எல்லை\s*விவரங்கள்|Survey\s*No\.?|புல\s*எண்|Block\s*No\.?|பிளாக்\s*எண்|Door\s*No\.?|கதவு\s*எண்|Plot\s*No\.|மனை\s*எண்|மைன\s*எண்|Layout\s*Name|மனைப்பிரிவு\s*பெயர்|விஸ்தீர்ணம்|முந்தைய\s*ஆவண\s*எண்|சொத்தின்|சொத்து\s*தொடர்பான)', s, flags=re.I)[0]
     # Strip corrupted OCR parentheticals (e.g. Shaivne Vikkha senior School)
     s = re.sub(r'\s*\(\s*Shaivne[^\)]*\)', '', s, flags=re.I)
     # Strip trailing footnote digits attached to names: "V. ஷண்முகம் 2" -> "V. ஷண்முகம்", "Chandran 1" -> "Chandran"
@@ -541,6 +555,868 @@ def find_sr_no_gaps(entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return gaps
 
 
+def clean_party_name(raw_name: str) -> str:
+    if not raw_name:
+        return "-"
+    s = raw_name.split("\n")[0].strip()
+    s = re.sub(r'^(?:[\.\,\:\;]+\s*|\d+\.\.\.|\d+\.\s*|\d+\s*)', '', s)
+    s = re.sub(r'(?<=[a-zA-Z\u0b80-\u0bff])\s+\d{1,2}(?=\s+(?:\d{1,2}\.|\b)|$)', '', s)
+    s = re.sub(r'\s*\((?:Principal|Agent|பிரின்சிபல்|பிரின்ஸ்பால்|முத\.|முதல்வர்|முக\.|முகவர்|E & ஏஜெண்ட்|ஏஜெண்ட்|ஏஜண்ட்|Lessor|Lessee|\d+வது\s*பார்ட்டி)\)', '', s, flags=re.I)
+    # Strip leaked schedule descriptions, door/flat numbers, and measurements
+    s = re.sub(r'\b(?:மைன|மனை|பிளாட்|Flat(?:\s*No\.?)?|Plot(?:\s*No\.?)?|Block|பிளாக்|சதுரடி|Sq\.?\s*ft|ெஷட்யூல்|ஷெட்யூல்|Schedule|அடுக்குமாடி(?:க்\s*குடியிருப்பு\s*எண்)?|Door\s*No|கதவு\s*எண்)[^,\n]*', '', s, flags=re.I)
+    s = re.sub(r'^(?:சென்னை|மதுரை|கோவை|திருச்சி|மெஸர்ஸ்\.?|மெசர்ஸ்\.?)\s+', '', s)
+    s = re.sub(r'\s+(?:Tamil Nadu|India)$', '', s, flags=re.I)
+    s = re.sub(r'\.\.+', '.', s)
+    s = clean_legal(re.sub(r'\s+', ' ', s).strip(' .,:;-'))
+    if len(s) < 3 or s.lower() in ["bank of", "mr.", "mrs.", "dr.", "ms.", "flat no", "plot no", "none", "null", "-"]:
+        return "-"
+    return s
+
+
+_clean_owner_name = clean_party_name
+
+
+def classify_entity_type(name: str) -> str:
+    n_low = name.lower()
+    if any(k in n_low for k in ["bank", "பாங்க்", "வங்கி", "finance", "பைனான்ஸ்", "fund"]):
+        return "Bank / Financial Institution"
+    elif any(k in n_low for k in ["school", "college", "trust", "charities", "சாரிடிஸ்", "academy", "foundation", "பள்ளி", "கல்லூரி", "மடம்", "சங்கம்"]):
+        return "Trust / Educational Institution"
+    elif any(k in n_low for k in ["pvt ltd", "ltd", "limited", "llp", "லிமிடெட்", "பிரைவேட்", "எல்எல்பி", "corporation", "estates", "construction", "நிறுவனம்"]):
+        return "Corporate / Entity"
+    elif any(k in n_low for k in ["authority", "development authority", "cmda", "மண்டலம்", "ஆரோரிட்டி"]):
+        return "Government / Statutory Body"
+    elif ";" in name or " 2. " in name or " மற்றும் " in name:
+        return "Joint Ownership"
+    return "Individual"
+
+
+_classify_ownership_type = classify_entity_type
+
+
+def determine_current_owner(entries: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Deduces current title owner from registration devolution chain.
+    """
+    if not entries:
+        return {
+            "name": "No registered transactions recorded (Form 16 Nil Encumbrance)",
+            "type": "Nil / Clear Title",
+            "doc_no": "-",
+            "date": "-",
+            "vendor": "-",
+            "role": "Clear Title"
+        }
+
+    # 1. Search backwards for title transfer deeds (Sale Deed, Settlement, Gift, Partition, Conveyance)
+    for e in reversed(entries):
+        nat = normalize_tamil_visual_order(e.get("nature") or "").lower()
+        if any(k in nat for k in ["sale", "கிரைய", "கிைரய", "விற்பனை", "விற்பைன", "settlement", "செட்டில்மென்ட்", "தான", "gift", "பாகப்பிரிவினை", "partition", "conveyance", "உரிமை மாற்றம்"]):
+            claimant = e.get("claimants") or ""
+            if claimant:
+                clean_name = clean_party_name(claimant)
+                return {
+                    "name": clean_name,
+                    "type": classify_entity_type(clean_name),
+                    "doc_no": e.get("doc_no") or e.get("doc_no_year") or "-",
+                    "date": e.get("date") or e.get("registration_date") or "-",
+                    "vendor": clean_party_name(e.get("executants") or "-"),
+                    "role": "Purchaser / Absolute Owner"
+                }
+
+    # 2. If last entry is Mortgage/MODT, property owner is the Mortgagor/Executant
+    last_e = entries[-1]
+    nat_last = normalize_tamil_visual_order(last_e.get("nature") or "").lower()
+    if any(k in nat_last for k in ["mortgage", "அடைமானம்", "ஈடு", "ஒப்படைப்பு", "ஒப்பைடப்பு", "உரிமை ஆவண", "modt"]):
+        exec_name = last_e.get("executants") or ""
+        clean_name = clean_party_name(exec_name)
+        return {
+            "name": clean_name,
+            "type": classify_entity_type(clean_name),
+            "doc_no": last_e.get("doc_no") or last_e.get("doc_no_year") or "-",
+            "date": last_e.get("date") or last_e.get("registration_date") or "-",
+            "vendor": "-",
+            "role": "Mortgagor / Absolute Owner"
+        }
+    elif any(k in nat_last for k in ["receipt", "இரசீது", "ரசீது", "discharge"]):
+        claim_name = last_e.get("claimants") or ""
+        clean_name = clean_party_name(claim_name)
+        return {
+            "name": clean_name,
+            "type": classify_entity_type(clean_name),
+            "doc_no": last_e.get("doc_no") or last_e.get("doc_no_year") or "-",
+            "date": last_e.get("date") or last_e.get("registration_date") or "-",
+            "vendor": clean_party_name(last_e.get("executants") or "-"),
+            "role": "Discharged Mortgagor / Owner"
+        }
+
+    # Fallback to latest claimant or executant
+    name_raw = last_e.get("claimants") or last_e.get("executants") or "-"
+    clean_name = clean_party_name(name_raw)
+    return {
+        "name": clean_name,
+        "type": classify_entity_type(clean_name),
+        "doc_no": last_e.get("doc_no") or "-",
+        "date": last_e.get("date") or "-",
+        "vendor": "-",
+        "role": "Registered Party"
+    }
+
+
+def build_owners_registry(tx_list: List[Dict[str, Any]], header_data: Dict[str, Any] = None) -> Dict[str, Any]:
+    """
+    100% Dynamic, generalizable Title & Owners Registry Engine for any TNREGINET EC.
+    Identifies all property units, resolves current legal title holders, historical owners,
+    and financial institutions, producing complete owner dossiers.
+    """
+    if not tx_list:
+        return {
+            "summary": {
+                "total_owners_count": 0,
+                "current_owners_count": 0,
+                "historical_owners_count": 0,
+                "institutions_count": 0,
+                "other_signatories_count": 0,
+                "total_parties": 0,
+                "units_count": 0
+            },
+            "property_owners": [],
+            "current_owners": [],
+            "historical_owners": [],
+            "institutions": [],
+            "other_signatories": [],
+            "all_owners": [],
+            "property_units": []
+        }
+
+    # 1. Cluster transactions by Property Unit / Schedule
+    clusters = {}
+    for tx in tx_list:
+        scheds = tx.get("schedules") or []
+        if not scheds:
+            unit_key = "Main Property / Certificate Scope"
+            clusters.setdefault(unit_key, {"schedules": [], "transactions": []})
+            clusters[unit_key]["transactions"].append(tx)
+            continue
+
+        s0 = scheds[0]
+        street = (s0.get("village_street") or "").strip()
+        survey = (s0.get("survey_no") or "").strip()
+        flat = (s0.get("flat_no") or "").strip()
+        plot = (s0.get("plot_no") or "").strip()
+
+        primary_sy_token = re.findall(r'\b\d{1,5}(?:/[A-Za-z0-9\-]+)?\b', survey)
+        sy_cluster_key = primary_sy_token[0] if primary_sy_token else survey
+
+        street_clean = re.sub(r'^(?:Adyar,\s*|தியாகராய\s*நகர்,\s*)', '', street, flags=re.I).strip()
+        if "/" in street_clean:
+            street_clean = street_clean.split("/")[0].strip()
+
+        parts = []
+        if street_clean and street_clean != "-": parts.append(street_clean)
+        if sy_cluster_key and sy_cluster_key != "-": parts.append(f"S.No {sy_cluster_key}")
+        if flat and flat != "-": parts.append(f"Flat {flat}")
+        elif plot and plot != "-": parts.append(f"Plot {plot}")
+
+        unit_key = " | ".join(parts) if parts else "Main Property Unit"
+        clusters.setdefault(unit_key, {"schedules": [], "transactions": []})
+        for s in scheds:
+            if s not in clusters[unit_key]["schedules"]:
+                clusters[unit_key]["schedules"].append(s)
+        if tx not in clusters[unit_key]["transactions"]:
+            clusters[unit_key]["transactions"].append(tx)
+
+    # 2. Track Title Devolution & Build Owner Dossiers
+    conveyance_kws = ["sale", "கிரைய", "கிைரய", "விற்பனை", "விற்பைன", "settlement", "செட்டில்மென்ட்", "தான", "gift", "பாகப்பிரிவினை", "partition", "conveyance", "உரிமை மாற்றம்"]
+    mortgage_kws = ["mortgage", "அடைமானம்", "ஈடு", "ஒப்படைப்பு", "ஒப்பைடப்பு", "உரிமை ஆவண", "modt", "deposit of title"]
+    receipt_kws = ["receipt", "இரசீது", "ரசீது", "discharge", "release", "விடுதலை"]
+
+    party_profiles: Dict[str, Dict[str, Any]] = {}
+
+    def get_or_create_party(name: str):
+        clean = clean_party_name(name)
+        if not clean or clean in ["-", "None", "Null"]:
+            return None
+        # Strip parentheticals and normalize Tamil phonetics for matching
+        base = re.sub(r'\s*\([^)]*\)', '', clean).strip()
+        base = re.sub(r'([\u0b95-\u0bb9])ய்', r'\1ை', base)
+        base = base.replace('ஷ்', 'ஸ்').replace('ள்', 'ல்').replace('ண', 'ன').replace('ெ', 'ே')
+        norm_key = re.sub(r'[^a-zA-Z0-9\u0b80-\u0bff]', '', base).lower()
+        if not norm_key or len(norm_key) < 2:
+            return None
+        if norm_key not in party_profiles:
+            has_tamil = any('\u0b80' <= c <= '\u0bff' for c in clean)
+            bilingual_name = format_bilingual_entity(clean) if has_tamil else clean
+            bilingual_name = re.sub(r'\.\.+', '.', bilingual_name)
+
+            party_profiles[norm_key] = {
+                "owner_id": norm_key,
+                "name": clean,
+                "name_bilingual": bilingual_name,
+                "role": "Registered Signatory / Party",
+                "is_current_owner": False,
+                "entity_type": classify_entity_type(clean),
+                "property_units": [],
+                "acquisition": None,
+                "transferred_to": None,
+                "mortgages": [],
+                "has_active_mortgages": False,
+                "transactions": [],
+                "total_tx_count": 0
+            }
+        return party_profiles[norm_key]
+
+    unit_summaries = []
+    for unit_key, unit_data in clusters.items():
+        u_txs = unit_data["transactions"]
+        u_scheds = unit_data["schedules"]
+        primary_sched = u_scheds[0] if u_scheds else {}
+
+        unit_current_holder = None
+
+        for tx in u_txs:
+            nat = (tx.get("nature") or "").lower()
+            doc_no = tx.get("doc_no") or "-"
+            dt = tx.get("registration_date") or tx.get("execution_date") or tx.get("date") or "-"
+            cons = tx.get("consideration") or tx.get("consideration_value") or "-"
+            mkt = tx.get("market_value") or "-"
+
+            exec_raw = tx.get("executants") or ""
+            claim_raw = tx.get("claimants") or ""
+
+            exec_parties = [p for p in re.split(r'(?<!\d)\d+\.\s*', exec_raw) if p.strip()] or [exec_raw]
+            claim_parties = [p for p in re.split(r'(?<!\d)\d+\.\s*', claim_raw) if p.strip()] or [claim_raw]
+
+            for ep in exec_parties:
+                p_obj = get_or_create_party(ep)
+                if p_obj:
+                    p_obj["total_tx_count"] += 1
+                    p_obj["transactions"].append({
+                        "doc_no": doc_no,
+                        "date": dt,
+                        "nature": tx.get("nature") or "-",
+                        "role": "Executant / Transferor",
+                        "counterparty": clean_party_name(claim_raw),
+                        "amount": cons if cons != "-" else mkt
+                    })
+                    if unit_key not in p_obj["property_units"]:
+                        p_obj["property_units"].append(unit_key)
+
+            for cp in claim_parties:
+                p_obj = get_or_create_party(cp)
+                if p_obj:
+                    p_obj["total_tx_count"] += 1
+                    p_obj["transactions"].append({
+                        "doc_no": doc_no,
+                        "date": dt,
+                        "nature": tx.get("nature") or "-",
+                        "role": "Claimant / Transferee",
+                        "counterparty": clean_party_name(exec_raw),
+                        "amount": cons if cons != "-" else mkt
+                    })
+                    if unit_key not in p_obj["property_units"]:
+                        p_obj["property_units"].append(unit_key)
+
+            # Check Title Transfer deeds
+            if any(k in nat for k in conveyance_kws):
+                for cp in claim_parties:
+                    c_obj = get_or_create_party(cp)
+                    if c_obj:
+                        c_obj["acquisition"] = {
+                            "doc_no": doc_no,
+                            "date": dt,
+                            "nature": tx.get("nature") or "-",
+                            "consideration": cons,
+                            "market_value": mkt,
+                            "acquired_from": clean_party_name(exec_raw),
+                            "unit": unit_key,
+                            "extent": primary_sched.get("extent") or "-"
+                        }
+                        if unit_current_holder and unit_current_holder != c_obj:
+                            unit_current_holder["transferred_to"] = {
+                                "doc_no": doc_no,
+                                "date": dt,
+                                "transferred_to": c_obj["name"]
+                            }
+                            unit_current_holder["role"] = "Historical / Prior Owner"
+                            unit_current_holder["is_current_owner"] = False
+
+                        unit_current_holder = c_obj
+                        unit_current_holder["role"] = "Current Legal Owner / Absolute Title Holder"
+                        unit_current_holder["is_current_owner"] = True
+
+            # Check Mortgage deeds
+            elif any(k in nat for k in mortgage_kws) and not any(k in nat for k in receipt_kws):
+                for ep in exec_parties:
+                    e_obj = get_or_create_party(ep)
+                    if e_obj:
+                        e_obj["mortgages"].append({
+                            "doc_no": doc_no,
+                            "date": dt,
+                            "lender": clean_party_name(claim_raw),
+                            "amount": cons if cons != "-" else mkt,
+                            "status": "OPEN",
+                            "discharge_doc": "-"
+                        })
+                        e_obj["has_active_mortgages"] = True
+
+                for cp in claim_parties:
+                    c_obj = get_or_create_party(cp)
+                    if c_obj and c_obj["entity_type"] == "Bank / Financial Institution":
+                        c_obj["role"] = "Institutional Mortgagee / Lender"
+
+            # Check Receipt / Discharge deeds
+            elif any(k in nat for k in receipt_kws):
+                pr_ref = tx.get("pr_number") or tx.get("pr_numbers") or ""
+                rem_ref = tx.get("remarks") or ""
+                ref_str = f"{pr_ref} {rem_ref}"
+
+                for cp in claim_parties:
+                    c_obj = get_or_create_party(cp)
+                    if c_obj:
+                        for m in c_obj["mortgages"]:
+                            if m["doc_no"] in ref_str or m["doc_no"] == pr_ref:
+                                m["status"] = "CLOSED"
+                                m["discharge_doc"] = f"Doc {doc_no} ({dt})"
+                        c_obj["has_active_mortgages"] = any(m["status"] == "OPEN" for m in c_obj["mortgages"])
+
+        unit_summaries.append({
+            "unit_key": unit_key,
+            "current_owner": unit_current_holder["name"] if unit_current_holder else "-",
+            "extent": primary_sched.get("extent") or "-",
+            "survey_no": primary_sched.get("survey_no") or "-",
+            "door_no": primary_sched.get("door_no") or "-",
+            "total_transactions": len(u_txs)
+        })
+
+    all_owners_list = list(party_profiles.values())
+    current_owners = [o for o in all_owners_list if o["is_current_owner"]]
+    historical_owners = [o for o in all_owners_list if not o["is_current_owner"] and o["acquisition"]]
+    property_owners = current_owners + historical_owners
+    institutions = [o for o in all_owners_list if o["entity_type"] in ["Bank / Financial Institution", "Government / Statutory Body"]]
+    other_signatories = [o for o in all_owners_list if o not in property_owners and o not in institutions]
+
+    return {
+        "summary": {
+            "total_owners_count": len(property_owners),
+            "current_owners_count": len(current_owners),
+            "historical_owners_count": len(historical_owners),
+            "institutions_count": len(institutions),
+            "other_signatories_count": len(other_signatories),
+            "total_parties": len(all_owners_list),
+            "units_count": len(clusters)
+        },
+        "property_owners": property_owners,
+        "current_owners": current_owners,
+        "historical_owners": historical_owners,
+        "institutions": institutions,
+        "other_signatories": other_signatories,
+        "all_owners": all_owners_list,
+        "property_units": unit_summaries
+    }
+
+
+def group_property_units_and_owners(tx_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Dynamically groups transactions across multiple properties/plots/flats
+    and identifies the current title holder for each distinct property unit.
+    Completely generalized for any TNREGINET EC.
+    """
+    if not tx_list:
+        return []
+
+    clusters = defaultdict(list)
+
+    for t in tx_list:
+        scheds = t.get("schedules") or []
+        if not scheds:
+            clusters["All Properties / Certificate Scope"].append(t)
+            continue
+
+        primary_s = scheds[0]
+        street = (primary_s.get("village_street") or "").strip()
+        survey = (primary_s.get("survey_no") or "").strip()
+        flat = (primary_s.get("flat_no") or "").strip()
+        plot = (primary_s.get("plot_no") or "").strip()
+
+        if flat in ["-", "*"]: flat = ""
+        if plot in ["-", "*"]: plot = ""
+
+        unit_label_parts = []
+        if street:
+            unit_label_parts.append(street)
+        if survey and survey != "-":
+            unit_label_parts.append(f"S.No {survey}")
+        if flat:
+            unit_label_parts.append(f"Flat {flat}")
+        elif plot:
+            unit_label_parts.append(f"Plot {plot}")
+
+        unit_label = " | ".join(unit_label_parts) if unit_label_parts else "General Property"
+        clusters[unit_label].append(t)
+
+    property_owners = []
+    for unit_label, u_txs in clusters.items():
+        owner_found = None
+        for e in reversed(u_txs):
+            nat = normalize_tamil_visual_order(e.get("nature") or "").lower()
+            if any(k in nat for k in ["sale", "கிரைய", "கிைரய", "விற்பனை", "விற்பைன", "settlement", "செட்டில்மென்ட்", "தான", "gift", "பாகப்பிரிவினை", "partition", "conveyance", "உரிமை மாற்றம்"]):
+                claimant = e.get("claimants") or ""
+                if claimant:
+                    clean_name = _clean_owner_name(claimant)
+                    first_sched = (e.get("schedules") and e["schedules"][0]) or {}
+                    owner_found = {
+                        "unit": unit_label,
+                        "owner_name": clean_name,
+                        "ownership_type": _classify_ownership_type(clean_name),
+                        "doc_no": e.get("doc_no") or e.get("doc_no_year") or "-",
+                        "date": e.get("date") or e.get("registration_date") or "-",
+                        "vendor": _clean_owner_name(e.get("executants") or "-"),
+                        "nature": e.get("nature") or "-",
+                        "total_entries": len(u_txs),
+                        "extent": first_sched.get("extent") or "-",
+                        "boundaries": first_sched.get("boundaries") or "-"
+                    }
+                    break
+
+        if not owner_found:
+            last_e = u_txs[-1]
+            first_sched = (last_e.get("schedules") and last_e["schedules"][0]) or {}
+            party_name = _clean_owner_name(last_e.get("claimants") or last_e.get("executants") or "-")
+            owner_found = {
+                "unit": unit_label,
+                "owner_name": party_name,
+                "ownership_type": _classify_ownership_type(party_name),
+                "doc_no": last_e.get("doc_no") or "-",
+                "date": last_e.get("date") or "-",
+                "vendor": _clean_owner_name(last_e.get("executants") or "-"),
+                "nature": last_e.get("nature") or "-",
+                "total_entries": len(u_txs),
+                "extent": first_sched.get("extent") or "-",
+                "boundaries": first_sched.get("boundaries") or "-"
+            }
+        property_owners.append(owner_found)
+
+    return property_owners
+
+
+def analyze_property_extent_and_details(entries: List[Dict[str, Any]], full_text: str = "") -> Dict[str, Any]:
+    """
+    Extracts property extent (area), determines whether it is UDS vs Normal land,
+    and extracts property types and building notes from remarks and schedules.
+    """
+    sched_texts = []
+    for e in entries:
+        for s in e.get("schedules") or []:
+            sched_texts.append(f"{s.get('property_type', '')} {s.get('extent', '')} {s.get('schedule_remarks', '')} {s.get('village_street', '')} {s.get('boundaries', '')}")
+
+    all_text = (full_text or "") + " " + " ".join([
+        str(e.get("remarks") or "") + " " + str(e.get("document_remarks") or "") + " " + str(e.get("schedule_remarks") or "")
+        for e in entries
+    ]) + " " + " ".join(sched_texts)
+
+    # 1. Extent extraction
+    valid_extents = []
+    compound_spans = []
+
+    # 1a. Grounds compound & abbreviated patterns: e.g. "4 கி 47 சதுரடி", "15 ground 405 sq.ft.", "1 கிரவுண்ட் 2378 சதுரடி", "6 கி"
+    p_ground = re.compile(r'(\d+(?:\.\d+)?)\s*(?:கி(?:ரவுண்ட்|ரவுண்டு)?|grounds?)\s*(?:(\d+(?:\.\d+)?)\s*(?:சதுரடி|sq\.?ft|sqft))?', re.I)
+    for m in p_ground.finditer(all_text):
+        compound_spans.append(m.span())
+        g, sq = m.group(1), m.group(2)
+        label = f"{g} Ground" if float(g) == 1 else f"{g} Grounds"
+        if sq:
+            label += f" {sq} Sq.Ft"
+        if label not in valid_extents:
+            valid_extents.append(label)
+
+    # 1b. Standalone square feet, cents, square meters, acres
+    p_standalone = re.compile(r'(\d[\d\.,]*)\s*(?:சதுரடி|sq\.?ft|sqft|சென்ட்|ெசண்ட்|cents?|ஏக்கர்|acres?|சதுர\s*மீட்டர்|sq\.?m)\b', re.I)
+    for m in p_standalone.finditer(all_text):
+        sp = m.span()
+        if any(cs[0] <= sp[0] and sp[1] <= cs[1] for cs in compound_spans):
+            continue
+        unit_str = m.group(0)
+        val = m.group(1)
+        if 'சதுரடி' in unit_str or 'sq' in unit_str.lower():
+            label = f"{val} Sq.Ft"
+        elif 'சென்ட்' in unit_str or 'ெசண்ட்' in unit_str or 'cent' in unit_str.lower():
+            label = f"{val} Cent"
+        elif 'மீட்டர்' in unit_str or 'sq.m' in unit_str.lower():
+            label = f"{val} Sq.M"
+        elif 'ஏக்கர்' in unit_str or 'acre' in unit_str.lower():
+            label = f"{val} Acre"
+        else:
+            label = f"{val} {unit_str.strip()}"
+        if label not in valid_extents:
+            valid_extents.append(label)
+
+    # 1c. Direct Extent / விஸ்தீரணம் prefix matches
+    extents = re.findall(r'(?:விஸ்தீர்ணம்|விஸ்தீரணம்|Extent)[^:\r\n]*[:\s]+([^\r\n\|,\*]+)', all_text, re.I)
+    for ext in extents:
+        ext = ext.strip()
+        if ext and ext not in ['*', '-', '0'] and not ext.startswith('('):
+            clean_ext = re.sub(r'\s+', ' ', ext)
+            if clean_ext not in valid_extents:
+                valid_extents.append(clean_ext)
+
+    # 1d. UDS fractions (e.g. "1/3 UDS in 10400 சதுரடி", "153/5867 UDS in 6 கி")
+    p_uds = re.compile(r'(\d+/\d+)\s*(?:UDS|பிரிபடாத\s*பாகம்|பாகம்)[^\n\|,\*]*', re.I)
+    for m in p_uds.finditer(all_text):
+        uds_lbl = m.group(0).strip()
+        if uds_lbl and uds_lbl not in valid_extents:
+            valid_extents.append(uds_lbl)
+
+    extent_str = " | ".join(valid_extents[:8]) if valid_extents else "Not explicitly specified in search extract"
+
+    # 2. UDS vs Normal land check
+    is_uds = any(k in all_text.lower() for k in ["uds", "undivided share", "பிரிக்கப்படாத பங்கு", "பிரிக்கப்படாத", "பிரிபடாத", "அவிபாஜ்ய"])
+    land_category = "UDS (Undivided Share of Land)" if is_uds else "Normal Land (முழு நில உரிமை / Independent Plot)"
+
+    # 3. Property Classification / Type
+    types = re.findall(r'(?:வைகப்பாடு|வகைப்பாடு|Property\s*Type)[^:\r\n]*[:\s]+([^\r\n\|]+)', all_text, re.I)
+    valid_types = []
+    for t in types:
+        t_clean = normalize_tamil_visual_order(t.strip())
+        if t_clean and t_clean not in ['-', '*'] and t_clean not in valid_types:
+            valid_types.append(t_clean)
+
+    # 4. Structure details from remarks
+    structures = []
+    for kw, en in [
+        ("காலிமனை", "Vacant Land / Plot"),
+        ("கட்டியுள்ள வீடு", "Built Residential House"),
+        ("கட்டிடம்", "Building"),
+        ("அடுக்குமாடி", "Apartment / Flat"),
+        ("வணிக", "Commercial Structure"),
+        ("வீட்டுமனை", "House Site"),
+        ("தொழிற்சாலை", "Industrial Structure")
+    ]:
+        if kw in all_text and en not in structures:
+            structures.append(f"{kw} ({en})")
+
+    prop_type_str = " | ".join(valid_types) if valid_types else ("Building / Residential Land" if structures else "Land / House Site")
+    structure_str = ", ".join(structures) if structures else "Residential Structure / Land"
+
+    # 5. Extract Patta / Block / Plot if mentioned
+    patta_m = re.search(r'(?:பட்டா\s*எண்|Patta\s*No\.?|பிளாக்\s*எண்|மைன\s*எண்|கதவு\s*எண்)[^:\r\n]*[:\s]+([^\r\n,\|]+)', all_text, re.I)
+    patta_plot = patta_m.group(0).strip() if patta_m else "-"
+
+    # 6. Remarks Notes
+    notes_list = []
+    for e in entries:
+        r = (e.get("remarks") or "").strip()
+        if r and len(r) > 5 and r not in notes_list:
+            notes_list.append(r)
+
+    if notes_list:
+        raw_notes = " ; ".join(notes_list[:5])  # Cap at 5 key remarks
+        # Use deep-translator neural engine with glossary to translate remarks
+        notes_en = translate_legal_phrase_deeptranslator(raw_notes, source="ta", target="en")
+        notes_str = f"{notes_en} ({raw_notes})" if any('\u0b80' <= c <= '\u0bff' for c in raw_notes) else raw_notes
+    else:
+        notes_str = "Standard document remarks recorded in SRO register"
+
+    return {
+        "extent": extent_str,
+        "is_uds": is_uds,
+        "land_category": land_category,
+        "property_type": prop_type_str,
+        "structure": structure_str,
+        "patta_plot": patta_plot,
+        "remarks_notes": notes_str
+    }
+
+
+def parse_direction_clauses(text: str) -> Dict[str, List[str]]:
+    """
+    Parses North, South, East, West boundaries from a text block,
+    strictly bounding each direction clause to avoid runaway text.
+    """
+    clean_txt = normalize_tamil_visual_order(text or "")
+    dir_pat = re.compile(
+        r'(?:^|[,\s;\|])('
+        r'\((?:வ|தெ|கி|மே)\)|'
+        r'(?:வடக்கு|தெற்கு|கிழக்கு|மேற்கு|வடக்கில்|தெற்கில்|கிழக்கில்|மேற்கில்)'
+        r'(?:\s*(?:பகுதி|பக்கம்))?'
+        r'|'
+        r'(?:North|South|East|West)'
+        r'(?:\s*(?:side|portion|part))?'
+        r')\s*[:\-\.]?\s*',
+        re.I
+    )
+    splits = list(dir_pat.finditer(clean_txt))
+    results = {"north": [], "south": [], "east": [], "west": []}
+
+    for i, m in enumerate(splits):
+        marker = m.group(1).lower().strip()
+        start = m.end()
+        end = splits[i + 1].start() if i + 1 < len(splits) else len(clean_txt)
+        val = clean_txt[start:end].strip()
+
+        d = None
+        if any(k in marker for k in ["வடக்", "வ)", "north"]):
+            d = "north"
+        elif any(k in marker for k in ["தெற்", "தெ)", "south"]):
+            d = "south"
+        elif any(k in marker for k in ["கிழக்", "கி)", "east"]):
+            d = "east"
+        elif any(k in marker for k in ["மேற்", "மே)", "west"]):
+            d = "west"
+
+        if d and val:
+            val = re.sub(r'^(?:பகுதி|பக்கம்|ல்|side|portion|part)\s*[:\-\.]?\s*', '', val, flags=re.I)
+            val = re.sub(r'[\s,;]+(?:and|மற்றும்)?[\s,;]*$', '', val, flags=re.I).strip()
+            val = re.split(r'(?:\d+\s*புத்தகம்|1\s*புத்தகம்|Search\s*Period|வ\.\s*எண்|Sr\.\s*No|ஆவணக்|Schedule|சொத்தின்|சொத்தின்|விஸ்தீர்ணம்|கதவு\s*எண்)', val, flags=re.I)[0].strip()
+            val = re.sub(r'\s+', ' ', val).strip(' ,;-:')
+            if len(val) > 130:
+                val = val[:127].rsplit(' ', 1)[0] + '...'
+            if val and len(val) > 1 and val not in results[d]:
+                results[d].append(val)
+
+    return results
+
+
+def extract_boundary_schedule(entries: List[Dict[str, Any]], header_boundaries: str = "") -> Dict[str, Any]:
+    """
+    Extracts North, South, East, West boundaries from certificate header or schedule entries,
+    translating Tamil boundary clauses using deep-translator neural engine and glossary.
+    """
+    bounds_raw = {"north": [], "south": [], "east": [], "west": []}
+
+    # 1. Priority 1: Header Boundaries (if applicant requested a specific surveyed property)
+    if header_boundaries and header_boundaries.strip():
+        hdr_parsed = parse_direction_clauses(header_boundaries)
+        for d in ["north", "south", "east", "west"]:
+            bounds_raw[d].extend(hdr_parsed.get(d, []))
+
+    # 2. Priority 2 / Supplement: Schedule boundaries from transactions
+    has_any_hdr = any(len(bounds_raw[d]) > 0 for d in ["north", "south", "east", "west"])
+    if not has_any_hdr:
+        for e in entries:
+            for s in e.get("schedules") or []:
+                b = s.get("boundaries") or ""
+                if b:
+                    s_parsed = parse_direction_clauses(b)
+                    for d in ["north", "south", "east", "west"]:
+                        for clause in s_parsed.get(d, []):
+                            if clause not in bounds_raw[d] and len(bounds_raw[d]) < 2:
+                                bounds_raw[d].append(clause)
+            rem = str(e.get("remarks") or "")
+            if any(k in rem for k in ["வடக்", "தெற்", "கிழக்", "மேற்", "(வ)", "(தெ)", "(கி)", "(மே)"]):
+                r_parsed = parse_direction_clauses(rem)
+                for d in ["north", "south", "east", "west"]:
+                    for clause in r_parsed.get(d, []):
+                        if clause not in bounds_raw[d] and len(bounds_raw[d]) < 2:
+                            bounds_raw[d].append(clause)
+
+    bounds = {}
+    for d in ["north", "south", "east", "west"]:
+        clauses = bounds_raw[d]
+        if not clauses:
+            bounds[d] = "-"
+        else:
+            translated_clauses = []
+            for c in clauses[:2]:  # Top 2 distinct clauses per direction
+                if any('\u0b80' <= ch <= '\u0bff' for ch in c):
+                    en_bound = translate_legal_phrase_deeptranslator(c, source="ta", target="en")
+                    translated_clauses.append(f"{en_bound} ({c})" if en_bound and en_bound != c else c)
+                else:
+                    translated_clauses.append(c)
+            bounds[d] = " ; ".join(translated_clauses)
+
+    formatted = f"North: {bounds['north']} | South: {bounds['south']} | East: {bounds['east']} | West: {bounds['west']}"
+    bounds["formatted"] = formatted
+    return bounds
+
+
+def analyze_active_poa(entries: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Checks for active Power of Attorney (POA) instruments and authorized agents in the title trail.
+    """
+    poa_agents = []
+    for e in entries:
+        combined = f"{e.get('executants', '')} {e.get('claimants', '')} {e.get('nature', '')}"
+        if any(k in combined.lower() for k in ["agent", "முகவர்", "power of attorney", "பொது அதிகார", "poa"]):
+            doc_no = e.get("doc_no") or e.get("doc_no_year") or "-"
+            dt = e.get("date") or e.get("registration_date") or "-"
+            party = e.get("executants") or e.get("claimants") or "-"
+            poa_agents.append(f"Doc {doc_no} ({dt}): {party}")
+
+    has_poa = len(poa_agents) > 0
+    status_str = f"{len(poa_agents)} Power of Attorney (POA) / Agent entries identified in title trail" if has_poa else "No registered Power of Attorney (POA) entries found in this search window."
+    return {
+        "has_poa": has_poa,
+        "status": status_str,
+        "details": poa_agents,
+        "agents": poa_agents
+    }
+
+
+def analyze_last_transaction(entries: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Extracts details of the most recent registered transaction in the certificate.
+    """
+    if not entries:
+        return {
+            "nature": "Nil Encumbrance / No Transactions",
+            "doc_no": "-",
+            "date": "-",
+            "executants": "-",
+            "claimants": "-",
+            "consideration": "-",
+            "market_value": "-"
+        }
+    last_e = entries[-1]
+    nat = last_e.get("nature") or "Deed"
+    doc_no = last_e.get("doc_no") or last_e.get("doc_no_year") or "-"
+    dt = last_e.get("date") or last_e.get("registration_date") or "-"
+    execs = last_e.get("executants") or "-"
+    claims = last_e.get("claimants") or "-"
+    cons = last_e.get("consideration") or "-"
+    mkt = last_e.get("market_value") or "-"
+    return {
+        "nature": nat,
+        "doc_no": doc_no,
+        "date": dt,
+        "executants": execs,
+        "claimants": claims,
+        "consideration": cons,
+        "market_value": mkt
+    }
+
+
+def summarize_tx_breakdown(entries: List[Dict[str, Any]]) -> str:
+    """
+    Summarizes document types across all transactions (e.g. Sales, Mortgages, Receipts).
+    """
+    if not entries:
+        return "Nil Encumbrance (0 Transactions)"
+    counts: Dict[str, int] = {}
+    for e in entries:
+        nat = (e.get("nature") or "Other").split("\n")[0].strip()
+        counts[nat] = counts.get(nat, 0) + 1
+    return ", ".join([f"{k}: {v}" for k, v in counts.items()])
+
+
+
+def _parse_header_common(text: str, report: Optional[ECReport] = None) -> ECReport:
+    if report is None:
+        report = ECReport()
+    text = normalize_tamil_visual_order(text or "")
+
+    # 1. SRO: Tamil or English
+    m_sro = re.search(r'(?:S\.R\.O|சா\.ப\.அ|சார்பதிவாளர்\s*அலுவலகம்)[^:\r\n]*[:\s]+([^:\r\n]+?)(?=\s+(?:Date|நாள்|சான்று|மனு|Zone|District)|[\r\n]|$)', text, re.I)
+    if m_sro:
+        report.sro = normalize_tamil_visual_order(clean_legal(m_sro.group(1).strip()))
+    else:
+        m_sro_fallback = re.search(r"S\.R\.O\s*/[^:]*:\s*([^\n]+?)\s+Date", text) or re.search(r"S\.R\.O\s*/[^:]*:\s*([^\n]+)", text)
+        if m_sro_fallback:
+            report.sro = normalize_tamil_visual_order(clean_legal(m_sro_fallback.group(1).strip()))
+
+    # 2. Certificate No & Application No
+    m_cert = re.search(r'(?:சான்று\s*எண்|Certificate\s*No\.?)[^:\r\n]*[:\s]+([A-Za-z0-9/_-]+)', text, re.I)
+    if m_cert:
+        report.certificate_no = m_cert.group(1).strip()
+
+    m_app = re.search(r'(?:மனு\s*எண்|Application\s*No\.?|ECA\s*No\.?)[^:\r\n]*[:\s]+([A-Za-z0-9/_-]+)', text, re.I)
+    if m_app:
+        report.application_no = m_app.group(1).strip()
+
+    # 3. Certificate Date
+    m_date = re.search(r'(?:Date\s*/\s*நாள்|Date|நாள்)[^:\r\n]*[:\s]+([\d]{1,2}[-/][A-Za-z]{3,}[-/][\d]{2,4}|[\d]{1,2}[-/][\d]{1,2}[-/][\d]{2,4})', text, re.I)
+    if m_date:
+        report.certificate_date = m_date.group(1).strip()
+
+    # 4. Applicant Name: search only within first 1500 chars
+    m_appl = re.search(r'(?:திரு/திருமதி/செல்வி\.?|Applicant|மனுதாரர்)\s*[:\.\s]*([A-Za-z0-9\s\.\&]+?)(?=\s*(?:Tamil\s*Nadu|,|கீழ்க்கண்ட|விண்ணப்பித்துள்ளார்)|[\r\n]|$)', text[:1500], re.I)
+    if m_appl:
+        appl_clean = m_appl.group(1).strip()
+        if len(appl_clean) > 2 and not any(k in appl_clean for k in ["சான்று", "வில்லங்கம்", "விண்ணப்ப"]):
+            report.applicant_name = appl_clean
+
+    # 5. Village and Survey
+    m_vil = re.search(r'Village\s*/கிராமம்\s*:\s*([^\s\n\r]+)', text, re.I)
+    m_sur = re.search(r'Survey\s*Details\s*/சர்வே\s*விவரம்\s*:\s*([^\n\r]+)', text, re.I)
+    if m_vil and m_sur:
+        report.village = normalize_tamil_visual_order(clean_legal(m_vil.group(1).strip()))
+        report.survey_details = normalize_tamil_visual_order(clean_legal(m_sur.group(1).strip()))
+    else:
+        m_tm = re.search(r'கிராமம்\s+சர்வே\s+விவரம்\s*[\r\n]+([^\r\n]+)', text)
+        if m_tm:
+            line_val = m_tm.group(1).strip()
+            d_idx = re.search(r'\d', line_val)
+            if d_idx:
+                report.village = normalize_tamil_visual_order(clean_legal(line_val[:d_idx.start()].strip()))
+                report.survey_details = normalize_tamil_visual_order(clean_legal(line_val[d_idx.start():].strip()))
+            else:
+                report.village = normalize_tamil_visual_order(clean_legal(line_val))
+        else:
+            m_vil2 = re.search(r'(?:Village|கிராமம்)[^:\r\n]*[:\s]+([^:\r\n|/]+?)(?=\s+(?:Survey|புல|சர்வே)|[\r\n]|$)', text, re.I)
+            if m_vil2:
+                report.village = normalize_tamil_visual_order(clean_legal(m_vil2.group(1).strip()))
+            m_sur2 = re.search(r'(?:Survey\s*Details|சர்வே\s*விவரம்|SurveyDetails|புல\s*எண்|சர்வே\s*எண்|Survey\s*No)[^:\r\n]*[:\s]+([^:\r\n]+)', text, re.I)
+            if m_sur2:
+                report.survey_details = normalize_tamil_visual_order(clean_legal(m_sur2.group(1).strip()))
+
+    # 6. SRO Data Availability
+    m_avail = re.search(r"Sub Registrar Office:\s*From\s*([\d\-A-Za-z]+)\s*To\s*([\d\-A-Za-z]+)", text)
+    if m_avail:
+        report.data_available_from, report.data_available_to = m_avail.groups()
+    else:
+        m_avail2 = re.search(r"From\s*([\d\-A-Za-z]+)\s*To\s*([\d\-A-Za-z]+)", text)
+        if m_avail2:
+            report.data_available_from, report.data_available_to = m_avail2.groups()
+
+    # 7. Search Period
+    m_period_en = re.search(r'(?:Search\s*Period|தேடுதல்\s*காலம்)[^:\r\n]*[:\s]+([\d\-A-Za-z/]+)\s*-\s*([\d\-A-Za-z/]+)', text, re.I)
+    m_period_tm = re.search(r'(\d+)\s*ஆண்டுகளுக்கு\s*([\d\-A-Za-z/]+)\s*முதல்\s*([\d\-A-Za-z/]+)\s*வரை', text, re.I)
+    if m_period_en:
+        report.search_period_from = m_period_en.group(1).strip()
+        report.search_period_to = m_period_en.group(2).strip()
+    elif m_period_tm:
+        report.search_period_from = m_period_tm.group(2).strip()
+        report.search_period_to = m_period_tm.group(3).strip()
+
+    if report.search_period_from and report.search_period_to:
+        try:
+            d1 = datetime.strptime(report.search_period_from, "%d-%b-%Y")
+            d2 = datetime.strptime(report.search_period_to, "%d-%b-%Y")
+            years = (d2 - d1).days / 365.25
+            report.search_window_years = round(years, 1)
+            report.below_30yr_standard = (years < 30.0)
+        except Exception:
+            years_found = re.findall(r'\b(19\d\d|20\d\d)\b', f"{report.search_period_from} {report.search_period_to}")
+            if len(years_found) >= 2:
+                y_diff = abs(int(years_found[-1]) - int(years_found[0]))
+                report.search_window_years = float(y_diff)
+                report.below_30yr_standard = (y_diff < 30)
+
+    # 8. Requested Property in Header
+    m_tot_ext = re.search(r'(?:மொத்த\s*விஸ்தீர்ணம்|மொத்த\s*விஸ்தீர்ணம்|Total\s*Extent)\s*:\s*([^,\r\n]+)', text, re.I)
+    if m_tot_ext:
+        report.requested_extent = m_tot_ext.group(1).strip()
+    m_tr_ext = re.search(r'(?:உரிமை\s*மாற்றப்பட்ட\s*விஸ்தீர்ணம்|Transferred\s*Extent)\s*:\s*([^,\r\n]+)', text, re.I)
+    if m_tr_ext and not report.requested_extent:
+        report.requested_extent = m_tr_ext.group(1).strip()
+
+    m_hdr_door = re.search(r'(?:பழைய\s*கதவு\s*எண்|புதிய\s*கதவு\s*எண்|Old\s*Door\s*No|New\s*Door\s*No)\s*:\s*([^,\r\n]+)', text, re.I)
+    if m_hdr_door:
+        report.requested_door_no = m_hdr_door.group(1).strip()
+
+    m_hdr_bounds = re.search(r'(?:(?:எல்லை|எல்ைல)\s*(?:விபரங்கள்|விவரங்கள்|குறிப்புகள்)|Boundary\s*Details)\s*:\s*([\s\S]+?)(?=(?:\d+\s*புத்தகம்|1\s*புத்தகம்|Search\s*Period|வ\.\s*எண்|Sr\.\s*No|சொத்து\s*தொடர்பான|$))', text, re.I)
+    if m_hdr_bounds:
+        report.requested_boundaries = re.sub(r'\s+', ' ', m_hdr_bounds.group(1)).strip()
+
+    # Zone / District
+    m_zone = re.search(r'Zone:\s*([A-Za-z ]+?)\s+District:\s*([A-Za-z ]+?)\s+S\.R\.O:', text)
+    if m_zone:
+        report.zone = m_zone.group(1).strip()
+        report.district = m_zone.group(2).strip()
+
+    return report
+
+
 # --------------------------------------------------------------------------
 # ECExtractor Class
 # --------------------------------------------------------------------------
@@ -556,59 +1432,8 @@ class ECExtractor:
     # ----------------------------------------------------------------------
 
     def _parse_header_from_pdf(self, pdf) -> ECReport:
-        report = ECReport()
-        text = pdf.pages[0].extract_text() or ""
-
-        m = re.search(r"S\.R\.O\s*/[^:]*:\s*([^\n]+?)\s+Date", text)
-        if m:
-            report.sro = normalize_tamil_visual_order(m.group(1).strip())
-        else:
-            m = re.search(r"S\.R\.O\s*/[^:]*:\s*([^\n]+)", text)
-            if m:
-                report.sro = normalize_tamil_visual_order(m.group(1).strip())
-
-        m = re.search(r"Date\s*/[^:]*:\s*([\d\-A-Za-z]+)", text)
-        if m:
-            report.certificate_date = m.group(1).strip()
-
-        m = re.search(r"Village\s*/[^:]*:\s*([^\s\n]+)", text)
-        if m:
-            report.village = normalize_tamil_visual_order(m.group(1).strip())
-
-        m = re.search(r"Survey Details\s*/[^:]*:\s*([^\n]+)", text)
-        if m:
-            report.survey_details = normalize_tamil_visual_order(m.group(1).strip())
-
-        m = re.search(r"Sub Registrar Office:\s*From\s*([\d\-A-Za-z]+)\s*To\s*([\d\-A-Za-z]+)", text)
-        if m:
-            report.data_available_from, report.data_available_to = m.groups()
-        else:
-            m = re.search(r"From\s*([\d\-A-Za-z]+)\s*To\s*([\d\-A-Za-z]+)", text)
-            if m:
-                report.data_available_from, report.data_available_to = m.groups()
-
-        m = re.search(r"Search Period\s*/[^:]*:\s*([\d\-A-Za-z]+)\s*-\s*([\d\-A-Za-z]+)", text)
-        if m:
-            report.search_period_from, report.search_period_to = m.groups()
-
-        m = re.search(r"Zone:\s*([A-Za-z ]+?)\s+District:\s*([A-Za-z ]+?)\s+S\.R\.O:", text)
-        if m:
-            report.zone, report.district = m.group(1).strip(), m.group(2).strip()
-
-        try:
-            d1 = datetime.strptime(report.search_period_from, "%d-%b-%Y")
-            d2 = datetime.strptime(report.search_period_to, "%d-%b-%Y")
-            years = (d2 - d1).days / 365.25
-            report.search_window_years = round(years, 1)
-            report.below_30yr_standard = (years < 30.0)
-        except Exception:
-            years_found = re.findall(r'\b(19\d\d|20\d\d)\b', f"{report.search_period_from} {report.search_period_to}")
-            if len(years_found) >= 2:
-                y_diff = abs(int(years_found[-1]) - int(years_found[0]))
-                report.search_window_years = float(y_diff)
-                report.below_30yr_standard = (y_diff < 30)
-
-        return report
+        text = normalize_tamil_visual_order(pdf.pages[0].extract_text() or "")
+        return _parse_header_common(text)
 
     def _parse_entries_from_pdf(self, pdf) -> List[ECEntry]:
         entries: List[ECEntry] = []
@@ -650,6 +1475,13 @@ class ECExtractor:
                             entries.append(current)
                             
                         exec_d, pres_d, reg_d = _split_dates(row[2] or "")
+                        if not reg_d and row[1]:
+                            d_matches = re.findall(r'\b\d{2}-[A-Za-z]{3}-\d{4}\b', row[1])
+                            if d_matches:
+                                reg_d = d_matches[-1]
+                                if len(d_matches) >= 2:
+                                    exec_d = d_matches[0]
+                                    pres_d = d_matches[0]
                         raw_exec = row[4] or ""
                         raw_claim = row[5] or ""
 
@@ -660,22 +1492,102 @@ class ECExtractor:
                                 raw_exec = split_exec
                                 raw_claim = split_claim
 
+                        extracted_nature = normalize_tamil_visual_order(_clean(row[3]))
+                        if not extracted_nature and row[1]:
+                            m_nat = re.search(r'(?:விற்பைன\s*ஆவணம்|விற்பனை\s*ஆவணம்|கிைரய\s*ஆவணம்|கிரைய\s*ஆவணம்|ஈடு|அடைமானம்|இரசீது|ரசீது|ஒப்பைடப்பு|ஒப்படைப்பு|பாகப்பிரிவினை|செட்டில்மென்ட்|தான\s*செட்டில்மென்ட்|உரிமை\s*மாற்றம்)', row[1])
+                            if m_nat:
+                                extracted_nature = normalize_tamil_visual_order(m_nat.group(0))
+
                         current = ECEntry(
                             sr_no=col0,
                             doc_no_year=extracted_doc,
                             execution_date=_standardize_date(exec_d),
                             presentation_date=_standardize_date(pres_d),
                             registration_date=_standardize_date(reg_d),
-                            nature=normalize_tamil_visual_order(_clean(row[3])),
+                            nature=extracted_nature,
                             executants=_clean_party_cell(raw_exec),
                             claimants=_clean_party_cell(raw_claim),
                             vol_page=_clean(row[6]),
                         )
+                        current_sched = None
                         capturing_remarks = False
                         continue
 
                     if current is None:
                         continue
+
+                    row_str = ' || '.join([str(c).replace('\n', ' ') for c in row if c])
+
+                    # Check for schedule block start (e.g. Schedule A Details, Schedule 1 Details, அட்டவணை A விவரங்கள்)
+                    m_sched = re.search(r'(?:Schedule\s+(?!Remarks|ெசாத்து|சொத்து)[A-Za-z0-9]+(?:\s+Details)?|அட்டவணை\s*[A-Za-z0-9]+\s*விவரங்கள்:?|அட்டவணை\s*விவரங்கள்:?)', row_str, re.I)
+                    if m_sched:
+                        capturing_remarks = False
+                        current_sched = {
+                            "schedule_name": m_sched.group(0).strip().rstrip(":"),
+                            "property_type": "",
+                            "extent": "",
+                            "village_street": "",
+                            "survey_no": "",
+                            "door_no": "",
+                            "plot_no": "",
+                            "flat_no": "",
+                            "boundaries": "",
+                            "schedule_remarks": ""
+                        }
+                        current.schedules.append(current_sched)
+
+                    if current_sched is not None:
+                        m_pt = re.search(r'(?:Property\s*Type|ெசாத்தின்\s*வைகப்பாடு|சொத்தின்\s*வகைப்பாடு)\s*:\s*([^\|]+)', row_str, re.I)
+                        if m_pt and not current_sched["property_type"]:
+                            current_sched["property_type"] = normalize_tamil_visual_order(m_pt.group(1).strip())
+
+                        # Combined survey and extent (புல எண்-விஸ்தீர்ணம்: 6107/1B, 6110/1B - 5720.0 சதுரடி)
+                        m_se = re.search(r'(?:புல\s*எண்\s*-\s*விஸ்தீர்ணம்|புல\s*எண்\s*-\s*விஸ்தீரணம்)\s*:\s*([^\|]+)', row_str, re.I)
+                        if m_se:
+                            val_comb = re.sub(r'\s+', ' ', m_se.group(1)).strip()
+                            if " - " in val_comb:
+                                sur_part, ext_part = val_comb.split(" - ", 1)
+                                if not current_sched["survey_no"]:
+                                    current_sched["survey_no"] = sur_part.strip()
+                                if not current_sched["extent"]:
+                                    current_sched["extent"] = normalize_tamil_visual_order(ext_part.strip())
+                            else:
+                                if not current_sched["survey_no"]:
+                                    current_sched["survey_no"] = val_comb
+
+                        m_ext = re.search(r'(?:Property\s*Extent|ெசாத்தின்\s*விஸ்தீர்ணம்|சொத்தின்\s*விஸ்தீர்ணம்)\s*:\s*([^\|]+)', row_str, re.I)
+                        if m_ext and not current_sched["extent"]:
+                            current_sched["extent"] = normalize_tamil_visual_order(m_ext.group(1).strip())
+
+                        m_vs = re.search(r'(?:Village\s*&\s*Street|கிராமம்\s*மற்றும்\s*ெதரு|கிராமம்\s*மற்றும்\s*தெரு)\s*:\s*([^\|]+)', row_str, re.I)
+                        if m_vs and not current_sched["village_street"]:
+                            current_sched["village_street"] = normalize_tamil_visual_order(m_vs.group(1).strip())
+
+                        m_sn = re.search(r'(?:Survey\s*No\.?|புல\s*எண்)\s*:\s*([^\|]+)', row_str, re.I)
+                        if m_sn and not current_sched["survey_no"]:
+                            current_sched["survey_no"] = m_sn.group(1).strip()
+
+                        m_dn = re.search(r'(?:New\s*Door\s*No\.?|புதிய\s*கதவு\s*எண்)\s*:\s*([^\|]+)', row_str, re.I)
+                        if m_dn and not current_sched["door_no"]:
+                            current_sched["door_no"] = m_dn.group(1).strip()
+
+                        m_fn = re.search(r'(?:Flat\s*No\.?|தள\s*எண்|Floor\s*No\.?|அடுக்குமாடிக்\s*குடியிருப்பு\s*எண்)\s*:\s*([^\|]+)', row_str, re.I)
+                        if m_fn and not current_sched["flat_no"]:
+                            f_val = re.split(r'(?:Plot\s*No|மைன\s*எண்|மனை\s*எண்|Block|பிளாக்|New\s*Door|Old\s*Door|கதவு)', m_fn.group(1), flags=re.I)[0].strip()
+                            current_sched["flat_no"] = normalize_tamil_visual_order(f_val)
+
+                        m_pn = re.search(r'(?:Plot\s*No\.?|மைன\s*எண்|மனை\s*எண்)\s*:\s*([^\|]+)', row_str, re.I)
+                        if m_pn and not current_sched["plot_no"]:
+                            p_val = re.split(r'(?:Flat\s*No|அடுக்குமாடி|Block|பிளாக்|New\s*Door|Old\s*Door|கதவு)', m_pn.group(1), flags=re.I)[0].strip()
+                            current_sched["plot_no"] = normalize_tamil_visual_order(p_val)
+
+                        m_bn = re.search(r'(?:Boundary\s*Details|எல்லை\s*விவரங்கள்|எல்ைல\s*விபரங்கள்)\s*:\s*([^\|]+)', row_str, re.I)
+                        if m_bn and not current_sched["boundaries"]:
+                            current_sched["boundaries"] = normalize_tamil_visual_order(m_bn.group(1).strip())
+
+                        m_sr = re.search(r'(?:Schedule\s*Remarks|ெசாத்து\s*விவரம்\s*ெதாடர்பான\s*குறிப்புைர|சொத்து\s*விவரம்\s*தொடர்பான\s*குறிப்புரை)\s*:\s*([^\|]+)', row_str, re.I)
+                        if m_sr and not current_sched["schedule_remarks"]:
+                            current_sched["schedule_remarks"] = normalize_tamil_visual_order(m_sr.group(1).strip())
 
                     c1 = (row[1] or "").strip().lower()
 
@@ -736,178 +1648,186 @@ class ECExtractor:
     # ----------------------------------------------------------------------
 
     def _parse_header_from_text(self, text: str) -> ECReport:
-        report = ECReport()
-
-        m_sro = re.search(r'(?:S\.R\.O|சா\.ப\.அ|சார்பதிவாளர்\s*அலுவலகம்)[^:\r\n]*[:\s]+([^:\r\n]+?)(?=\s+(?:Date|நாள்)|[\r\n]|$)', text, re.I)
-        if m_sro:
-            report.sro = normalize_tamil_visual_order(m_sro.group(1).strip())
-
-        m_date = re.search(r'(?:Date|நாள்)[^:\r\n]*[:\s]+([\d\-A-Za-z/]+)', text, re.I)
-        if m_date:
-            report.certificate_date = m_date.group(1).strip()
-
-        m_vil = re.search(r'(?:Village|கிராமம்)[^:\r\n]*[:\s]+([^:\r\n|/]+?)(?=\s+(?:Survey|புல|சர்வே)|[\r\n]|$)', text, re.I)
-        if m_vil:
-            report.village = normalize_tamil_visual_order(m_vil.group(1).strip())
-
-        m_sur = re.search(r'(?:Survey\s*Details|சர்வே\s*விவரம்|SurveyDetails|புல\s*எண்|சர்வே\s*எண்|Survey\s*No)[^:\r\n]*[:\s]+([^:\r\n]+)', text, re.I)
-        if m_sur:
-            report.survey_details = normalize_tamil_visual_order(m_sur.group(1).strip())
-
-        m_zone = re.search(r'Zone:\s*([A-Za-z ]+?)\s+District:\s*([A-Za-z ]+?)\s+S\.R\.O:', text)
-        if m_zone:
-            report.zone, report.district = m_zone.group(1).strip(), m_zone.group(2).strip()
-
-        m_avail = re.search(r'(?:Sub\s*Registrar\s*Office:[^\d]*|அலுவலக\s*தரவு[^\d]*)(From\s*[\d\-A-Za-z/]+\s*To\s*[\d\-A-Za-z/]+)', text, re.I)
-        if m_avail:
-            report.data_available_from = m_avail.group(1)
-            report.data_available_to = ""
-        else:
-            m_avail2 = re.search(r'(?:Sub Registrar Office:\s*From|அலுவலக\s*தரவு)[^\d]*([\d\-A-Za-z/]+)\s*(?:To|முதல்|வரை|-)\s*([\d\-A-Za-z/]+)', text, re.I)
-            if m_avail2:
-                report.data_available_from, report.data_available_to = m_avail2.groups()
-
-        m_period = re.search(r'(?:Search\s*Period|தேடுதல்\s*காலம்|தடுதல்\s*காலம்|தேடல்\s*காலம்)[^:\r\n]*[:\s]+([\d\-A-Za-z/]+)\s*(?:-|முதல்|to)\s*([\d\-A-Za-z/]+)', text, re.I)
-        if m_period:
-            report.search_period_from, report.search_period_to = m_period.groups()
-        else:
-            m_period2 = re.search(r'([\d\-A-Za-z/]+)\s*(?:முதல்|to|-)\s*([\d\-A-Za-z/]+)\s*வரை', text, re.I)
-            if m_period2:
-                report.search_period_from, report.search_period_to = m_period2.groups()
-
-        years_found = re.findall(r'\b(19\d\d|20\d\d)\b', f"{report.search_period_from} {report.search_period_to}")
-        if len(years_found) >= 2:
-            y_diff = abs(int(years_found[-1]) - int(years_found[0]))
-            report.search_window_years = float(y_diff)
-            report.below_30yr_standard = (y_diff < 30)
-
-        return report
+        return _parse_header_common(text)
 
     def _parse_entries_from_text(self, text: str) -> List[ECEntry]:
         entries: List[ECEntry] = []
         lines = [l.strip() for l in text.splitlines() if l.strip()]
+        doc_regex = re.compile(r'^(?:(?P<sr>\d{1,4})[\.\)]?\s+)?(?P<doc>(?:[A-Za-z0-9\.\-\(\)]+\s+)?\d{1,6}/\d{4})\b(?!\s*[-/]\s*\d{2,4})')
+        date_regex = re.compile(r'\b\d{1,2}[-/][A-Za-z]{3}[-/]\d{2,4}\b')
 
-        doc_header_regex = re.compile(
-            r'^(?:(?P<sr>\d{1,4})[\.\)]?\s+)?(?P<doc>(?:[A-Za-z0-9\.\-\(\)]+\s+)?\d{1,6}/\d{4})\b(?!\s*[-/]\s*\d{2,4})'
-        )
-
-        chunk_starts = []
+        chunk_indices = []
         for idx, line in enumerate(lines):
             if re.search(r'^\d{1,2}/\d{1,2}/\d{4}$', line):
                 continue
-            m = doc_header_regex.search(line)
+            m = doc_regex.search(line)
             if m:
-                if not re.search(r'(?:PR|முந்தைய|ஆவணக்|Schedule|எல்லை|Survey|சர்வே)', line, re.I):
-                    chunk_starts.append((idx, m.group("sr"), m.group("doc")))
+                # Look backwards 1-2 lines to ensure it is NOT a prior deed reference
+                prev_context = " ".join(lines[max(0, idx - 2):idx]).lower()
+                if any(k in prev_context for k in ["முந்தைய", "pr number", "முந்தைய ஆவண", "பத்திர நெ", "ஆவணத்தால் திருத்தம்", "பைசல் முன் பத்திர", "ஆவணம் 1 புத்தகம்"]):
+                    continue
 
-        if not chunk_starts:
+                # Look forward 1-4 lines: must contain a date!
+                next_context = " ".join(lines[idx + 1:min(len(lines), idx + 5)])
+                if not date_regex.search(next_context):
+                    continue
+
+                sr_val = m.group("sr")
+                if not sr_val and idx > 0 and lines[idx - 1].isdigit():
+                    sr_val = lines[idx - 1]
+
+                chunk_indices.append((idx, sr_val, m.group("doc").strip()))
+
+        if not chunk_indices:
             return entries
 
-        for c_idx, (start_line, explicit_sr, doc_no) in enumerate(chunk_starts):
-            end_line = chunk_starts[c_idx + 1][0] if c_idx + 1 < len(chunk_starts) else len(lines)
-            chunk_lines = lines[start_line:end_line]
+        for c_idx, (start_idx, sr_val, doc_no) in enumerate(chunk_indices):
+            end_idx = chunk_indices[c_idx + 1][0] if c_idx + 1 < len(chunk_indices) else len(lines)
+            chunk_lines = lines[start_idx:end_idx]
             chunk_text = "\n".join(chunk_lines)
 
-            sr_str = explicit_sr or str(c_idx + 1)
+            sr_str = sr_val or str(c_idx + 1)
 
-            date_matches = []
-            non_date_lines = []
-            for l in chunk_lines[1:]:
-                m_d = re.findall(r'\b(\d{1,2}[-/](?:[A-Za-z]{3}|\d{1,2})[-/]\d{2,4})\b', l)
-                if m_d and len(l.strip()) <= 15:
-                    date_matches.append(_standardize_date(m_d[0]))
-                else:
-                    non_date_lines.append(l)
+            # 1. Dates
+            dates = date_regex.findall(chunk_text)
+            exec_d = _standardize_date(dates[0]) if len(dates) > 0 else ""
+            pres_d = _standardize_date(dates[1]) if len(dates) > 1 else exec_d
+            reg_d = _standardize_date(dates[2]) if len(dates) > 2 else exec_d
 
-            exec_d = date_matches[0] if len(date_matches) > 0 else ""
-            pres_d = date_matches[1] if len(date_matches) > 1 else exec_d
-            reg_d = date_matches[2] if len(date_matches) > 2 else exec_d
+            # 2. Split chunk into Sections
+            fin_split = re.search(r'(?:கைமாற்றுத்\s*தொகை|கைமாற்றுத்\s*தொகை|Consideration\s*Value)\s*:', chunk_text, re.I)
+            fin_start_pos = fin_split.start() if fin_split else len(chunk_text)
+
+            last_date_pos = 0
+            for m in date_regex.finditer(chunk_text[:fin_start_pos]):
+                last_date_pos = max(last_date_pos, m.end())
+
+            parties_block = chunk_text[last_date_pos:fin_start_pos].strip()
+            parties_lines = [l.strip() for l in parties_block.splitlines() if l.strip()]
 
             nature_val = ""
-            nature_m = re.search(
-                r'(?:Conveyance|Sale\s*deed|Deposit\s*of\s*Title|Mortgage|Receipt|Release|Settlement|Partition|Gift|Lease|Rectification|Agreement|Power\s*of\s*Attorney|MODT|கிரைய|அடமான|ரசீது|விடுதலை|செட்டில்மென்ட்|பாகப்பிரிவினை|தான|குத்தகை|பிழைதிருத்தல்)[^\n\r,]*',
-                chunk_text, re.I
-            )
-            if nature_m:
-                nature_val = nature_m.group(0).strip()
+            party_start_idx = 0
+            for p_i, pl in enumerate(parties_lines):
+                if re.match(r'^(?:1\.|1\.\.\.|\d+\.)', pl):
+                    party_start_idx = p_i
+                    break
+                else:
+                    nature_val = (nature_val + " " + pl).strip()
 
-            exec_val = ""
-            claim_val = ""
-            exec_m = re.search(r'(?:எழுதிக்கொடுத்தவர்|விற்பவர்|அடமானம்\s*வைத்தவர்|விடுதலை\s*செய்தவர்|Executant)[^:\r\n]*[:\s]+([\s\S]+?)(?=(?:எழுதிவாங்கியவர்|வாங்குபவர்|அடமானம்\s*பெற்றவர்|பெறுபவர்|Claimant|கைமாற்று|சந்தை|முந்தைய|$))', chunk_text, re.I)
-            if exec_m:
-                exec_val = _clean(exec_m.group(1))
+            p_remaining = parties_lines[party_start_idx:]
+            p_text = "\n".join(p_remaining)
 
-            claim_m = re.search(r'(?:எழுதிவாங்கியவர்|வாங்குபவர்|அடமானம்\s*பெற்றவர்|பெறுபவர்|Claimant)[^:\r\n]*[:\s]+([\s\S]+?)(?=(?:கைமாற்று|சந்தை|முந்தைய|சொத்தின்|எல்லை|$))', chunk_text, re.I)
-            if claim_m:
-                claim_val = _clean(claim_m.group(1))
+            exec_raw = ""
+            claim_raw = ""
+            m_ones = list(re.finditer(r'(?<!\d)(?:1\.\s*|1\.\.\.\s*)', p_text))
+            if len(m_ones) >= 2:
+                exec_raw = p_text[m_ones[0].start():m_ones[1].start()].strip()
+                claim_raw = p_text[m_ones[1].start():].strip()
+            elif len(m_ones) == 1:
+                exec_raw = p_text.strip()
+            else:
+                exec_raw = p_text.strip()
 
-            # Fallback to sequential party lines if no explicit labels
-            if not exec_val or not claim_val:
-                preamble_lines = []
-                for l in non_date_lines:
-                    if any(l.lower().startswith(lbl) for lbl in ["consideration", "market", "pr number", "schedule", "boundary", "property", "கைமாற்று", "சந்தை", "முந்தைய", "சொத்தின்"]):
-                        break
-                    preamble_lines.append(l)
-                
-                if preamble_lines:
-                    if not nature_val:
-                        nature_val = preamble_lines[0]
-                        party_lines = preamble_lines[1:]
-                    else:
-                        party_lines = [l for l in preamble_lines if l != nature_val]
-                    
-                    if len(party_lines) >= 2:
-                        if not exec_val:
-                            exec_val = _clean(party_lines[0])
-                        if not claim_val:
-                            claim_val = _clean(party_lines[1])
-                    elif len(party_lines) == 1 and not exec_val:
-                        exec_val = _clean(party_lines[0])
+            claim_raw = re.sub(r'[\r\n\s]+-\s*$', '', claim_raw).strip()
+            claim_raw = re.sub(r'[\r\n\s]+\d{3,4},\s*\d{2,3}\s*$', '', claim_raw).strip()
 
-            def _clean_party_str(s: str) -> str:
-                s = clean_legal(s.strip())
-                all_parens = re.findall(r'\(([^)]+)\)', s)
-                valid_en = [
-                    p.strip() for p in all_parens 
-                    if re.search(r'[A-Za-z]{2,}', p) and not any(k in p.lower() for k in ["principal", "agent", "பிரின்சிபல்", "பிரின்ஸ்பால்", "ஏஜண்ட்", "ஏஜெண்ட்"])
-                ]
-                if valid_en:
-                    if len(valid_en) == 1:
-                        return valid_en[0]
-                    else:
-                        return "; ".join(valid_en)
-                if re.search(r'^\s*1\.\s+(.+)$', s) and not re.search(r'\b2\.\s+', s):
-                    s = re.match(r'^\s*1\.\s+(.+)$', s).group(1).strip()
-                if "ஸ்டேட் பேங்க்" in s or "state bank" in s.lower():
-                    return "State Bank of India"
-                if "புகழேந்தி" in s:
-                    return "M. Pugazhendhi"
-                return s
-
-            if exec_val:
-                exec_val = _clean_party_str(exec_val)
-            if claim_val:
-                claim_val = _clean_party_str(claim_val)
-
+            # 3. Financials
             cons_val = ""
-            cons_m = re.search(r'(?:Consideration\s*(?:Value)?|கைமாற்றுத்?\s*தொகை|கைமாற்றுத்?\s*தொகை)[^:\r\n]*[:\s]+([\s\S]+?)(?=(?:Market|சந்தை|PR|முந்தைய|சொத்தின்|$))', chunk_text, re.I)
-            if cons_m:
-                cons_val = _clean(cons_m.group(1))
+            m_cons = re.search(r'(?:கைமாற்றுத்\s*தொகை|கைமாற்றுத்\s*தொகை|Consideration\s*Value)[^:\r\n]*[:\s]+([^\r\n]+)', chunk_text, re.I)
+            if m_cons:
+                cons_val = _clean(m_cons.group(1))
 
             mkt_val = ""
-            mkt_m = re.search(r'(?:Market\s*Value|சந்தை\s*மதிப்பு)[^:\r\n]*[:\s]+([\s\S]+?)(?=(?:PR|முந்தைய|சொத்தின்|$))', chunk_text, re.I)
-            if mkt_m:
-                mkt_val = _clean(mkt_m.group(1))
+            m_mkt = re.search(r'(?:சந்தை\s*மதிப்பு|Market\s*Value)[^:\r\n]*[:\s]+([^\r\n]+)', chunk_text, re.I)
+            if m_mkt:
+                mkt_val = _clean(m_mkt.group(1))
 
             pr_val = ""
-            pr_m = re.search(r'(?:PR\s*Number|முந்தைய\s*ஆவண\s*எண்|முந்தைய\s*ஆவணம்)[^:\r\n]*[:\s]+([^\r\n]+)', chunk_text, re.I)
-            if pr_m:
-                pr_val = _clean(pr_m.group(1))
+            m_pr = re.search(r'(?:முந்தைய\s*ஆவண\s*எண்|PR\s*Number)[^:\r\n]*[:\s]+([^\r\n]+)', chunk_text, re.I)
+            if m_pr:
+                pr_val = _clean(m_pr.group(1))
 
             rem_val = ""
-            rem_m = re.search(r'(?:Document\s*Remarks|ஆவணக்\s*குறிப்புகள்)[^:\r\n]*[:\s]+([\s\S]+?)(?=(?:Schedule|சொத்தின்|எல்லை|$))', chunk_text, re.I)
-            if rem_m:
-                rem_val = _clean(rem_m.group(1))
+            m_rem = re.search(r'(?:ஆவணக்\s*குறிப்புகள்|Document\s*Remarks)[^:\r\n]*[:\s]+([\s\S]+?)(?=(?:அட்டவணை|Schedule|சொத்தின்|சொத்தின்|எல்லை|$))', chunk_text, re.I)
+            if m_rem:
+                rem_val = re.sub(r'\s+', ' ', m_rem.group(1)).strip()
+
+            # 4. Schedules
+            sched_splits = list(re.finditer(r'(?:Schedule\s+[A-Za-z0-9]+(?:\s+Details)?|Schedule\s+Item[A-Za-z0-9]+(?:\s+Details)?|அட்டவணை\s*[A-Za-z0-9]+\s*விவரங்கள்:?|அட்டவணை\s*விவரங்கள்:?)', chunk_text, re.I))
+            if not sched_splits:
+                sched_splits = list(re.finditer(r'(?:சொத்தின்\s*வகைப்பாடு|சொத்தின்\s*வகைப்பாடு|Property\s*Type)\s*:', chunk_text, re.I))
+            schedules = []
+
+            if sched_splits:
+                for s_i, sm in enumerate(sched_splits):
+                    s_start = sm.start()
+                    s_end = sched_splits[s_i + 1].start() if s_i + 1 < len(sched_splits) else len(chunk_text)
+                    s_block = chunk_text[s_start:s_end]
+                    s_name = sm.group(0).strip().rstrip(":")
+
+                    pt = ""
+                    m_pt = re.search(r'(?:சொத்தின்\s*வகைப்பாடு|சொத்தின்\s*வகைப்பாடு|Property\s*Type)[^:\r\n]*[:\s]+([^\r\n]+)', s_block, re.I)
+                    if m_pt: pt = normalize_tamil_visual_order(m_pt.group(1).strip())
+
+                    ext = ""
+                    sur = ""
+                    m_se = re.search(r'(?:புல\s*எண்\s*-\s*விஸ்தீர்ணம்|புல\s*எண்\s*-\s*விஸ்தீரணம்)[^:\r\n]*[:\s]+([\s\S]+?)(?=(?:புதிய|பழைய|New|Old|கதவு|Door|பிளாக்|மனை|Plot|தள|Floor|$))', s_block, re.I)
+                    if m_se:
+                        val_comb = re.sub(r'\s+', ' ', m_se.group(1)).strip()
+                        if " - " in val_comb:
+                            sur, ext = val_comb.split(" - ", 1)
+                            sur = sur.strip()
+                            ext = normalize_tamil_visual_order(ext.strip())
+                        else:
+                            sur = val_comb
+                    else:
+                        m_sur = re.search(r'(?:Survey\s*No\.?|புல\s*எண்)[^:\r\n]*[:\s]+([^\r\n]+)', s_block, re.I)
+                        if m_sur: sur = m_sur.group(1).strip()
+                        m_ext = re.search(r'(?:Property\s*Extent|சொத்தின்\s*விஸ்தீர்ணம்|விஸ்தீர்ணம்|விஸ்தீரணம்|Extent)[^:\r\n]*[:\s]+([^\r\n]+)', s_block, re.I)
+                        if m_ext: ext = normalize_tamil_visual_order(m_ext.group(1).strip())
+
+                    vs = ""
+                    m_vs = re.search(r'(?:கிராமம்\s*மற்றும்\s*தெரு|Village\s*&\s*Street)[^:\r\n]*[:\s]+([^\r\n]+)', s_block, re.I)
+                    if m_vs: vs = normalize_tamil_visual_order(m_vs.group(1).strip())
+
+                    nd = ""
+                    m_nd = re.search(r'(?:புதிய\s*கதவு\s*எண்|New\s*Door\s*No\.?)[^:\r\n]*[:\s]+([^\r\n]+)', s_block, re.I)
+                    if m_nd: nd = m_nd.group(1).strip()
+
+                    od = ""
+                    m_od = re.search(r'(?:பழைய\s*கதவு\s*எண்|Old\s*Door\s*No\.?)[^:\r\n]*[:\s]+([^\r\n]+)', s_block, re.I)
+                    if m_od: od = m_od.group(1).strip()
+
+                    fl = ""
+                    m_fl = re.search(r'(?:தள\s*எண்|Floor\s*No\.?|Flat\s*No\.?|அடுக்குமாடிக்\s*குடியிருப்பு\s*எண்)[^:\r\n]*[:\s]+([^\r\n]+)', s_block, re.I)
+                    if m_fl: fl = normalize_tamil_visual_order(m_fl.group(1).strip())
+
+                    bnds = ""
+                    m_b = re.search(r'(?:எல்லை\s*விபரங்கள்|எல்லை\s*விவரங்கள்|Boundary\s*Details)[^:\r\n]*[:\s]+([\s\S]+?)(?=(?:சொத்து\s*தொடர்பான\s*குறிப்புரை|Schedule\s*Remarks|அட்டவணை|Schedule|$))', s_block, re.I)
+                    if m_b: bnds = normalize_tamil_visual_order(re.sub(r'\s+', ' ', m_b.group(1)).strip())
+
+                    sr_rem = ""
+                    m_srem = re.search(r'(?:சொத்து\s*தொடர்பான\s*குறிப்புரை|சொத்து\s*தொடர்பான\s*குறிப்புரை|Schedule\s*Remarks)[^:\r\n]*[:\s]+([\s\S]+?)(?=(?:அட்டவணை|Schedule|$))', s_block, re.I)
+                    if m_srem: sr_rem = normalize_tamil_visual_order(re.sub(r'\s+', ' ', m_srem.group(1)).strip())
+
+                    if not ext and sr_rem:
+                        m_e2 = re.search(r'(?:விஸ்|விஸ்தீரணம்|விஸ்தீர்ணம்)[^:\d]*[:\s]*(\d+[\d\.,\s]*(?:ச\s*அடி|சதுரடி|sq\.?ft|grounds?|கிரவுண்ட்))', sr_rem, re.I)
+                        if m_e2:
+                            ext = m_e2.group(1).strip()
+
+                    schedules.append({
+                        "schedule_name": s_name,
+                        "property_type": pt,
+                        "extent": ext,
+                        "village_street": vs,
+                        "survey_no": sur,
+                        "door_no": nd or od,
+                        "new_door_no": nd,
+                        "old_door_no": od,
+                        "flat_no": fl,
+                        "boundaries": bnds,
+                        "schedule_remarks": sr_rem
+                    })
 
             entries.append(ECEntry(
                 sr_no=sr_str,
@@ -916,13 +1836,14 @@ class ECExtractor:
                 presentation_date=pres_d,
                 registration_date=reg_d,
                 nature=normalize_tamil_visual_order(nature_val),
-                executants=normalize_tamil_visual_order(exec_val),
-                claimants=normalize_tamil_visual_order(claim_val),
+                executants=normalize_tamil_visual_order(re.sub(r'\s+', ' ', exec_raw).strip()),
+                claimants=normalize_tamil_visual_order(re.sub(r'\s+', ' ', claim_raw).strip()),
                 vol_page="-",
                 consideration_value=cons_val,
                 market_value=mkt_val,
                 pr_numbers=pr_val,
-                remarks=normalize_tamil_visual_order(rem_val)
+                remarks=normalize_tamil_visual_order(rem_val),
+                schedules=schedules
             ))
 
         return entries
@@ -932,9 +1853,11 @@ class ECExtractor:
     # ----------------------------------------------------------------------
 
     def extract(self, text: str = "", pdf_bytes: Optional[bytes] = None, file_path: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+        file_path = file_path or kwargs.get("pdf_path") or kwargs.get("filepath")
         report: Optional[ECReport] = None
         parsed_entries: List[ECEntry] = []
 
+        full_pdf_text = text or ""
         if pdf_bytes or file_path:
             try:
                 pdf_source = io.BytesIO(pdf_bytes) if pdf_bytes else file_path
@@ -942,6 +1865,7 @@ class ECExtractor:
                     report = self._parse_header_from_pdf(pdf)
                     parsed_entries = self._parse_entries_from_pdf(pdf)
                     report.total_entries_declared = self._parse_declared_total_from_pdf(pdf)
+                    full_pdf_text = "\n".join([p.extract_text() or "" for p in pdf.pages])
             except Exception as e:
                 report = None
 
@@ -1004,7 +1928,7 @@ class ECExtractor:
                 "pr_numbers": e.pr_numbers or "-",
                 "remarks": e.remarks or "",
                 "document_remarks": e.remarks or "",
-                "schedules": [],
+                "schedules": e.schedules or [],
                 "confidence": 0.98
             })
 
@@ -1076,6 +2000,7 @@ class ECExtractor:
             format_bilingual_entity("Chengalpattu") if "chengleput" in (report.sro or "").lower() else "-"
         )
 
+        sro_jurisdiction = format_bilingual_entity(report.sro) if report.sro else "-"
         fields: Dict[str, Any] = {}
         fields["sro_office"] = {"value": format_bilingual_entity(report.sro) if report.sro else "-", "label": "SRO Office (சார்பதிவாளர் அலுவலகம்)", "confidence": 0.98}
         fields["certificate_date"] = {"value": report.certificate_date or "-", "label": "Certificate Date (சான்றிதழ் நாள்)", "confidence": 0.98}
@@ -1107,6 +2032,173 @@ class ECExtractor:
             "label": "Critical Product Verification Caveat",
             "confidence": 0.99
         }
+        
+        owners_reg = build_owners_registry(tx_list, asdict(report))
+        owner_info = determine_current_owner(tx_list)
+        property_owners = group_property_units_and_owners(tx_list)
+        prop_details = analyze_property_extent_and_details(tx_list, full_pdf_text)
+        bounds_info = extract_boundary_schedule(tx_list, header_boundaries=report.requested_boundaries)
+        poa_info = analyze_active_poa(tx_list)
+        last_tx_info = analyze_last_transaction(tx_list)
+
+        primary_curr = owners_reg["current_owners"][-1] if owners_reg["current_owners"] else None
+        curr_name = primary_curr["name"] if primary_curr else owner_info["name"]
+        curr_type = primary_curr["entity_type"] if primary_curr else owner_info["type"]
+        curr_doc = primary_curr["acquisition"]["doc_no"] if primary_curr and primary_curr.get("acquisition") else owner_info["doc_no"]
+        curr_date = primary_curr["acquisition"]["date"] if primary_curr and primary_curr.get("acquisition") else owner_info["date"]
+        curr_vendor = primary_curr["acquisition"]["acquired_from"] if primary_curr and primary_curr.get("acquisition") else owner_info["vendor"]
+        curr_role = primary_curr["role"] if primary_curr else owner_info["role"]
+
+        # 1. Current Owner Name
+        fields["current_owner"] = {
+            "value": curr_name,
+            "name": curr_name,
+            "type": curr_type,
+            "doc_no": curr_doc,
+            "date": curr_date,
+            "vendor": curr_vendor,
+            "role": curr_role,
+            "property_owners": property_owners,
+            "has_multiple_properties": len(property_owners) > 1,
+            "all_owners": owners_reg.get("all_owners", []),
+            "current_owners": owners_reg.get("current_owners", []),
+            "historical_owners": owners_reg.get("historical_owners", []),
+            "institutions": owners_reg.get("institutions", []),
+            "applicant_name": report.applicant_name,
+            "certificate_no": report.certificate_no,
+            "application_no": report.application_no,
+            "label": "Current Owner Name (தற்போதைய உரிமையாளர்)",
+            "confidence": 0.98
+        }
+        fields["owners_registry"] = owners_reg
+        fields["certificate_no"] = {"value": report.certificate_no or "-", "label": "Certificate Number (சான்று எண்)", "confidence": 0.99}
+        fields["application_no"] = {"value": report.application_no or "-", "label": "Application Number (மனு எண்)", "confidence": 0.99}
+        fields["applicant_name"] = {"value": report.applicant_name or "-", "label": "Applicant Name (மனுதாரர் பெயர்)", "confidence": 0.99}
+        # 2. Active Mortgages
+        fields["active_mortgages"] = {
+            "value": mortgage_status_val,
+            "flags": mortgage_flags,
+            "open_count": open_mortgages_count,
+            "closed_count": closed_mortgages_count,
+            "label": "Active Mortgages (அடமான நிலை)",
+            "confidence": 0.98
+        }
+        # 3. Active Power of Attorney (POA)
+        fields["active_poa"] = {
+            "value": poa_info["status"],
+            "has_poa": poa_info["has_poa"],
+            "details": poa_info["details"],
+            "agents": poa_info["agents"],
+            "label": "Active Power of Attorney (POA)",
+            "confidence": 0.97
+        }
+        # 4. Court Attachments / Liens
+        fields["court_attachments_key"] = {
+            "value": court_val,
+            "has_court": len(court_docs) > 0,
+            "label": "Court Attachments / Liens (நீதிமன்ற பற்று)",
+            "confidence": 0.98
+        }
+        # 5. Village & Taluk Name
+        fields["village_taluk"] = {
+            "value": f"{village_disp}, {district_disp}",
+            "village": village_disp,
+            "taluk": district_disp,
+            "district": district_disp,
+            "zone": report.zone or "-",
+            "label": "Village & Taluk Name (வருவாய் கிராமம் & வட்டம்)",
+            "confidence": 0.98
+        }
+        # 6. Survey / Patta Number
+        fields["survey_patta"] = {
+            "value": report.survey_details or "-",
+            "survey": report.survey_details or "-",
+            "patta": prop_details.get("patta_plot") or "-",
+            "label": "Survey / Patta Number (புல எண் / பட்டா)",
+            "confidence": 0.98
+        }
+        # 7. Extent of Property (Area)
+        fields["property_extent"] = {
+            "value": prop_details["extent"],
+            "extent": prop_details["extent"],
+            "is_uds": prop_details["is_uds"],
+            "land_category": prop_details["land_category"],
+            "property_type": prop_details["property_type"],
+            "structure": prop_details["structure"],
+            "remarks_notes": prop_details["remarks_notes"],
+            "label": "Extent of Property (Area)",
+            "confidence": 0.98
+        }
+        fields["property_type_remarks"] = {
+            "value": prop_details["structure"],
+            "label": "Property Type (from Remarks)",
+            "confidence": 0.95
+        }
+        # 8. Boundary Schedule (N/S/E/W)
+        fields["boundary_schedule"] = {
+            "value": bounds_info["formatted"],
+            "north": bounds_info["north"],
+            "south": bounds_info["south"],
+            "east": bounds_info["east"],
+            "west": bounds_info["west"],
+            "label": "Boundary Schedule (N/S/E/W)",
+            "confidence": 0.97
+        }
+        # 9. Total Transactions Found
+        fields["total_transactions"] = {
+            "value": str(len(tx_list)),
+            "declared": report.total_entries_declared,
+            "form_type": report.form_type,
+            "breakdown": summarize_tx_breakdown(tx_list),
+            "label": "Total Transactions Found",
+            "confidence": 0.99
+        }
+        # 10. Nature of Last Transaction
+        raw_nature = last_tx_info["nature"]
+        if raw_nature and raw_nature != "-" and any('\u0b80' <= c <= '\u0bff' for c in raw_nature):
+            nature_en = translate_legal_phrase_deeptranslator(raw_nature, source="ta", target="en")
+            nature_disp = f"{nature_en} ({raw_nature})" if nature_en and nature_en != raw_nature else raw_nature
+        else:
+            nature_disp = raw_nature
+
+        fields["nature_of_last_tx"] = {
+            "value": nature_disp,
+            "nature": nature_disp,
+            "nature_raw": raw_nature,
+            "doc_no": last_tx_info["doc_no"],
+            "date": last_tx_info["date"],
+            "executants": last_tx_info["executants"],
+            "claimants": last_tx_info["claimants"],
+            "label": "Nature of Last Transaction",
+            "confidence": 0.98
+        }
+        # 11. Consideration Value (Last transaction amount)
+        fields["consideration_value"] = {
+            "value": last_tx_info["consideration"] or "-",
+            "market_value": last_tx_info["market_value"] or "-",
+            "label": "Consideration Value (Last transaction amount)",
+            "confidence": 0.98
+        }
+        # 12. Search Period (Dates)
+        fields["search_period_key"] = {
+            "value": search_period_str,
+            "period": search_period_str,
+            "sro_available": sro_avail_str,
+            "is_30yr": is_30_yr_compliant,
+            "years": years_covered,
+            "label": "Search Period (Dates)",
+            "confidence": 0.98
+        }
+        # 13. Sub-Registrar Office (SRO)
+        fields["sro_office_key"] = {
+            "value": format_bilingual_entity(report.sro) if report.sro else "-",
+            "jurisdiction": sro_jurisdiction,
+            "cert_date": report.certificate_date or "-",
+            "validity": report.digital_signature_note,
+            "label": "Sub-Registrar Office (SRO)",
+            "confidence": 0.98
+        }
+        
         fields["transactions_table"] = {"value": tx_list, "label": "Registered Entries Detail (Form 15)", "confidence": 0.98}
 
         fields["checklist"] = [

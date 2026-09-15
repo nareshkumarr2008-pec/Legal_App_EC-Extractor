@@ -531,6 +531,7 @@ function renderDocumentResult() {
 
     renderAllDocumentPages(pages, extraction);
     renderFieldsTab(extraction.fields || {});
+    renderOwnersTab(extraction);
     renderPropertyFilterTab(extraction);
     renderChecklistTab(extraction.checklist || []);
     renderOCRTextTab(res.aggregated_text || currentPage.full_text || "");
@@ -861,50 +862,94 @@ function renderFieldsTab(fields) {
 
 function renderECFieldsLayout(fields, container) {
     // 1. Safe extraction of field values
+    const currentOwnerObj = fields.current_owner || {};
+    const ownerName = currentOwnerObj.name || currentOwnerObj.value || (fields.owner_name ? (fields.owner_name.value || fields.owner_name) : "-");
+    const ownershipType = currentOwnerObj.type || "Individual";
+    const ownerDocNo = currentOwnerObj.doc_no || "-";
+    const ownerDate = currentOwnerObj.date || "-";
+    const ownerVendor = currentOwnerObj.vendor || "-";
+    const propertyOwners = currentOwnerObj.property_owners || [];
+    const hasMultipleProperties = currentOwnerObj.has_multiple_properties || propertyOwners.length > 1;
+    const certNo = fields.certificate_no ? (fields.certificate_no.value || fields.certificate_no) : (currentOwnerObj.certificate_no || "-");
+    const appNo = fields.application_no ? (fields.application_no.value || fields.application_no) : (currentOwnerObj.application_no || "-");
+    const applicantName = fields.applicant_name ? (fields.applicant_name.value || fields.applicant_name) : (currentOwnerObj.applicant_name || "-");
+
+    // 2. Active Mortgages
+    const mortgageObj = fields.active_mortgages || fields.mortgage_status || {};
+    const mortgageVal = mortgageObj.value || "0 Open/Unreleased Mortgages | 0 Closed Mortgage";
+    const mortgageFlags = mortgageObj.flags || (fields.verification_flags && fields.verification_flags.mortgages_flags) || [];
+
+    // 3. Active POA
+    const poaObj = fields.active_poa || {};
+    const poaVal = poaObj.value || "No registered Power of Attorney (POA) entries found in this search window.";
+    const poaAgents = poaObj.agents || poaObj.details || [];
+    const hasPOA = poaObj.has_poa || poaAgents.length > 0;
+
+    // 4. Court Attachments
+    const courtVal = fields.court_attachments_key ? (fields.court_attachments_key.value || fields.court_attachments_key) :
+                     (fields.court_attachments ? (fields.court_attachments.value || fields.court_attachments) : "No court attachments, decrees, or lis-pendens entries appear among the registered documents in this search window.");
+
+    // 5. Village & Taluk
     const sroVal = fields.sro_office ? (fields.sro_office.value || fields.sro_office) : "-";
-    const sroJurisdiction = fields.sro_jurisdiction ? (fields.sro_jurisdiction.value || fields.sro_jurisdiction) : (sroVal !== "-" ? `${sroVal}` : "-");
     const villageVal = fields.village ? (fields.village.value || fields.village) : "-";
     const talukVal = fields.taluk ? (fields.taluk.value || fields.taluk) : "-";
     const districtVal = fields.district ? (fields.district.value || fields.district) : "-";
     const zoneVal = fields.zone ? (fields.zone.value || fields.zone) : "-";
+
+    // 6. Survey / Patta
     const surveyVal = fields.survey_searched ? (fields.survey_searched.value || fields.survey_searched) : "-";
-    const certDate = fields.certificate_date ? (fields.certificate_date.value || fields.certificate_date) : "-";
-    const searchPeriod = fields.search_period ? (fields.search_period.value || fields.search_period) : "-";
-    const sroAvail = fields.sro_available_from ? (fields.sro_available_from.value || fields.sro_available_from) : searchPeriod;
-    const formTypeObj = fields.form_type || {};
-    const formTypeVal = formTypeObj.value || (fields.total_entries && parseInt(fields.total_entries.value) > 0 ? `Form 15 — Transactions Found (${fields.total_entries.value} entries)` : "Form 16 Nil — No Encumbrance Recorded");
-    const totalEntriesVal = fields.total_entries ? (fields.total_entries.value || "0") : "0";
-    const encStatusVal = fields.encumbrance_status ? (fields.encumbrance_status.value || "Encumbered") : (parseInt(totalEntriesVal) > 0 ? `Encumbered — ${totalEntriesVal} Registered Transactions Recorded` : "Nil Encumbrance / Clear Title");
+    const pattaVal = fields.survey_patta ? (fields.survey_patta.patta || "-") : "-";
 
-    // Mortgages
-    const mortgageObj = fields.mortgage_status || {};
-    const mortgageVal = mortgageObj.value || "0 Open/Unreleased Mortgages | 0 Closed Mortgage";
-    const mortgageFlags = mortgageObj.flags || (fields.verification_flags && fields.verification_flags.mortgages_flags) || [];
+    // 7. Property Extent & Remarks
+    const extentObj = fields.property_extent || {};
+    const extentVal = extentObj.value || extentObj.extent || (fields.extent ? (fields.extent.value || fields.extent) : "Not explicitly specified in remarks");
+    const isUDS = extentObj.is_uds === true;
+    const landCategory = extentObj.land_category || (isUDS ? "UDS (Undivided Share of Land)" : "Normal Land (முழு நில உரிமை / Independent Plot)");
+    const propTypeVal = extentObj.property_type || (fields.property_type_remarks && fields.property_type_remarks.value) || "House Site / Building";
+    const structureVal = extentObj.structure || "Residential Structure / Land";
+    const remarksNotes = extentObj.remarks_notes || "Standard document remarks recorded in SRO register";
 
-    // Court Attachments
-    const courtVal = fields.court_attachments ? (fields.court_attachments.value || fields.court_attachments) : "No court attachments, decrees, or lis-pendens entries appear among the registered documents in this search window.";
+    // 8. Boundary Schedule
+    const boundObj = fields.boundary_schedule || {};
+    const northBound = boundObj.north || "-";
+    const southBound = boundObj.south || "-";
+    const eastBound = boundObj.east || "-";
+    const westBound = boundObj.west || "-";
 
-    // Partition & Settlement
-    const partitionVal = fields.partition_settlement_status ? (fields.partition_settlement_status.value || fields.partition_settlement_status) :
-                         "Confirmed: No undisclosed partition, settlement, or family release deeds found that would break ownership continuity.";
+    // 9. Total Transactions Found
+    const totalTxObj = fields.total_transactions || fields.total_entries || {};
+    const totalEntriesVal = totalTxObj.value || (fields.total_entries ? fields.total_entries.value : "0");
+    const formTypeVal = fields.form_type ? (fields.form_type.value || fields.form_type) : (parseInt(totalEntriesVal) > 0 ? "Form 15 (Encumbered)" : "Form 16 Nil");
+    const txBreakdown = totalTxObj.breakdown || (parseInt(totalEntriesVal) > 0 ? `${totalEntriesVal} Registered Transactions Recorded` : "Nil Encumbrance");
 
-    // Leases & Rectifications
-    const leaseVal = fields.lease_status ? (fields.lease_status.value || fields.lease_status) : "No active registered lease agreements recorded in this search window.";
-    const rectVal = fields.rectification_deeds ? (fields.rectification_deeds.value || fields.rectification_deeds) : "No rectification deeds recorded in this search window.";
+    // 10. Nature of Last Transaction
+    const lastTxObj = fields.nature_of_last_tx || {};
+    const lastNature = lastTxObj.nature || lastTxObj.value || "-";
+    const lastDocNo = lastTxObj.doc_no || "-";
+    const lastDate = lastTxObj.date || "-";
+    const lastExecs = lastTxObj.executants || "-";
+    const lastClaims = lastTxObj.claimants || "-";
 
-    // Digital Signature Validity
-    const sigVal = fields.digital_signature_validity ? (fields.digital_signature_validity.value || fields.digital_signature_validity) : "Digitally Signed by Sub-Registrar / TNREGINET Statutory Authority — Certificate Valid under Tamil Nadu Registration Rules";
+    // 11. Consideration Value
+    const consObj = fields.consideration_value || {};
+    const consVal = consObj.value || "-";
+    const mktVal = consObj.market_value || "-";
 
-    // 30-Year Standard
+    // 12. Search Period
+    const searchPeriodObj = fields.search_period_key || fields.search_period || {};
+    const searchPeriod = searchPeriodObj.value || searchPeriodObj.period || (fields.search_period ? (fields.search_period.value || fields.search_period) : "-");
+    const sroAvail = searchPeriodObj.sro_available || (fields.sro_available_from ? (fields.sro_available_from.value || fields.sro_available_from) : searchPeriod);
     const stdObj = fields.search_period_standard || {};
-    const stdDesc = stdObj.value || "Title verification standards in Tamil Nadu start at a 30-year minimum search window; prior parent deeds required.";
-    const is30Compliant = stdObj.status === "COMPLIANT";
+    const is30Compliant = stdObj.status === "COMPLIANT" || searchPeriodObj.is_30yr === true;
 
-    // Transactions list
-    const transactions = (fields.transactions_table && Array.isArray(fields.transactions_table.value)) ? fields.transactions_table.value : [];
+    // 13. Sub-Registrar Office
+    const sroKeyObj = fields.sro_office_key || {};
+    const sroJurisdiction = sroKeyObj.jurisdiction || (fields.sro_jurisdiction ? (fields.sro_jurisdiction.value || fields.sro_jurisdiction) : sroVal);
+    const certDate = sroKeyObj.cert_date || (fields.certificate_date ? (fields.certificate_date.value || fields.certificate_date) : "-");
+    const sigVal = sroKeyObj.validity || (fields.digital_signature_validity ? (fields.digital_signature_validity.value || fields.digital_signature_validity) : "Digitally Signed by Sub-Registrar / Certificate Valid under Tamil Nadu Registration Rules");
 
     const wrapper = document.createElement("div");
-    wrapper.className = "space-y-4";
+    wrapper.className = "space-y-3.5";
 
     wrapper.innerHTML = `
         <!-- CRITICAL PRODUCT CAVEAT CALLOUT -->
@@ -925,391 +970,524 @@ function renderECFieldsLayout(fields, container) {
             </div>
         </div>
 
-        <!-- 1. PROPERTY & SEARCH JURISDICTION -->
-        <div class="space-y-2 pt-1">
-            <div class="flex items-center justify-between flex-wrap gap-2">
-                <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                    <i data-lucide="map-pin" class="w-3.5 h-3.5 text-blue-600"></i>
-                    <span>1. Property & Search Jurisdiction (சொத்து & எல்லை விவரங்கள்)</span>
-                </h4>
-                <div class="flex items-center gap-2">
-                    <button onclick="switchTab('property-filter')" class="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 flex items-center gap-1 cursor-pointer transition-colors shadow-2xs">
-                        <i data-lucide="filter" class="w-3 h-3"></i><span>Verify Specific Property</span>
-                    </button>
-                    <span class="text-[10px] font-mono text-slate-400">Section 1 of 5</span>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                <!-- Survey Number Searched -->
-                <div class="p-2.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex flex-col justify-between">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-[11px] font-bold text-slate-600">தேடப்பட்ட புல எண்(கள்) (Survey Number Searched)</span>
-                        <span class="px-2 py-0.5 bg-blue-50 text-blue-700 font-bold text-[10px] rounded-full border border-blue-200">Target</span>
-                    </div>
-                    <div class="text-xs font-extrabold text-blue-700 font-mono bg-blue-50/50 p-2 rounded-lg border border-blue-100 flex items-center justify-between">
-                        <span>${escapeHtml(surveyVal)}</span>
-                        <button onclick="copyToClipboard('${escapeHtml(surveyVal)}')" class="text-slate-400 hover:text-blue-600 p-1" title="Copy"><i data-lucide="copy" class="w-3 h-3"></i></button>
-                    </div>
-                </div>
-
-                <!-- Village -->
-                <div class="p-2.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex flex-col justify-between">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-[11px] font-bold text-slate-600">வருவாய் கிராமம் (Revenue Village)</span>
-                        <span class="text-[10px] text-slate-400 font-mono">TN Village</span>
-                    </div>
-                    <div class="text-xs font-semibold text-slate-800 bg-slate-50 p-2 rounded-lg border border-slate-200/60 flex items-center justify-between">
-                        <span>${escapeHtml(villageVal)}</span>
-                        <button onclick="copyToClipboard('${escapeHtml(villageVal)}')" class="text-slate-400 hover:text-blue-600 p-1" title="Copy"><i data-lucide="copy" class="w-3 h-3"></i></button>
-                    </div>
-                </div>
-
-                <!-- Taluk / Jurisdiction -->
-                <div class="p-2.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex flex-col justify-between">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-[11px] font-bold text-slate-600">வட்டம் / எல்லை (Taluk / Jurisdiction)</span>
-                        <span class="text-[10px] text-slate-400 font-mono">Taluk</span>
-                    </div>
-                    <div class="text-xs font-semibold text-slate-800 bg-slate-50 p-2 rounded-lg border border-slate-200/60 flex items-center justify-between">
-                        <span>${escapeHtml(talukVal)}</span>
-                        <button onclick="copyToClipboard('${escapeHtml(talukVal)}')" class="text-slate-400 hover:text-blue-600 p-1" title="Copy"><i data-lucide="copy" class="w-3 h-3"></i></button>
-                    </div>
-                </div>
-
-                <!-- District & Zone -->
-                <div class="p-2.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex flex-col justify-between">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-[11px] font-bold text-slate-600">மாவட்டம் & மண்டலம் (District & Zone)</span>
-                        <span class="text-[10px] text-slate-400 font-mono">District</span>
-                    </div>
-                    <div class="text-xs font-semibold text-slate-800 bg-slate-50 p-2 rounded-lg border border-slate-200/60 flex items-center justify-between">
-                        <span>${escapeHtml(districtVal)} | ${escapeHtml(zoneVal)}</span>
-                        <button onclick="copyToClipboard('${escapeHtml(districtVal)}')" class="text-slate-400 hover:text-blue-600 p-1" title="Copy"><i data-lucide="copy" class="w-3 h-3"></i></button>
-                    </div>
-                </div>
-
-                <!-- SRO Jurisdiction -->
-                <div class="p-2.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex flex-col justify-between md:col-span-2">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-[11px] font-bold text-slate-600">சார்பதிவாளர் அலுவலக எல்லை (SRO Jurisdiction & Office)</span>
-                        <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-bold text-[10px] rounded-full border border-emerald-200">SRO Verified</span>
-                    </div>
-                    <div class="text-xs font-semibold text-slate-800 bg-slate-50 p-2 rounded-lg border border-slate-200/60 flex items-center justify-between">
-                        <span>${escapeHtml(sroJurisdiction)}</span>
-                        <button onclick="copyToClipboard('${escapeHtml(sroJurisdiction)}')" class="text-slate-400 hover:text-blue-600 p-1" title="Copy"><i data-lucide="copy" class="w-3 h-3"></i></button>
-                    </div>
-                </div>
-
-                <!-- Digital Signature & Certificate Validity -->
-                <div class="p-2.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex flex-col justify-between md:col-span-2">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-[11px] font-bold text-slate-600">டிஜிட்டல் கையொப்பம் & சான்றிதழ் செல்லுபடி (Digital Signature & Validity)</span>
-                        <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold text-[10px] rounded-full border border-emerald-300">VALID & VERIFIED</span>
-                    </div>
-                    <div class="text-xs font-semibold text-emerald-900 bg-emerald-50/70 p-2 rounded-lg border border-emerald-200 flex items-center justify-between">
-                        <span class="flex items-center gap-1.5"><i data-lucide="badge-check" class="w-4 h-4 text-emerald-600 shrink-0"></i>${escapeHtml(sigVal)}</span>
-                        <span class="text-[10px] font-mono text-emerald-700 shrink-0 ml-2">Date: ${escapeHtml(certDate)}</span>
-                    </div>
-                </div>
+        <!-- 1. KEY FIELDS HEADER -->
+        <div class="flex items-center justify-between pt-1">
+            <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-blue-600"></i>
+                <span>1. KEY FIELDS (முக்கிய விவரங்கள்)</span>
+            </h4>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="toggleAllECKeyCards()" class="px-2 py-0.5 text-[10px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition-colors cursor-pointer" id="btn-toggle-all-ec-cards">
+                    Toggle Expand All
+                </button>
+                <span class="text-[10px] font-mono text-slate-400">Section 1 of 1</span>
             </div>
         </div>
 
-        <!-- 2. SEARCH PERIOD & TN 30-YEAR STANDARD -->
-        <div class="space-y-2 pt-1">
-            <div class="flex items-center justify-between">
-                <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-indigo-600"></i>
-                    <span>2. Search Period & TN 30-Year Standard (தேடல் காலம்)</span>
-                </h4>
-                <span class="text-[10px] font-mono text-slate-400">Section 2 of 5</span>
-            </div>
+        <!-- ACCORDION CARDS CONTAINER -->
+        <div class="space-y-2">
 
-            <div class="p-3 rounded-xl bg-white border border-slate-200/90 shadow-2xs space-y-2.5 text-xs">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    <div class="p-2 bg-slate-50 rounded-lg border border-slate-200/60">
-                        <span class="text-[10px] font-bold text-slate-500 block uppercase">தேடல் காலம் (Search Period Requested)</span>
-                        <span class="font-bold text-slate-900 font-mono text-xs">${escapeHtml(searchPeriod)}</span>
+            <!-- 0. HERO CARD: CURRENT OWNER NAME (OPEN BY DEFAULT) -->
+            <div id="ec-card-owner" class="ec-key-card rounded-xl border border-blue-200 bg-white shadow-2xs transition-all overflow-hidden">
+                <div onclick="toggleECKeyCard('ec-card-owner')" class="p-3 bg-blue-50/50 hover:bg-blue-50/80 cursor-pointer flex items-center justify-between transition-colors">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="user" class="w-4 h-4 text-blue-600"></i>
+                        <span class="text-xs font-bold text-slate-800">Current Owner Name</span>
                     </div>
-                    <div class="p-2 bg-slate-50 rounded-lg border border-slate-200/60">
-                        <span class="text-[10px] font-bold text-slate-500 block uppercase">அலுவலக தேதி இருப்பு (SRO Date Available Range)</span>
-                        <span class="font-bold text-slate-900 font-mono text-xs">${escapeHtml(sroAvail)}</span>
-                    </div>
+                    <i data-lucide="chevron-down" id="ec-card-owner-chevron" class="ec-key-card-chevron w-4 h-4 text-blue-600 transition-transform"></i>
                 </div>
+                <div id="ec-card-owner-body" class="ec-key-card-body p-3.5 bg-white border-t border-blue-100 space-y-2.5">
+                    ${(certNo !== "-" || appNo !== "-" || applicantName !== "-") ? `
+                    <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs flex flex-wrap items-center justify-between gap-2 text-slate-600 font-mono">
+                        ${certNo !== "-" ? `<span><b>Cert No:</b> <span class="text-slate-900 font-bold">${escapeHtml(certNo)}</span></span>` : ""}
+                        ${appNo !== "-" ? `<span><b>App No:</b> ${escapeHtml(appNo)}</span>` : ""}
+                        ${applicantName !== "-" ? `<span><b>Applicant:</b> <span class="text-blue-900 font-semibold">${escapeHtml(applicantName)}</span></span>` : ""}
+                    </div>
+                    ` : ""}
 
-                <div class="p-2.5 rounded-lg ${is30Compliant ? 'bg-emerald-50 border border-emerald-200' : 'bg-amber-50 border border-amber-200'}">
-                    <div class="flex items-start justify-between gap-2 mb-1">
-                        <div class="flex items-center gap-1.5">
-                            <i data-lucide="${is30Compliant ? 'check-circle-2' : 'alert-triangle'}" class="w-4 h-4 ${is30Compliant ? 'text-emerald-600' : 'text-amber-600'} shrink-0"></i>
-                            <span class="font-bold ${is30Compliant ? 'text-emerald-900' : 'text-amber-900'} text-xs">
-                                Tamil Nadu 30-Year Title Standard: ${is30Compliant ? 'Compliant' : 'Abbreviated Search Window'}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <span class="text-[11px] font-semibold text-slate-400 block">Current Title Holder / Owner</span>
+                            <span class="text-sm font-extrabold text-slate-900 block mt-0.5">${escapeHtml(ownerName)}</span>
+                        </div>
+                        <div>
+                            <span class="text-[11px] font-semibold text-slate-400 block">Ownership Type</span>
+                            <span class="text-sm font-extrabold text-slate-900 block mt-0.5">${escapeHtml(ownershipType)}</span>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 flex items-center gap-2 flex-wrap">
+                        <button type="button" onclick="openOwnerDossierByName('${escapeHtml(ownerName)}')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-purple-600 hover:bg-purple-700 text-white shadow-2xs flex items-center gap-1.5 cursor-pointer transition-colors">
+                            <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                            <span>View Title Dossier</span>
+                        </button>
+                        <button type="button" onclick="switchTab('owners')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 flex items-center gap-1.5 cursor-pointer transition-colors">
+                            <i data-lucide="users" class="w-3.5 h-3.5"></i>
+                            <span>Open Owners Directory (${(fields.owners_registry && fields.owners_registry.summary) ? (fields.owners_registry.summary.total_owners_count || fields.owners_registry.summary.total_parties) : (propertyOwners.length || 1)})</span>
+                        </button>
+                    </div>
+
+                    ${ownerDocNo !== "-" ? `
+                    <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-mono bg-slate-50/60 px-2.5 py-1.5 rounded-lg">
+                        <span><b>Latest Title Deed (Overall):</b> Doc ${escapeHtml(ownerDocNo)}</span>
+                        <span><b>Reg Date:</b> ${escapeHtml(ownerDate)}</span>
+                        ${ownerVendor !== "-" ? `<span><b>Vendor:</b> ${escapeHtml(ownerVendor)}</span>` : ""}
+                    </div>
+                    ` : ""}
+
+                    ${hasMultipleProperties ? `
+                    <div class="pt-3 mt-1 border-t border-blue-100">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
+                                <i data-lucide="layers" class="w-3.5 h-3.5 text-blue-600"></i>
+                                <span>All Property Units & Respective Owners (${propertyOwners.length} Units Found)</span>
                             </span>
+                            <button type="button" onclick="switchTab('owners')" class="text-[10px] bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold px-2 py-0.5 rounded border border-blue-200 transition-colors cursor-pointer">View in Directory &rarr;</button>
                         </div>
-                        <span class="px-2 py-0.5 rounded text-[10px] font-extrabold ${is30Compliant ? 'bg-emerald-200 text-emerald-800' : 'bg-amber-200 text-amber-900'}">
-                            ${is30Compliant ? '30+ YEARS OK' : 'LESS THAN 30 YRS'}
-                        </span>
-                    </div>
-                    <p class="text-[11px] ${is30Compliant ? 'text-emerald-800' : 'text-amber-800'} leading-relaxed">
-                        ${escapeHtml(stdDesc)}
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <!-- 3. FORM TYPE & ENCUMBRANCE STATUS -->
-        <div class="space-y-2 pt-1">
-            <div class="flex items-center justify-between">
-                <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                    <i data-lucide="file-check-2" class="w-3.5 h-3.5 text-purple-600"></i>
-                    <span>3. Form Type & Title Status (படிவ வகை & வில்லங்க நிலை)</span>
-                </h4>
-                <span class="text-[10px] font-mono text-slate-400">Section 3 of 5</span>
-            </div>
-
-            <div class="p-3 rounded-xl bg-white border border-slate-200/90 shadow-2xs space-y-2 text-xs">
-                <div class="flex items-start justify-between gap-2">
-                    <div>
-                        <span class="text-[10px] font-bold text-slate-500 uppercase block">படிவ வகை (Form Type - Form 15 vs Form 16)</span>
-                        <h5 class="text-xs font-extrabold text-slate-900 mt-0.5">${escapeHtml(formTypeVal)}</h5>
-                    </div>
-                    <span class="px-2.5 py-1 rounded-lg text-xs font-extrabold ${transactions.length > 0 ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'}">
-                        ${transactions.length > 0 ? `${transactions.length} Entries Recorded` : 'Nil Encumbrance'}
-                    </span>
-                </div>
-                <p class="text-[11px] text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-200/60">
-                    ${transactions.length > 0 ? '<strong>Form 15:</strong> This document records active registered financial transactions, mortgages, charges, or property conveyances during the searched window. Deep scrutiny of all transactions is required.' : '<strong>Form 16:</strong> Nil Encumbrance Certificate — The searched property is entirely free from registered encumbrances, charges, or registered sale deeds for the specified period.'}
-                </p>
-            </div>
-        </div>
-
-        <!-- 4. KEY VERIFICATION SIGNALS (USED TO CONFIRM) -->
-        <div class="space-y-2 pt-1">
-            <div class="flex items-center justify-between">
-                <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                    <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-600"></i>
-                    <span>4. Key Verification Signals — Used to Confirm (வில்லங்க சரிபார்ப்பு சமிக்ஞைகள்)</span>
-                </h4>
-                <span class="text-[10px] font-mono text-slate-400">Section 4 of 5</span>
-            </div>
-
-            <div class="grid grid-cols-1 gap-2.5 text-xs">
-                <!-- Signal A: Live Mortgage & Charge Status -->
-                <div class="p-3 rounded-xl bg-white border border-slate-200/90 shadow-2xs space-y-2">
-                    <div class="flex items-start justify-between gap-2">
-                        <div class="flex items-center gap-1.5">
-                            <div class="p-1 rounded bg-amber-100 text-amber-700"><i data-lucide="landmark" class="w-3.5 h-3.5"></i></div>
-                            <div>
-                                <span class="font-bold text-slate-800 text-xs">அடமான நிலை (Mortgage & Charge Status)</span>
-                                <p class="text-[10px] text-slate-400 font-medium">Used to confirm: No live mortgage remains unreleased</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-72 overflow-y-auto pr-1">
+                            ${propertyOwners.map(po => `
+                            <div class="p-2.5 rounded-lg bg-slate-50 hover:bg-blue-50/40 border border-slate-200/80 transition-colors space-y-1 text-xs">
+                                <div class="flex items-start justify-between gap-1.5">
+                                    <span class="font-bold text-slate-800 text-[11px] leading-tight text-blue-950">${escapeHtml(po.unit)}</span>
+                                    <span class="shrink-0 px-1.5 py-0.5 text-[9px] font-semibold rounded bg-slate-200/70 text-slate-700 font-mono">${po.total_entries} doc(s)</span>
+                                </div>
+                                <div class="flex items-center justify-between gap-2 pt-0.5">
+                                    <div class="text-[12px] font-extrabold text-slate-900 truncate">${escapeHtml(po.owner_name)}</div>
+                                    <button type="button" onclick="openOwnerDossierByName('${escapeHtml(po.owner_name)}')" class="shrink-0 px-2 py-0.5 rounded text-[10px] font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 transition-colors flex items-center gap-1 cursor-pointer" title="Inspect Title Dossier">
+                                        <i data-lucide="file-text" class="w-3 h-3"></i>
+                                        <span>Dossier</span>
+                                    </button>
+                                </div>
+                                <div class="text-[10px] text-slate-500 font-mono flex items-center justify-between pt-0.5 border-t border-slate-200/50">
+                                    <span>Doc: <b>${escapeHtml(po.doc_no)}</b> (${escapeHtml(po.date)})</span>
+                                    ${po.extent && po.extent !== '-' ? `<span>Ext: <b>${escapeHtml(po.extent)}</b></span>` : ''}
+                                </div>
                             </div>
+                            `).join('')}
                         </div>
-                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${mortgageVal.includes('Open') ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-emerald-100 text-emerald-800'}">
+                    </div>
+                    ` : ""}
+                </div>
+            </div>
+
+            <!-- 1. ACTIVE MORTGAGES -->
+            <div id="ec-card-mortgage" class="ec-key-card rounded-xl border border-slate-200/90 bg-white shadow-2xs transition-all overflow-hidden">
+                <div onclick="toggleECKeyCard('ec-card-mortgage')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="home" class="w-4 h-4 text-slate-600"></i>
+                        <span class="text-xs font-bold text-slate-800">1. Active Mortgages</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${mortgageVal.includes('Open') && !mortgageVal.startsWith('0 Open') ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'}">
                             ${escapeHtml(mortgageVal)}
                         </span>
+                        <i data-lucide="chevron-right" id="ec-card-mortgage-chevron" class="ec-key-card-chevron w-4 h-4 text-slate-400 transition-transform"></i>
                     </div>
-                    <!-- Full breakdown of mortgages -->
-                    <div class="space-y-1.5 pt-1">
-                        ${mortgageFlags.map(mf => {
+                </div>
+                <div id="ec-card-mortgage-body" class="ec-key-card-body hidden p-3.5 bg-slate-50/50 border-t border-slate-100 space-y-2">
+                    <div class="space-y-1.5">
+                        ${mortgageFlags.length > 0 ? mortgageFlags.map(mf => {
                             const isClosed = mf.startsWith('[CLOSED]');
                             return `
-                            <div class="p-2 rounded-lg text-[11px] leading-relaxed flex items-start gap-2 ${isClosed ? 'bg-emerald-50/70 border border-emerald-200 text-emerald-900' : 'bg-amber-50/70 border border-amber-200 text-amber-900'}">
-                                <span class="px-1.5 py-0.2 rounded text-[9px] font-extrabold shrink-0 mt-0.5 ${isClosed ? 'bg-emerald-200 text-emerald-800' : 'bg-amber-200 text-amber-900'}">
+                            <div class="p-2 rounded-lg text-[11px] leading-relaxed flex items-start gap-2 ${isClosed ? 'bg-emerald-50/80 border border-emerald-200 text-emerald-900' : 'bg-amber-50/80 border border-amber-200 text-amber-900'}">
+                                <span class="px-1.5 py-0.5 rounded text-[9px] font-extrabold shrink-0 mt-0.5 ${isClosed ? 'bg-emerald-200 text-emerald-800' : 'bg-amber-200 text-amber-900'}">
                                     ${isClosed ? 'CLOSED' : 'OPEN / UNRELEASED'}
                                 </span>
                                 <span>${escapeHtml(mf.replace(/^\[(?:CLOSED|OPEN \/ UNRELEASED)\]\s*/, ''))}</span>
                             </div>
                             `;
-                        }).join('')}
-                    </div>
-                </div>
-
-                <!-- Signal B: Court Attachments & Decrees -->
-                <div class="p-3 rounded-xl bg-white border border-slate-200/90 shadow-2xs space-y-1.5">
-                    <div class="flex items-start justify-between gap-2">
-                        <div class="flex items-center gap-1.5">
-                            <div class="p-1 rounded bg-emerald-100 text-emerald-700"><i data-lucide="scale" class="w-3.5 h-3.5"></i></div>
-                            <div>
-                                <span class="font-bold text-slate-800 text-xs">நீதிமன்ற உத்தரவுகள் / பற்று (Court Attachments & Decrees)</span>
-                                <p class="text-[10px] text-slate-400 font-medium">Used to confirm: No pending court attachment or decree</p>
-                            </div>
+                        }).join('') : `
+                        <div class="text-[11px] text-emerald-800 bg-emerald-50 p-2 rounded-lg border border-emerald-200">
+                            Clear Title: No open or active mortgages recorded in this search period.
                         </div>
-                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                            CLEAR / NO ATTACHMENTS
-                        </span>
-                    </div>
-                    <div class="bg-slate-50 p-2 rounded-lg border border-slate-200/60 text-[11px] text-slate-700 leading-relaxed">
-                        ${escapeHtml(courtVal)}
-                    </div>
-                </div>
-
-                <!-- Signal C: Partition & Settlement Scrutiny -->
-                <div class="p-3 rounded-xl bg-white border border-slate-200/90 shadow-2xs space-y-1.5">
-                    <div class="flex items-start justify-between gap-2">
-                        <div class="flex items-center gap-1.5">
-                            <div class="p-1 rounded bg-purple-100 text-purple-700"><i data-lucide="git-branch" class="w-3.5 h-3.5"></i></div>
-                            <div>
-                                <span class="font-bold text-slate-800 text-xs">பாகப்பிரிவினை & செட்டில்மென்ட் (Partition & Settlement Scrutiny)</span>
-                                <p class="text-[10px] text-slate-400 font-medium">Used to confirm: No undisclosed partition breaks ownership claim</p>
-                            </div>
-                        </div>
-                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
-                            DEVOLUTION CHAIN CHECKED
-                        </span>
-                    </div>
-                    <div class="bg-slate-50 p-2 rounded-lg border border-slate-200/60 text-[11px] text-slate-700 leading-relaxed">
-                        ${escapeHtml(partitionVal)}
-                    </div>
-                </div>
-
-                <!-- Signal D: Leases & Rectifications -->
-                <div class="p-3 rounded-xl bg-white border border-slate-200/90 shadow-2xs space-y-1.5">
-                    <div class="flex items-start justify-between gap-2">
-                        <div class="flex items-center gap-1.5">
-                            <div class="p-1 rounded bg-blue-100 text-blue-700"><i data-lucide="file-signature" class="w-3.5 h-3.5"></i></div>
-                            <div>
-                                <span class="font-bold text-slate-800 text-xs">குத்தகை & பிழைதிருத்தம் (Registered Leases & Rectifications)</span>
-                                <p class="text-[10px] text-slate-400 font-medium">Used to confirm: Lease rights & clerical corrections</p>
-                            </div>
-                        </div>
-                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                            REGISTERED CHARGES
-                        </span>
-                    </div>
-                    <div class="space-y-1 text-[11px] text-slate-700">
-                        <div class="bg-slate-50 p-2 rounded-lg border border-slate-200/60 leading-relaxed">
-                            <strong>Lease Status:</strong> ${escapeHtml(leaseVal)}
-                        </div>
-                        <div class="bg-slate-50 p-2 rounded-lg border border-slate-200/60 leading-relaxed">
-                            <strong>Rectifications:</strong> ${escapeHtml(rectVal)}
-                        </div>
+                        `}
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- 5. REGISTERED ENTRIES DETAIL (FORM 15) -->
-        <div class="space-y-2 pt-1">
-            <div class="flex items-center justify-between">
-                <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                    <i data-lucide="list-ordered" class="w-3.5 h-3.5 text-blue-600"></i>
-                    <span>5. Registered Entries Detail — Form 15 (பதிவு விவரங்கள்)</span>
-                </h4>
-                <span class="text-[10px] font-mono text-slate-400">Section 5 of 5 • ${transactions.length} Total</span>
-            </div>
-
-            ${transactions.length > 0 ? `
-            <div class="space-y-2.5 max-h-[560px] overflow-y-auto pr-1">
-                ${transactions.map((tx, idx) => {
-                    const srNum = tx.sr || (idx + 1);
-                    const nat = tx.nature || "Deed";
-                    let natBadge = "bg-blue-100 text-blue-800 border-blue-200";
-                    if (nat.toLowerCase().includes("mortgage") || nat.toLowerCase().includes("deposit of title")) natBadge = "bg-amber-100 text-amber-900 border-amber-300";
-                    else if (nat.toLowerCase().includes("receipt") || nat.toLowerCase().includes("discharge")) natBadge = "bg-emerald-100 text-emerald-800 border-emerald-300";
-                    else if (nat.toLowerCase().includes("lease")) natBadge = "bg-cyan-100 text-cyan-800 border-cyan-300";
-                    else if (nat.toLowerCase().includes("partition")) natBadge = "bg-violet-100 text-violet-800 border-violet-300";
-                    else if (nat.toLowerCase().includes("settlement") || nat.toLowerCase().includes("gift")) natBadge = "bg-purple-100 text-purple-800 border-purple-300";
-                    else if (nat.toLowerCase().includes("rectification")) natBadge = "bg-slate-100 text-slate-800 border-slate-300";
-
-                    const execDate = (tx.execution_date && tx.execution_date.standard) ? tx.execution_date.standard : (tx.date || "-");
-                    const presDate = (tx.presentation_date && tx.presentation_date.standard) ? tx.presentation_date.standard : execDate;
-                    const regDate = (tx.registration_date && tx.registration_date.standard) ? tx.registration_date.standard : execDate;
-                    const schedules = tx.schedules || [];
-
-                    return `
-                    <div class="p-3.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs hover:border-blue-300 transition-colors text-xs space-y-2">
-                        <div class="flex items-start justify-between gap-2">
-                            <div class="flex items-center gap-2">
-                                <span class="w-5 h-5 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-[10px]">${srNum}</span>
-                                <span class="font-extrabold text-blue-700 font-mono text-xs">Doc ${escapeHtml(tx.doc_no || "-")}</span>
-                                <span class="text-slate-500 font-mono text-[11px]">Reg: ${escapeHtml(regDate)}</span>
-                            </div>
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${natBadge}">
-                                ${escapeHtml(nat.split('\n')[0])}
-                            </span>
-                        </div>
-
-                        <!-- 3 Dates Pipeline -->
-                        <div class="flex items-center gap-3 text-[10px] font-mono text-slate-500 bg-slate-50 px-2 py-1 rounded border border-slate-200/50">
-                            <span><b>Execution:</b> ${escapeHtml(execDate)}</span>
-                            <span>•</span>
-                            <span><b>Presentation:</b> ${escapeHtml(presDate)}</span>
-                            <span>•</span>
-                            <span><b>Registration:</b> ${escapeHtml(regDate)}</span>
-                        </div>
-
-                        <!-- Executants & Claimants -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] bg-slate-50/80 p-2.5 rounded-lg border border-slate-200/60">
-                            <div>
-                                <span class="text-slate-400 font-semibold block text-[10px]">Executant(s):</span>
-                                ${renderBilingualParties(tx.executants_bilingual, tx.executants || tx.parties)}
-                            </div>
-                            <div>
-                                <span class="text-slate-400 font-semibold block text-[10px]">Claimant(s):</span>
-                                ${renderBilingualParties(tx.claimants_bilingual, tx.claimants)}
-                            </div>
-                        </div>
-
-                        <!-- Financial & PR Linkage -->
-                        ${(() => {
-                            const fin = sanitizeTxFinancials(tx);
-                            return `
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-[11px] bg-emerald-50/30 p-2 rounded-lg border border-emerald-100">
-                                <div>
-                                    <span class="text-slate-500 text-[10px] block">Consideration:</span>
-                                    <b class="text-emerald-800 font-mono">${escapeHtml(fin.cons)}</b>
-                                </div>
-                                <div>
-                                    <span class="text-slate-500 text-[10px] block">Market Value:</span>
-                                    <b class="text-slate-700 font-mono">${escapeHtml(fin.mkt)}</b>
-                                </div>
-                                <div>
-                                    <span class="text-slate-500 text-[10px] block">PR Number:</span>
-                                    <b class="text-indigo-700 font-mono">${escapeHtml(fin.pr)}</b>
-                                </div>
-                            </div>
-                            `;
-                        })()}
-
-                        <!-- Schedule Property Sub-blocks (Step 6) -->
-                        ${schedules.length > 0 ? `
+            <!-- 2. ACTIVE POWER OF ATTORNEY (POA) -->
+            <div id="ec-card-poa" class="ec-key-card rounded-xl border border-slate-200/90 bg-white shadow-2xs transition-all overflow-hidden">
+                <div onclick="toggleECKeyCard('ec-card-poa')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="file-text" class="w-4 h-4 text-slate-600"></i>
+                        <span class="text-xs font-bold text-slate-800">2. Active Power of Attorney (POA)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${hasPOA ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}">
+                            ${hasPOA ? `${poaAgents.length} Agents Identified` : 'No Active POA'}
+                        </span>
+                        <i data-lucide="chevron-right" id="ec-card-poa-chevron" class="ec-key-card-chevron w-4 h-4 text-slate-400 transition-transform"></i>
+                    </div>
+                </div>
+                <div id="ec-card-poa-body" class="ec-key-card-body hidden p-3.5 bg-slate-50/50 border-t border-slate-100 space-y-2">
+                    <div class="text-[11px] text-slate-700 bg-white p-2.5 rounded-lg border border-slate-200/60 leading-relaxed space-y-1.5">
+                        <div class="font-bold text-slate-800">${escapeHtml(poaVal)}</div>
+                        ${poaAgents.length > 0 ? `
                         <div class="space-y-1 pt-1">
-                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Schedule Property Details (${schedules.length} block${schedules.length > 1 ? 's' : ''}):</span>
-                            ${schedules.map(sch => `
-                            <div class="p-2 bg-blue-50/40 rounded-lg border border-blue-100/80 text-[11px] space-y-1">
-                                <div class="flex items-center justify-between font-bold text-blue-900 text-[11px]">
-                                    <span>${escapeHtml(sch.schedule_name || "Schedule Details")}</span>
-                                    <span class="px-1.5 py-0.2 bg-blue-100 text-blue-800 rounded text-[9px] font-extrabold">${escapeHtml(sch.property_type || "House Site")}</span>
-                                </div>
-                                <div class="grid grid-cols-2 md:grid-cols-3 gap-1 text-[10px] text-slate-600">
-                                    <span><b>Extent:</b> ${escapeHtml(sch.extent || "-")}</span>
-                                    <span><b>Survey:</b> ${escapeHtml(sch.survey_no || "-")}</span>
-                                    <span><b>Plot:</b> ${escapeHtml(sch.plot_no || "-")}</span>
-                                </div>
-                                ${sch.boundaries && sch.boundaries !== '-' ? `
-                                <div class="text-[10px] text-slate-700 bg-white/80 p-1.5 rounded border border-blue-100/60 leading-tight">
-                                    <b class="text-slate-900">Boundaries:</b> ${escapeHtml(sch.boundaries)}
-                                </div>
-                                ` : ''}
+                            ${poaAgents.map(ag => `
+                            <div class="p-1.5 bg-purple-50/60 rounded border border-purple-100 text-purple-900 text-[11px] font-mono">
+                                • ${escapeHtml(ag)}
                             </div>
                             `).join('')}
                         </div>
-                        ` : ''}
-
-                        ${tx.nature_note ? `<div class="text-[10px] text-amber-700 bg-amber-50/60 px-2 py-1 rounded border border-amber-200/60 italic">${escapeHtml(tx.nature_note)}</div>` : ''}
+                        ` : ""}
                     </div>
-                    `;
-                }).join('')}
+                </div>
             </div>
-            ` : `
-            <div class="p-6 text-center bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-500">
-                Nil Encumbrance Certificate — No registered transaction entries found for this search period.
+
+            <!-- 3. COURT ATTACHMENTS / LIENS -->
+            <div id="ec-card-court" class="ec-key-card rounded-xl border border-slate-200/90 bg-white shadow-2xs transition-all overflow-hidden">
+                <div onclick="toggleECKeyCard('ec-card-court')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="gavel" class="w-4 h-4 text-slate-600"></i>
+                        <span class="text-xs font-bold text-slate-800">3. Court Attachments / Liens</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${courtVal.includes('FLAG') ? 'bg-rose-100 text-rose-800 border border-rose-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'}">
+                            ${courtVal.includes('FLAG') ? 'FLAG: ATTACHMENT' : 'CLEAR / NO ATTACHMENTS'}
+                        </span>
+                        <i data-lucide="chevron-right" id="ec-card-court-chevron" class="ec-key-card-chevron w-4 h-4 text-slate-400 transition-transform"></i>
+                    </div>
+                </div>
+                <div id="ec-card-court-body" class="ec-key-card-body hidden p-3.5 bg-slate-50/50 border-t border-slate-100 space-y-2">
+                    <div class="text-[11px] text-slate-700 bg-white p-2.5 rounded-lg border border-slate-200/60 leading-relaxed">
+                        ${escapeHtml(courtVal)}
+                    </div>
+                </div>
             </div>
-            `}
+
+            <!-- 4. VILLAGE & TALUK NAME -->
+            <div id="ec-card-village" class="ec-key-card rounded-xl border border-slate-200/90 bg-white shadow-2xs transition-all overflow-hidden">
+                <div onclick="toggleECKeyCard('ec-card-village')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="map-pin" class="w-4 h-4 text-slate-600"></i>
+                        <span class="text-xs font-bold text-slate-800">4. Village & Taluk Name</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[11px] font-mono text-slate-600 font-semibold">${escapeHtml(villageVal)}</span>
+                        <i data-lucide="chevron-right" id="ec-card-village-chevron" class="ec-key-card-chevron w-4 h-4 text-slate-400 transition-transform"></i>
+                    </div>
+                </div>
+                <div id="ec-card-village-body" class="ec-key-card-body hidden p-3.5 bg-slate-50/50 border-t border-slate-100">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
+                            <span class="text-[10px] font-bold text-slate-400 block uppercase">வருவாய் கிராமம் (Revenue Village)</span>
+                            <span class="text-xs font-bold text-slate-800 mt-0.5 block">${escapeHtml(villageVal)}</span>
+                        </div>
+                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
+                            <span class="text-[10px] font-bold text-slate-400 block uppercase">வட்டம் / எல்லை (Taluk / Jurisdiction)</span>
+                            <span class="text-xs font-bold text-slate-800 mt-0.5 block">${escapeHtml(talukVal)}</span>
+                        </div>
+                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
+                            <span class="text-[10px] font-bold text-slate-400 block uppercase">பதிவு மாவட்டம் (Registration District)</span>
+                            <span class="text-xs font-bold text-slate-800 mt-0.5 block">${escapeHtml(districtVal)}</span>
+                        </div>
+                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
+                            <span class="text-[10px] font-bold text-slate-400 block uppercase">மண்டலம் (Zone)</span>
+                            <span class="text-xs font-bold text-slate-800 mt-0.5 block">${escapeHtml(zoneVal)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. SURVEY / PATTA NUMBER -->
+            <div id="ec-card-survey" class="ec-key-card rounded-xl border border-slate-200/90 bg-white shadow-2xs transition-all overflow-hidden">
+                <div onclick="toggleECKeyCard('ec-card-survey')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="file-text" class="w-4 h-4 text-slate-600"></i>
+                        <span class="text-xs font-bold text-slate-800">5. Survey / Patta Number</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[11px] font-mono text-blue-700 font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-200">${escapeHtml(surveyVal)}</span>
+                        <i data-lucide="chevron-right" id="ec-card-survey-chevron" class="ec-key-card-chevron w-4 h-4 text-slate-400 transition-transform"></i>
+                    </div>
+                </div>
+                <div id="ec-card-survey-body" class="ec-key-card-body hidden p-3.5 bg-slate-50/50 border-t border-slate-100 space-y-2">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
+                            <span class="text-[10px] font-bold text-slate-400 block uppercase">தேடப்பட்ட புல எண்(கள்) (Survey Number Searched)</span>
+                            <span class="text-xs font-extrabold text-blue-700 font-mono mt-0.5 block">${escapeHtml(surveyVal)}</span>
+                        </div>
+                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
+                            <span class="text-[10px] font-bold text-slate-400 block uppercase">பட்டா / பிளாக் / மனை எண் (Patta / Block / Plot)</span>
+                            <span class="text-xs font-bold text-slate-800 font-mono mt-0.5 block">${escapeHtml(pattaVal)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. EXTENT OF PROPERTY (AREA) - WITH UDS AND REMARKS DETAILS -->
+            <div id="ec-card-extent" class="ec-key-card rounded-xl border border-slate-200/90 bg-white shadow-2xs transition-all overflow-hidden">
+                <div onclick="toggleECKeyCard('ec-card-extent')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="layers" class="w-4 h-4 text-slate-600"></i>
+                        <span class="text-xs font-bold text-slate-800">6. Extent of Property (Area)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${isUDS ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-emerald-100 text-emerald-900 border border-emerald-300'}">
+                            ${isUDS ? 'UDS Share' : 'Normal Land'}
+                        </span>
+                        <i data-lucide="chevron-right" id="ec-card-extent-chevron" class="ec-key-card-chevron w-4 h-4 text-slate-400 transition-transform"></i>
+                    </div>
+                </div>
+                <div id="ec-card-extent-body" class="ec-key-card-body hidden p-3.5 bg-slate-50/50 border-t border-slate-100 space-y-3">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-xs">
+                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
+                            <span class="text-[10px] font-bold text-slate-400 block uppercase">சொத்தின் விஸ்தீர்ணம் (Property Extent / Area)</span>
+                            <span class="text-xs font-extrabold text-blue-700 font-mono mt-0.5 block">${escapeHtml(extentVal)}</span>
+                        </div>
+                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
+                            <span class="text-[10px] font-bold text-slate-400 block uppercase">நில உரிமை வகை (Land Classification)</span>
+                            <span class="text-xs font-bold text-slate-900 mt-0.5 block flex items-center gap-1">
+                                <i data-lucide="${isUDS ? 'pie-chart' : 'check-circle'}" class="w-3.5 h-3.5 ${isUDS ? 'text-amber-600' : 'text-emerald-600'}"></i>
+                                <span>${escapeHtml(landCategory)}</span>
+                            </span>
+                        </div>
+                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
+                            <span class="text-[10px] font-bold text-slate-400 block uppercase">சொத்தின் வகைப்பாடு (Property Type)</span>
+                            <span class="text-xs font-bold text-slate-800 mt-0.5 block">${escapeHtml(propTypeVal)}</span>
+                        </div>
+                    </div>
+
+                    <!-- REMARKS & STRUCTURE DETAILS CALLOUT -->
+                    <div class="p-3 bg-blue-50/40 rounded-xl border border-blue-200/80 space-y-1.5">
+                        <div class="flex items-center gap-1.5 text-blue-900 font-bold text-xs">
+                            <i data-lucide="info" class="w-3.5 h-3.5 text-blue-600"></i>
+                            <span>Remarks Column Details (ஆவணக் குறிப்புகள் & கூடுதல் விவரங்கள்)</span>
+                        </div>
+                        <p class="text-[11px] text-slate-600 leading-relaxed">
+                            <strong>Structure Details:</strong> ${escapeHtml(structureVal)}
+                        </p>
+                        <div class="text-[11px] text-slate-700 bg-white p-2 rounded-lg border border-blue-100 font-mono leading-relaxed">
+                            <b>Extracted Notes:</b> ${escapeHtml(remarksNotes)}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. BOUNDARY SCHEDULE (N/S/E/W) -->
+            <div id="ec-card-boundary" class="ec-key-card rounded-xl border border-slate-200/90 bg-white shadow-2xs transition-all overflow-hidden">
+                <div onclick="toggleECKeyCard('ec-card-boundary')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="compass" class="w-4 h-4 text-slate-600"></i>
+                        <span class="text-xs font-bold text-slate-800">7. Boundary Schedule (N/S/E/W)</span>
+                    </div>
+                    <i data-lucide="chevron-right" id="ec-card-boundary-chevron" class="ec-key-card-chevron w-4 h-4 text-slate-400 transition-transform"></i>
+                </div>
+                <div id="ec-card-boundary-body" class="ec-key-card-body hidden p-3.5 bg-slate-50/50 border-t border-slate-100">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
+                            <span class="text-[10px] font-bold text-blue-600 block uppercase">வடக்கு (North Boundary)</span>
+                            <span class="text-xs font-semibold text-slate-800 mt-0.5 block">${escapeHtml(northBound)}</span>
+                        </div>
+                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
+                            <span class="text-[10px] font-bold text-emerald-600 block uppercase">தெற்கு (South Boundary)</span>
+                            <span class="text-xs font-semibold text-slate-800 mt-0.5 block">${escapeHtml(southBound)}</span>
+                        </div>
+                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
+                            <span class="text-[10px] font-bold text-indigo-600 block uppercase">கிழக்கு (East Boundary)</span>
+                            <span class="text-xs font-semibold text-slate-800 mt-0.5 block">${escapeHtml(eastBound)}</span>
+                        </div>
+                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
+                            <span class="text-[10px] font-bold text-amber-600 block uppercase">மேற்கு (West Boundary)</span>
+                            <span class="text-xs font-semibold text-slate-800 mt-0.5 block">${escapeHtml(westBound)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 8. TOTAL TRANSACTIONS FOUND -->
+            <div id="ec-card-total-tx" class="ec-key-card rounded-xl border border-slate-200/90 bg-white shadow-2xs transition-all overflow-hidden">
+                <div onclick="toggleECKeyCard('ec-card-total-tx')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="arrow-left-right" class="w-4 h-4 text-slate-600"></i>
+                        <span class="text-xs font-bold text-slate-800">8. Total Transactions Found</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
+                            ${escapeHtml(totalEntriesVal)} Registered Entries
+                        </span>
+                        <i data-lucide="chevron-right" id="ec-card-total-tx-chevron" class="ec-key-card-chevron w-4 h-4 text-slate-400 transition-transform"></i>
+                    </div>
+                </div>
+                <div id="ec-card-total-tx-body" class="ec-key-card-body hidden p-3.5 bg-slate-50/50 border-t border-slate-100 space-y-2">
+                    <div class="p-2.5 bg-white rounded-lg border border-slate-200/60 text-xs space-y-1">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-700">படிவ வகை (Form Type):</span>
+                            <span class="font-extrabold text-purple-700">${escapeHtml(formTypeVal)}</span>
+                        </div>
+                        <div class="pt-1 border-t border-slate-100 text-[11px] text-slate-600 leading-relaxed">
+                            <b>Breakdown:</b> ${escapeHtml(txBreakdown)}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 9. NATURE OF LAST TRANSACTION -->
+            <div id="ec-card-last-tx" class="ec-key-card rounded-xl border border-slate-200/90 bg-white shadow-2xs transition-all overflow-hidden">
+                <div onclick="toggleECKeyCard('ec-card-last-tx')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="file-text" class="w-4 h-4 text-slate-600"></i>
+                        <span class="text-xs font-bold text-slate-800">9. Nature of Last Transaction</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[11px] font-mono font-semibold text-slate-700">${escapeHtml(lastNature.split('\n')[0])}</span>
+                        <i data-lucide="chevron-right" id="ec-card-last-tx-chevron" class="ec-key-card-chevron w-4 h-4 text-slate-400 transition-transform"></i>
+                    </div>
+                </div>
+                <div id="ec-card-last-tx-body" class="ec-key-card-body hidden p-3.5 bg-slate-50/50 border-t border-slate-100 space-y-2">
+                    <div class="p-2.5 bg-white rounded-lg border border-slate-200/60 text-xs space-y-1.5">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-800">ஆவணத் தன்மை (Nature): ${escapeHtml(lastNature)}</span>
+                            <span class="font-mono text-blue-700 font-bold">Doc ${escapeHtml(lastDocNo)} (${escapeHtml(lastDate)})</span>
+                        </div>
+                        <div class="pt-1 border-t border-slate-100 text-[11px] text-slate-600">
+                            <div><b>Executant:</b> ${escapeHtml(lastExecs)}</div>
+                            <div class="mt-0.5"><b>Claimant:</b> ${escapeHtml(lastClaims)}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 10. CONSIDERATION VALUE (LAST TRANSACTION AMOUNT) -->
+            <div id="ec-card-consideration" class="ec-key-card rounded-xl border border-slate-200/90 bg-white shadow-2xs transition-all overflow-hidden">
+                <div onclick="toggleECKeyCard('ec-card-consideration')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="coins" class="w-4 h-4 text-slate-600"></i>
+                        <span class="text-xs font-bold text-slate-800">10. Consideration Value (Last transaction amount)</span>
+                    </div>
+                    <i data-lucide="chevron-right" id="ec-card-consideration-chevron" class="ec-key-card-chevron w-4 h-4 text-slate-400 transition-transform"></i>
+                </div>
+                <div id="ec-card-consideration-body" class="ec-key-card-body hidden p-3.5 bg-slate-50/50 border-t border-slate-100">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
+                            <span class="text-[10px] font-bold text-slate-400 block uppercase">கைமாற்றுத் தொகை (Consideration Value)</span>
+                            <span class="text-xs font-extrabold text-emerald-700 font-mono mt-0.5 block">${escapeHtml(consVal)}</span>
+                        </div>
+                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
+                            <span class="text-[10px] font-bold text-slate-400 block uppercase">சந்தை மதிப்பு (Market Value)</span>
+                            <span class="text-xs font-extrabold text-slate-800 font-mono mt-0.5 block">${escapeHtml(mktVal)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 11. SEARCH PERIOD (DATES) -->
+            <div id="ec-card-search-period" class="ec-key-card rounded-xl border border-slate-200/90 bg-white shadow-2xs transition-all overflow-hidden">
+                <div onclick="toggleECKeyCard('ec-card-search-period')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="calendar" class="w-4 h-4 text-slate-600"></i>
+                        <span class="text-xs font-bold text-slate-800">11. Search Period (Dates)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-extrabold ${is30Compliant ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-100 text-amber-800 border border-amber-300'}">
+                            ${is30Compliant ? '30+ YEARS OK' : 'LESS THAN 30 YRS'}
+                        </span>
+                        <i data-lucide="chevron-right" id="ec-card-search-period-chevron" class="ec-key-card-chevron w-4 h-4 text-slate-400 transition-transform"></i>
+                    </div>
+                </div>
+                <div id="ec-card-search-period-body" class="ec-key-card-body hidden p-3.5 bg-slate-50/50 border-t border-slate-100 space-y-2">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
+                            <span class="text-[10px] font-bold text-slate-400 block uppercase">தேடல் காலம் (Search Period Requested)</span>
+                            <span class="text-xs font-bold text-slate-900 font-mono mt-0.5 block">${escapeHtml(searchPeriod)}</span>
+                        </div>
+                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
+                            <span class="text-[10px] font-bold text-slate-400 block uppercase">அலுவலக தேதி இருப்பு (SRO Date Available Range)</span>
+                            <span class="text-xs font-bold text-slate-900 font-mono mt-0.5 block">${escapeHtml(sroAvail)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 12. SUB-REGISTRAR OFFICE (SRO) -->
+            <div id="ec-card-sro" class="ec-key-card rounded-xl border border-slate-200/90 bg-white shadow-2xs transition-all overflow-hidden">
+                <div onclick="toggleECKeyCard('ec-card-sro')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="landmark" class="w-4 h-4 text-slate-600"></i>
+                        <span class="text-xs font-bold text-slate-800">12. Sub-Registrar Office (SRO)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[11px] font-semibold text-slate-700">${escapeHtml(sroVal)}</span>
+                        <i data-lucide="chevron-right" id="ec-card-sro-chevron" class="ec-key-card-chevron w-4 h-4 text-slate-400 transition-transform"></i>
+                    </div>
+                </div>
+                <div id="ec-card-sro-body" class="ec-key-card-body hidden p-3.5 bg-slate-50/50 border-t border-slate-100 space-y-2">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
+                            <span class="text-[10px] font-bold text-slate-400 block uppercase">சார்பதிவாளர் அலுவலகம் (SRO Office & Jurisdiction)</span>
+                            <span class="text-xs font-bold text-slate-800 mt-0.5 block">${escapeHtml(sroJurisdiction)}</span>
+                        </div>
+                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
+                            <span class="text-[10px] font-bold text-slate-400 block uppercase">சான்றிதழ் நாள் (Certificate Date)</span>
+                            <span class="text-xs font-bold text-slate-800 mt-0.5 block font-mono">${escapeHtml(certDate)}</span>
+                        </div>
+                    </div>
+                    <div class="p-2.5 bg-emerald-50 rounded-lg border border-emerald-200 text-[11px] text-emerald-900 flex items-center gap-1.5">
+                        <i data-lucide="badge-check" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+                        <span>${escapeHtml(sigVal)}</span>
+                    </div>
+                </div>
+            </div>
+
         </div>
     `;
 
     container.appendChild(wrapper);
 }
+
+// Global accordion togglers
+window.toggleECKeyCard = function(cardId) {
+    const body = document.getElementById(`${cardId}-body`);
+    const chevron = document.getElementById(`${cardId}-chevron`);
+    const card = document.getElementById(cardId);
+    if (!body) return;
+    const isHidden = body.classList.contains("hidden");
+    if (isHidden) {
+        body.classList.remove("hidden");
+        if (chevron) {
+            chevron.classList.add("rotate-90");
+            chevron.classList.remove("text-slate-400");
+            chevron.classList.add("text-blue-600");
+        }
+        if (card) card.classList.add("border-blue-300", "ring-1", "ring-blue-100");
+    } else {
+        body.classList.add("hidden");
+        if (chevron) {
+            chevron.classList.remove("rotate-90");
+            chevron.classList.remove("text-blue-600");
+            chevron.classList.add("text-slate-400");
+        }
+        if (card) card.classList.remove("border-blue-300", "ring-1", "ring-blue-100");
+    }
+};
+
+window.toggleAllECKeyCards = function() {
+    const bodies = document.querySelectorAll(".ec-key-card-body");
+    const chevrons = document.querySelectorAll(".ec-key-card-chevron");
+    const cards = document.querySelectorAll(".ec-key-card");
+    const anyHidden = Array.from(bodies).some(b => b.classList.contains("hidden"));
+    bodies.forEach(b => {
+        if (anyHidden) b.classList.remove("hidden");
+        else b.classList.add("hidden");
+    });
+    chevrons.forEach(c => {
+        if (anyHidden) {
+            c.classList.add("rotate-90");
+            c.classList.remove("text-slate-400");
+            c.classList.add("text-blue-600");
+        } else {
+            c.classList.remove("rotate-90");
+            c.classList.remove("text-blue-600");
+            c.classList.add("text-slate-400");
+        }
+    });
+    cards.forEach(c => {
+        if (anyHidden) c.classList.add("border-blue-300");
+        else c.classList.remove("border-blue-300");
+    });
+};
+
 
 function renderTSLRFieldsLayout(fields, container) {
     const getVal = (f, def = "-") => {
@@ -1572,10 +1750,12 @@ function renderTableTab(extraction) {
             if (schedules.length > 0) {
                 const s0 = schedules[0];
                 const parts = [];
-                if (s0.extent && s0.extent !== '-') parts.push(s0.extent);
-                if (s0.survey_no && s0.survey_no !== '-') parts.push(`Sy:${s0.survey_no}`);
-                if (s0.plot_no && s0.plot_no !== '-') parts.push(`Plot:${s0.plot_no}`);
-                schSummary = parts.join(", ") || (s0.property_type || "House Site");
+                if (s0.village_street && s0.village_street !== '-') parts.push(s0.village_street);
+                if (s0.survey_no && s0.survey_no !== '-') parts.push(`S.No: ${s0.survey_no}`);
+                if (s0.flat_no && s0.flat_no !== '-') parts.push(`Flat: ${s0.flat_no}`);
+                if (s0.plot_no && s0.plot_no !== '-') parts.push(`Plot: ${s0.plot_no}`);
+                if (s0.extent && s0.extent !== '-') parts.push(`Ext: ${s0.extent}`);
+                schSummary = parts.join(" | ") || (s0.property_type || "-");
             }
 
             return `
@@ -1641,6 +1821,583 @@ function renderTableTab(extraction) {
         `;
     } else {
         container.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">Structured tables available for EC & Legal Heir documents.</div>`;
+    }
+}
+
+// --------------------------------------------------------------------------
+// Owners Directory & Title Dossier Engine
+// --------------------------------------------------------------------------
+
+function renderOwnersTab(extraction) {
+    const container = document.getElementById("owners-directory-container");
+    const badge = document.getElementById("owners-count-badge");
+    if (!container) return;
+
+    const fields = (extraction && extraction.fields) ? extraction.fields : {};
+    const registry = fields.owners_registry || {};
+    state.ownersRegistry = registry;
+    state.activeOwnerFilter = state.activeOwnerFilter || "owners";
+    state.ownerSearchQuery = state.ownerSearchQuery || "";
+
+    const summary = registry.summary || {
+        total_owners_count: 0,
+        total_parties: 0,
+        current_owners_count: 0,
+        historical_owners_count: 0,
+        institutions_count: 0,
+        units_count: 0
+    };
+
+    if (badge) {
+        badge.textContent = summary.total_owners_count || (summary.current_owners_count + summary.historical_owners_count) || summary.total_parties || "0";
+    }
+
+    if (!summary.total_parties && (!registry.all_owners || registry.all_owners.length === 0)) {
+        container.innerHTML = `
+            <div class="text-center p-8 space-y-3 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+                    <i data-lucide="users" class="w-6 h-6"></i>
+                </div>
+                <h4 class="font-bold text-sm text-slate-800">No Registered Owners Found in Certificate</h4>
+                <p class="text-xs text-slate-500 max-w-md mx-auto">
+                    This document appears to be a Nil Encumbrance Certificate (Form 16) or has no registered transactions in the searched date window.
+                </p>
+            </div>
+        `;
+        lucide.createIcons();
+        return;
+    }
+
+    const totalOwners = summary.total_owners_count || (summary.current_owners_count + summary.historical_owners_count);
+
+    container.innerHTML = `
+        <div class="space-y-4">
+            <!-- Summary Bar -->
+            <div class="p-4 rounded-xl bg-gradient-to-r from-purple-500/10 via-blue-500/5 to-slate-50 border border-purple-200/80 shadow-2xs">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="p-1.5 rounded-lg bg-purple-600 text-white shadow-2xs">
+                                <i data-lucide="users" class="w-4 h-4"></i>
+                            </span>
+                            <h4 class="text-sm font-bold text-slate-900">Owners Directory & Title Dossier Registry</h4>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">TNREGINET Verified</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-1">
+                            Chronological devolution, root acquisition deeds, held property schedules, and active bank mortgages for all parties in this certificate.
+                        </p>
+                    </div>
+
+                    <div class="flex items-center gap-2 flex-wrap text-xs">
+                        <div class="px-2.5 py-1 rounded-lg bg-white border border-purple-200 text-purple-800 font-semibold shadow-2xs flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                            <span>${totalOwners} Title Owner(s)</span>
+                        </div>
+                        <div class="px-2.5 py-1 rounded-lg bg-white border border-emerald-200 text-emerald-800 font-semibold shadow-2xs flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            <span>${summary.current_owners_count} Current Title Holder(s)</span>
+                        </div>
+                        <div class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 font-semibold shadow-2xs flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                            <span>${summary.historical_owners_count} Prior Owner(s)</span>
+                        </div>
+                        <div class="px-2.5 py-1 rounded-lg bg-white border border-blue-200 text-blue-800 font-semibold shadow-2xs flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                            <span>${summary.units_count} Property Unit(s)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search & Filters -->
+                <div class="mt-4 pt-3 border-t border-purple-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                    <div class="relative flex-1">
+                        <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5"></i>
+                        <input type="text" id="owner-search-input" value="${escapeHtml(state.ownerSearchQuery || '')}" oninput="handleOwnerSearch(this.value)" placeholder="Search owner name, deed number, survey no, or flat/plot..." class="w-full bg-white border border-slate-300 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-purple-500">
+                    </div>
+
+                    <div class="flex items-center gap-1.5 overflow-x-auto text-[11px] font-semibold" id="owner-filter-buttons-container">
+                        <button type="button" data-filter="owners" onclick="setOwnerFilter('owners')" class="owner-filter-btn px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${state.activeOwnerFilter === 'owners' ? 'bg-purple-600 text-white shadow-xs' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'}">
+                            Title Owners (${totalOwners})
+                        </button>
+                        <button type="button" data-filter="current" onclick="setOwnerFilter('current')" class="owner-filter-btn px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${state.activeOwnerFilter === 'current' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'}">
+                            Current Owners (${summary.current_owners_count})
+                        </button>
+                        <button type="button" data-filter="historical" onclick="setOwnerFilter('historical')" class="owner-filter-btn px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${state.activeOwnerFilter === 'historical' ? 'bg-slate-700 text-white shadow-xs' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'}">
+                            Prior Owners (${summary.historical_owners_count})
+                        </button>
+                        <button type="button" data-filter="institutions" onclick="setOwnerFilter('institutions')" class="owner-filter-btn px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${state.activeOwnerFilter === 'institutions' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'}">
+                            Lenders & Banks (${summary.institutions_count})
+                        </button>
+                        <button type="button" data-filter="all" onclick="setOwnerFilter('all')" class="owner-filter-btn px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${state.activeOwnerFilter === 'all' ? 'bg-slate-800 text-white shadow-xs' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'}">
+                            All Signatories (${summary.total_parties})
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clustered Property Units Ribbon (If multiple) -->
+            ${(registry.property_units && registry.property_units.length > 1) ? `
+            <div class="p-3 bg-blue-50/60 rounded-xl border border-blue-200/70 shadow-2xs space-y-2">
+                <div class="flex items-center justify-between text-xs">
+                    <span class="font-bold text-blue-950 flex items-center gap-1.5">
+                        <i data-lucide="layers" class="w-3.5 h-3.5 text-blue-600"></i>
+                        <span>Identified Property Clusters (${registry.property_units.length} Units)</span>
+                    </span>
+                    <span class="text-[10px] text-blue-700">Click to filter owners by property unit</span>
+                </div>
+                <div class="flex gap-2 overflow-x-auto pb-1">
+                    ${registry.property_units.map(u => `
+                    <button type="button" onclick="filterOwnersByUnit('${escapeHtml(u.unit_key)}')" class="shrink-0 text-left p-2 rounded-lg bg-white hover:bg-blue-100 border border-blue-200/80 shadow-2xs text-[11px] transition-colors cursor-pointer max-w-[240px]">
+                        <div class="font-bold text-slate-900 truncate">${escapeHtml(u.unit_key)}</div>
+                        <div class="text-[10px] text-slate-500 flex items-center justify-between mt-0.5">
+                            <span>Holder: <b>${escapeHtml(u.current_owner)}</b></span>
+                            <span class="ml-1 text-blue-600 font-mono">${u.total_transactions} doc(s)</span>
+                        </div>
+                    </button>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ""}
+
+            <!-- Owners Cards List -->
+            <div id="owners-cards-list" class="space-y-3">
+                <!-- Filled dynamically -->
+            </div>
+        </div>
+    `;
+
+    renderOwnerCards();
+    lucide.createIcons();
+}
+
+function setOwnerFilter(filterType) {
+    state.activeOwnerFilter = filterType;
+    const container = document.getElementById("owner-filter-buttons-container");
+    if (container) {
+        const colorMap = {
+            owners: "bg-purple-600 text-white shadow-xs",
+            current: "bg-emerald-600 text-white shadow-xs",
+            historical: "bg-slate-700 text-white shadow-xs",
+            institutions: "bg-indigo-600 text-white shadow-xs",
+            all: "bg-slate-800 text-white shadow-xs"
+        };
+        container.querySelectorAll(".owner-filter-btn").forEach(btn => {
+            const f = btn.getAttribute("data-filter");
+            if (f === filterType) {
+                btn.className = `owner-filter-btn px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${colorMap[f] || 'bg-purple-600 text-white shadow-xs'}`;
+            } else {
+                btn.className = "owner-filter-btn px-2.5 py-1 rounded-lg transition-colors cursor-pointer bg-white hover:bg-slate-100 text-slate-700 border border-slate-200";
+            }
+        });
+    }
+    renderOwnerCards();
+    lucide.createIcons();
+}
+
+function handleOwnerSearch(query) {
+    state.ownerSearchQuery = (query || "").trim().toLowerCase();
+    renderOwnerCards();
+    lucide.createIcons();
+}
+
+function filterOwnersByUnit(unitKey) {
+    const input = document.getElementById("owner-search-input");
+    if (input) {
+        input.value = unitKey;
+        handleOwnerSearch(unitKey);
+    }
+}
+
+function renderOwnerCards() {
+    const listContainer = document.getElementById("owners-cards-list");
+    if (!listContainer || !state.ownersRegistry) return;
+
+    const registry = state.ownersRegistry;
+    let list = [];
+
+    if (state.activeOwnerFilter === "current") {
+        list = registry.current_owners || [];
+    } else if (state.activeOwnerFilter === "historical") {
+        list = registry.historical_owners || [];
+    } else if (state.activeOwnerFilter === "institutions") {
+        list = registry.institutions || [];
+    } else if (state.activeOwnerFilter === "owners") {
+        list = (registry.property_owners && registry.property_owners.length > 0)
+            ? registry.property_owners
+            : (registry.current_owners || []).concat(registry.historical_owners || []);
+    } else {
+        list = registry.all_owners || [];
+    }
+
+    const q = state.ownerSearchQuery || "";
+    if (q) {
+        list = list.filter(o => {
+            const name = (o.name || "").toLowerCase();
+            const bName = (o.name_bilingual || "").toLowerCase();
+            const role = (o.role || "").toLowerCase();
+            const units = (o.property_units || []).join(" ").toLowerCase();
+            const acqDoc = o.acquisition ? ((o.acquisition.doc_no || "") + " " + (o.acquisition.nature || "")).toLowerCase() : "";
+            const txDocs = (o.transactions || []).map(t => (t.doc_no || "") + " " + (t.nature || "")).join(" ").toLowerCase();
+            return name.includes(q) || bName.includes(q) || role.includes(q) || units.includes(q) || acqDoc.includes(q) || txDocs.includes(q);
+        });
+    }
+
+    if (list.length === 0) {
+        listContainer.innerHTML = `
+            <div class="text-center p-6 bg-white rounded-xl border border-slate-200 text-xs text-slate-500">
+                No matching owners or parties found for the current filter/search query.
+            </div>
+        `;
+        return;
+    }
+
+    listContainer.innerHTML = list.map(o => {
+        const isCurrent = o.is_current_owner === true;
+        const isInstitution = (o.entity_type === "Bank / Financial Institution" || o.entity_type === "Government / Statutory Body");
+        
+        let roleBadgeClass = "bg-slate-100 text-slate-700 border-slate-200";
+        let roleText = o.role || "Registered Party";
+        if (isCurrent) {
+            roleBadgeClass = "bg-emerald-100 text-emerald-800 border-emerald-200";
+            roleText = "Current Legal Owner";
+        } else if (isInstitution) {
+            roleBadgeClass = "bg-indigo-100 text-indigo-800 border-indigo-200";
+        } else if (o.acquisition) {
+            roleBadgeClass = "bg-amber-100 text-amber-800 border-amber-200";
+            roleText = "Prior / Historical Owner";
+        }
+
+        const iconName = isInstitution ? "landmark" : (o.entity_type === "Individual" ? "user" : "building-2");
+        const iconBg = isCurrent ? "bg-emerald-100 text-emerald-700" : (isInstitution ? "bg-indigo-100 text-indigo-700" : "bg-purple-100 text-purple-700");
+
+        return `
+        <div class="p-4 rounded-xl bg-white hover:bg-slate-50/80 border border-slate-200/90 shadow-2xs transition-all space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                <div class="flex items-start gap-3">
+                    <div class="p-2.5 rounded-xl ${iconBg} shrink-0 mt-0.5 shadow-2xs">
+                        <i data-lucide="${iconName}" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h4 class="font-extrabold text-sm text-slate-900">${escapeHtml(o.name_bilingual || o.name)}</h4>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${roleBadgeClass}">${escapeHtml(roleText)}</span>
+                            <span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200">${escapeHtml(o.entity_type || 'Entity')}</span>
+                        </div>
+                        <div class="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2 flex-wrap">
+                            <span>Total Involvements: <b>${o.total_tx_count || (o.transactions ? o.transactions.length : 0)} document(s)</b></span>
+                            ${o.property_units && o.property_units.length > 0 ? `<span>&bull; Units: <b>${escapeHtml(o.property_units.join(', '))}</b></span>` : ''}
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" onclick="openOwnerDossier('${escapeHtml(o.owner_id)}')" class="shrink-0 px-3 py-1.5 text-xs font-semibold rounded-lg bg-purple-600 hover:bg-purple-700 text-white shadow-2xs flex items-center gap-1.5 transition-colors cursor-pointer">
+                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                    <span>View Title Dossier</span>
+                </button>
+            </div>
+
+            <!-- Acquisition & Devolution Row -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs pt-1">
+                ${o.acquisition ? `
+                <div class="p-2.5 rounded-lg bg-emerald-50/50 border border-emerald-200/70 text-emerald-950 space-y-1">
+                    <div class="flex items-center justify-between text-[11px] font-bold text-emerald-900">
+                        <span class="flex items-center gap-1"><i data-lucide="key" class="w-3 h-3 text-emerald-600"></i> Acquisition Instrument</span>
+                        <span class="font-mono">Doc ${escapeHtml(o.acquisition.doc_no)} (${escapeHtml(o.acquisition.date)})</span>
+                    </div>
+                    <div class="text-[11px] text-emerald-900/90 truncate font-medium">
+                        <b>Nature:</b> ${escapeHtml(o.acquisition.nature || 'Title Deed')} &bull; <b>From:</b> ${escapeHtml(o.acquisition.acquired_from || '-')}
+                    </div>
+                    ${o.acquisition.consideration && o.acquisition.consideration !== '-' ? `
+                    <div class="text-[10px] text-emerald-800 font-mono">
+                        Consideration: <b>${escapeHtml(o.acquisition.consideration)}</b>
+                    </div>
+                    ` : ''}
+                </div>
+                ` : `
+                <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-500 text-[11px] flex items-center">
+                    <span>No registered root acquisition deed found within this EC window.</span>
+                </div>
+                `}
+
+                ${o.transferred_to ? `
+                <div class="p-2.5 rounded-lg bg-slate-100 border border-slate-200/90 text-slate-800 space-y-1">
+                    <div class="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                        <span class="flex items-center gap-1"><i data-lucide="arrow-right-left" class="w-3 h-3 text-slate-500"></i> Devolution / Transferred To</span>
+                        <span class="font-mono">Doc ${escapeHtml(o.transferred_to.doc_no)}</span>
+                    </div>
+                    <div class="text-[11px] text-slate-700 font-medium truncate">
+                        <b>Transferred To:</b> ${escapeHtml(o.transferred_to.transferred_to || '-')}
+                    </div>
+                    <div class="text-[10px] text-slate-500 font-mono">
+                        Date: ${escapeHtml(o.transferred_to.date || '-')}
+                    </div>
+                </div>
+                ` : (isCurrent ? `
+                <div class="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-300 text-emerald-900 flex items-center justify-between">
+                    <div class="flex items-center gap-1.5 text-xs font-bold">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
+                        <span>Absolute Legal Title Retained</span>
+                    </div>
+                    <span class="text-[10px] font-mono bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">No Outward Transfer</span>
+                </div>
+                ` : `
+                <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-500 text-[11px] flex items-center">
+                    <span>Devolution status not recorded as an outward sale deed in this EC.</span>
+                </div>
+                `)}
+            </div>
+
+            <!-- Mortgages / Loans Status -->
+            <div class="pt-1 flex items-center justify-between text-xs">
+                ${o.has_active_mortgages ? `
+                <span class="px-2.5 py-1 rounded-md bg-amber-100 text-amber-900 border border-amber-200 text-[11px] font-bold flex items-center gap-1.5">
+                    <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-600"></i>
+                    <span>Active / Unreleased Mortgage(s) Recorded</span>
+                </span>
+                ` : (o.mortgages && o.mortgages.length > 0 ? `
+                <span class="px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-bold flex items-center gap-1.5">
+                    <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-600"></i>
+                    <span>All ${o.mortgages.length} Mortgage(s) Discharged & Closed</span>
+                </span>
+                ` : `
+                <span class="px-2 py-0.5 rounded text-[11px] text-slate-500">
+                    No mortgages or charges recorded under this party.
+                </span>
+                `)}
+
+                <button type="button" onclick="openOwnerDossier('${escapeHtml(o.owner_id)}')" class="text-purple-600 hover:text-purple-800 font-semibold text-[11px] flex items-center gap-1 cursor-pointer">
+                    <span>Inspect Complete Dossier & Audit</span>
+                    <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                </button>
+            </div>
+        </div>
+        `;
+    }).join("");
+}
+
+function openOwnerDossierByName(name) {
+    if (!state.ownersRegistry || !state.ownersRegistry.all_owners) {
+        switchTab("owners");
+        return;
+    }
+    const clean = (name || "").toLowerCase().trim();
+    const found = state.ownersRegistry.all_owners.find(o => {
+        return (o.name || "").toLowerCase().includes(clean) || (o.name_bilingual || "").toLowerCase().includes(clean);
+    });
+    if (found) {
+        openOwnerDossier(found.owner_id);
+    } else {
+        switchTab("owners");
+    }
+}
+
+function openOwnerDossier(ownerId) {
+    if (!state.ownersRegistry || !state.ownersRegistry.all_owners) return;
+    const owner = state.ownersRegistry.all_owners.find(o => o.owner_id === ownerId);
+    if (!owner) return;
+
+    const modal = document.getElementById("owner-dossier-modal");
+    const nameEl = document.getElementById("dossier-owner-name");
+    const roleBadge = document.getElementById("dossier-role-badge");
+    const entityBadge = document.getElementById("dossier-entity-badge");
+    const iconContainer = document.getElementById("dossier-role-icon");
+    const bodyContainer = document.getElementById("dossier-modal-body");
+
+    if (!modal || !bodyContainer) return;
+
+    if (nameEl) nameEl.textContent = owner.name_bilingual || owner.name;
+    if (entityBadge) entityBadge.textContent = owner.entity_type || "Entity";
+
+    const isCurrent = owner.is_current_owner === true;
+    const isInstitution = (owner.entity_type === "Bank / Financial Institution" || owner.entity_type === "Government / Statutory Body");
+
+    if (roleBadge) {
+        if (isCurrent) {
+            roleBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200";
+            roleBadge.textContent = "Current Legal Owner / Title Holder";
+        } else if (isInstitution) {
+            roleBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-200";
+            roleBadge.textContent = "Institutional Mortgagee / Lender";
+        } else if (owner.acquisition) {
+            roleBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-200 text-slate-800 border border-slate-300";
+            roleBadge.textContent = "Prior / Historical Owner";
+        } else {
+            roleBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200";
+            roleBadge.textContent = owner.role || "Registered Party";
+        }
+    }
+
+    if (iconContainer) {
+        iconContainer.className = `p-2.5 rounded-xl ${isCurrent ? 'bg-emerald-100 text-emerald-700' : (isInstitution ? 'bg-indigo-100 text-indigo-700' : 'bg-purple-100 text-purple-700')} mt-0.5 shadow-2xs`;
+        const icon = isInstitution ? "landmark" : (owner.entity_type === "Individual" ? "user" : "building-2");
+        iconContainer.innerHTML = `<i data-lucide="${icon}" class="w-5 h-5"></i>`;
+    }
+
+    bodyContainer.innerHTML = `
+        <!-- Section 1: Property Units Associated -->
+        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+            <h5 class="text-xs font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
+                <i data-lucide="home" class="w-3.5 h-3.5 text-blue-600"></i>
+                <span>Property Schedule & Held Units (${(owner.property_units || []).length} Unit(s))</span>
+            </h5>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                ${(owner.property_units && owner.property_units.length > 0) ? owner.property_units.map(u => `
+                <div class="p-2 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="map-pin" class="w-3.5 h-3.5 text-blue-500 shrink-0"></i>
+                    <span class="truncate">${escapeHtml(u)}</span>
+                </div>
+                `).join('') : `
+                <div class="text-slate-500 text-xs">General property scope from certificate header</div>
+                `}
+            </div>
+        </div>
+
+        <!-- Section 2: Acquisition Instrument -->
+        <div class="p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs space-y-2">
+            <h5 class="text-xs font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
+                <i data-lucide="key" class="w-3.5 h-3.5 text-emerald-600"></i>
+                <span>Root Acquisition Deed (எவ்வாறு உரிமை பெறப்பட்டது)</span>
+            </h5>
+            ${owner.acquisition ? `
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-emerald-50/40 p-3 rounded-lg border border-emerald-100 text-xs">
+                <div>
+                    <span class="text-[10px] text-slate-500 uppercase block font-semibold">Document No & Year</span>
+                    <span class="font-extrabold text-slate-900 font-mono">${escapeHtml(owner.acquisition.doc_no)}</span>
+                </div>
+                <div>
+                    <span class="text-[10px] text-slate-500 uppercase block font-semibold">Registration Date</span>
+                    <span class="font-bold text-slate-800">${escapeHtml(owner.acquisition.date)}</span>
+                </div>
+                <div>
+                    <span class="text-[10px] text-slate-500 uppercase block font-semibold">Deed Nature</span>
+                    <span class="font-bold text-slate-800">${escapeHtml(owner.acquisition.nature)}</span>
+                </div>
+                <div>
+                    <span class="text-[10px] text-slate-500 uppercase block font-semibold">Consideration Amount</span>
+                    <span class="font-bold text-emerald-700 font-mono">${escapeHtml(owner.acquisition.consideration || '-')}</span>
+                </div>
+                <div class="col-span-2 sm:col-span-4 pt-1 border-t border-emerald-100 flex items-center justify-between text-[11px]">
+                    <span><b>Acquired From (Vendor/Executant):</b> ${escapeHtml(owner.acquisition.acquired_from || '-')}</span>
+                    ${owner.acquisition.extent && owner.acquisition.extent !== '-' ? `<span><b>Extent:</b> ${escapeHtml(owner.acquisition.extent)}</span>` : ''}
+                </div>
+            </div>
+            ` : `
+            <p class="text-xs text-slate-500 italic p-2 bg-slate-50 rounded-lg">
+                No registered acquisition deed (Sale/Settlement/Gift) recorded within the search period of this Encumbrance Certificate. The party may hold title through parent deeds prior to the search window or by inheritance.
+            </p>
+            `}
+        </div>
+
+        <!-- Section 3: Devolution / Transfer Out (If Applicable) -->
+        ${owner.transferred_to ? `
+        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+            <h5 class="text-xs font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
+                <i data-lucide="arrow-right-left" class="w-3.5 h-3.5 text-slate-600"></i>
+                <span>Subsequent Transfer / Devolution (உரிமை மாற்றம்)</span>
+            </h5>
+            <div class="p-3 bg-white rounded-lg border border-slate-200 text-xs space-y-1">
+                <div class="flex items-center justify-between">
+                    <span class="font-bold text-slate-800">Transferred To: <b class="text-purple-700">${escapeHtml(owner.transferred_to.transferred_to)}</b></span>
+                    <span class="font-mono text-slate-600">Doc: ${escapeHtml(owner.transferred_to.doc_no)}</span>
+                </div>
+                <div class="text-[11px] text-slate-500">Date of Registered Transfer: ${escapeHtml(owner.transferred_to.date)}</div>
+            </div>
+        </div>
+        ` : (isCurrent ? `
+        <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center gap-2 text-xs">
+            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+            <span><strong>Active Title Holder:</strong> No subsequent sale deed or alienation recorded against this party. Legal ownership remains intact.</span>
+        </div>
+        ` : '')}
+
+        <!-- Section 4: Loans & Mortgage Audit -->
+        <div class="p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs space-y-2">
+            <div class="flex items-center justify-between">
+                <h5 class="text-xs font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
+                    <i data-lucide="landmark" class="w-3.5 h-3.5 text-purple-600"></i>
+                    <span>Mortgage & Bank Loan Audit (அடமான பரிசீலனை)</span>
+                </h5>
+                <span class="text-[11px] font-bold ${owner.has_active_mortgages ? 'text-amber-600' : 'text-emerald-600'}">
+                    ${owner.has_active_mortgages ? '⚠️ ACTIVE LOANS RECORDED' : 'CLEAR / NO ACTIVE CHARGES'}
+                </span>
+            </div>
+            ${(owner.mortgages && owner.mortgages.length > 0) ? `
+            <div class="space-y-2">
+                ${owner.mortgages.map(m => `
+                <div class="p-2.5 rounded-lg border ${m.status === 'OPEN' ? 'bg-amber-50/50 border-amber-200 text-amber-950' : 'bg-slate-50 border-slate-200 text-slate-700'} text-xs space-y-1">
+                    <div class="flex items-center justify-between font-bold">
+                        <span>Lender: ${escapeHtml(m.lender)}</span>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-mono ${m.status === 'OPEN' ? 'bg-amber-200 text-amber-900' : 'bg-emerald-100 text-emerald-800'}">
+                            ${m.status === 'OPEN' ? '⚠️ OPEN / UNRELEASED' : 'CLOSED / SATISFIED'}
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] text-slate-600">
+                        <span>Doc: <b>${escapeHtml(m.doc_no)}</b> (${escapeHtml(m.date)})</span>
+                        ${m.amount && m.amount !== '-' ? `<span>Loan Sum: <b>${escapeHtml(m.amount)}</b></span>` : ''}
+                    </div>
+                    ${m.discharge_doc && m.discharge_doc !== '-' ? `
+                    <div class="text-[10px] text-emerald-800 font-mono pt-1 border-t border-slate-200">
+                        Discharge Receipt: <b>${escapeHtml(m.discharge_doc)}</b>
+                    </div>
+                    ` : ''}
+                </div>
+                `).join('')}
+            </div>
+            ` : `
+            <p class="text-xs text-slate-500 italic p-2 bg-slate-50 rounded-lg">
+                No mortgages, MODTs, or financial charges recorded under this owner in the Encumbrance Certificate.
+            </p>
+            `}
+        </div>
+
+        <!-- Section 5: Complete Transaction Trail -->
+        <div class="p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs space-y-2">
+            <h5 class="text-xs font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
+                <i data-lucide="history" class="w-3.5 h-3.5 text-indigo-600"></i>
+                <span>Complete Chronological Transaction Trail (${(owner.transactions || []).length} Document(s))</span>
+            </h5>
+            <div class="overflow-x-auto rounded-lg border border-slate-200">
+                <table class="min-w-full divide-y divide-slate-200 text-xs">
+                    <thead class="bg-slate-50 text-slate-600">
+                        <tr>
+                            <th class="px-2.5 py-2 text-left font-bold">Doc No & Date</th>
+                            <th class="px-2.5 py-2 text-left font-bold">Nature</th>
+                            <th class="px-2.5 py-2 text-left font-bold">Party Role</th>
+                            <th class="px-2.5 py-2 text-left font-bold">Counterparty</th>
+                            <th class="px-2.5 py-2 text-right font-bold">Value</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 bg-white">
+                        ${(owner.transactions && owner.transactions.length > 0) ? owner.transactions.map(t => `
+                        <tr class="hover:bg-slate-50/80">
+                            <td class="px-2.5 py-2 font-mono whitespace-nowrap">
+                                <div class="font-bold text-slate-900">${escapeHtml(t.doc_no)}</div>
+                                <div class="text-[10px] text-slate-500">${escapeHtml(t.date)}</div>
+                            </td>
+                            <td class="px-2.5 py-2 font-medium text-slate-800">${escapeHtml(t.nature)}</td>
+                            <td class="px-2.5 py-2">
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold ${t.role.includes('Claimant') ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-blue-50 text-blue-800 border border-blue-200'}">${escapeHtml(t.role)}</span>
+                            </td>
+                            <td class="px-2.5 py-2 text-slate-600 max-w-[180px] truncate" title="${escapeHtml(t.counterparty)}">${escapeHtml(t.counterparty)}</td>
+                            <td class="px-2.5 py-2 text-right font-mono font-bold text-slate-800">${escapeHtml(t.amount || '-')}</td>
+                        </tr>
+                        `).join('') : `
+                        <tr><td colspan="5" class="px-3 py-2 text-center text-slate-400">No transactions recorded.</td></tr>
+                        `}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+
+    modal.classList.remove("hidden");
+    lucide.createIcons();
+}
+
+function closeOwnerDossier() {
+    const modal = document.getElementById("owner-dossier-modal");
+    if (modal) {
+        modal.classList.add("hidden");
     }
 }
 
@@ -2300,7 +3057,7 @@ function renderInheritanceResults(bundleData) {
 // 8. Tab, Zoom, Search, and Export helpers
 function switchTab(tabName) {
     state.activeTab = tabName;
-    ["fields", "property-filter", "checklist", "table", "ocr"].forEach(t => {
+    ["fields", "owners", "property-filter", "checklist", "table", "ocr"].forEach(t => {
         const btn = document.getElementById(`tab-btn-${t}`);
         const content = document.getElementById(`tab-content-${t}`);
         if (btn && content) {
