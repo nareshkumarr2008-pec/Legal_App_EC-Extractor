@@ -1,0 +1,280 @@
+{
+  "vendor_details": {
+    "value": "Mr.N.MUTHUKARUPPAN, Son of Mr.Nagappa Chettiar, Hindu, aged about 60 years, and I residing at Flat No.A-2, Ground Floor, Apollo Twins, Old No.119, No.53, Periyar Pathai, Choolaimedu, Chennai 600094",
+    "confidence": 0.95,
+    "label": "விற்பவர் விவரம் (Vendor / Executant Details)",
+    "bilingual": {
+      "english": "Mr.N.MUTHUKARUPPAN, Son of Mr.Nagappa Chettiar, Hindu, aged about 60 years, and I residing at Flat No.A-2, Ground Floor, Apollo Twins, Old No.119, No.53, Periyar Pathai, Choolaimedu, Chennai 600094",
+      "tamil": "ம்ர் N. முதுகருப்பஅந் ஸொந் ஒப் ம்ர்.நகப்பஅ செட்டஇஅர் ஹிந்து அகெட் அபௌட் 60 யெஅர்ஸ் அந்த் இ ரெஸிடிங அட் அடுக்குமாடி குடியிருப்பு நொ.அ-2 க்ரௌந்த் ப்லூர் அபொல்லஒ த்விந்ஸ் பழைய நொ.119 நொ.53 பெரியர் பதை சூலைமெடு சென்னை 600094"
+    },
+    "box": {
+      "page_index": 0,
+      "page_number": 1,
+      "x_pct": 63.02,
+      "y_pct": 53.71,
+      "w_pct": 23.71,
+      "h_pct": 2.1
+    }
+  },
+  "purchaser_details": {
+    "value": "Mr.M.6.NAAGESH, Son of Late.M.N.Gopal, Hindu, aged about 42 years,! residing at o.6/2, Sri Ramar Street, Devaraj Nagar, lhasarathapura, Saligramam, Chennai 600093 (Represented by POA Agent: Mrs. V.M. Bhuwaneesvari)",
+    "confidence": 0.95,
+    "label": "வாங்குபவர் விவரம் (Purchaser / Claimant Details)",
+    "bilingual": {
+      "english": "Mr.M.6.NAAGESH, Son of Late.M.N.Gopal, Hindu, aged about 42 years,! residing at o.6/2, Sri Ramar Street, Devaraj Nagar, lhasarathapura, Saligramam, Chennai 600093",
+      "tamil": "Represented by POA Agent: Mrs. V.M. Bhuwaneesvari) (ம்ர் M. 6.நாகெஷ ஸொந் ஒப் லதெ M. N. கொபல் ஹிந்து அகெட் அபௌட் 42 யெஅர்ஸ் ரெஸிடிங அட் ஒ.6/2 ஸ்ரி ரமர் தெரு டெவரஜ் நகர் ல்ஹஸரதபுரா ஸலிக்ரமம் சென்னை 600093 ரெப்ரெஸெந்த்எட் ப்ய் பொஅ அகெந்த் ம்ர்ஸ் வ்.ம் புவனீஸ்வரி"
+    },
+    "box": {
+      "page_index": 2,
+      "page_number": 3,
+      "x_pct": 41.53,
+      "y_pct": 49.45,
+      "w_pct": 29.47,
+      "h_pct": 16.28
+    }
+  },
+  "poa_agent_details": {
+    "value": "Mrs.V.M.BHUWANEESVARI, Wife of Mr~M.B.Naagesh, Hindu, aged about 3S years, residing at No.6/2, Sri Ramar Street, Devaraj Nagar, Dasarathapuram, Saligramam, Chennai 600093, (which deed of Power ,.,,as duly registered under document No.1698 of 2010, dated 03.11.2010, registered with SRO Virugambakkam)",
+    "confidence": 0.94,
+    "label": "பவர் ஏஜென்ட் விவரம் (Power of Attorney Agent)",
+    "bilingual": {
+      "english": "Mrs.V.M.BHUWANEESVARI, Wife of Mr~M.B.Naagesh, Hindu, aged about 3S years, residing at No.6/2, Sri Ramar Street, Devaraj Nagar, Dasarathapuram, Saligramam, Chennai 600093,",
+      "tamil": "which deed of Power ,.,,as duly registered under document No.1698 of 2010, dated 03.11.2010, registered with SRO Virugambakkam) (ம்ர்ஸ் V. M. புவனீஸ்வரி விபெ ஒப் ம்ர்~ம்.ப். நாகெஷ ஹிந்து அகெட் அபௌட் 3ஸ் யெஅர்ஸ் ரெஸிடிங அட் நொ.6/2 ஸ்ரி ரமர் தெரு டெவரஜ் நகர் டஸரதபுரம் ஸலிக்ரமம் சென்னை 600093 வ்ஹிச பத்திரம் ஒப் அதிகாரம் அஸ் டுல்ய் ரெகிஸ்தெரெட் உந்தேர் ஆவணம் நொ.1698 ஒப் 2010 டதெட் 03.11.2010 ரெகிஸ்தெரெட் வித சார்பதிவாளர் அலுவலகம் விருகம்பக்கம்"
+    }
+  },
+  "history_previous_owner": {
+    "value": "(1) I A.D.BALAKRI~HNAN (2) D.B.GOPINATH and (3) D.B.BALAJI represented by their General Power of Attorney Agent His.APOLLO ESTATES AND BUILDERS PRIVATE LTD, represented by • ,..- '~ their Power of Attorney Agent Mr.JAMAL ASAN ALIYAR",
+    "confidence": 0.92,
+    "label": "முந்தைய உரிமையாளர் (Previous Owner / History)",
+    "bilingual": {
+      "english": "",
+      "tamil": "1) I A.D.BALAKRI~HNAN (2) D.B.GOPINATH and (3) D.B.BALAJI represented by their General Power of Attorney Agent His.APOLLO ESTATES AND BUILDERS PRIVATE LTD, represented by • ,..- '~ their Power of Attorney Agent Mr.JAMAL ASAN ALIYAR (1 இ A.D. பலக்ரி~ஹ்னன் 2 D.B. கொபிநத அந்த் 3 D.B. பாலாஜி ரெப்ரெஸெந்த்எட் ப்ய் தெஇர் ஜெனரல் அதிகாரம் ஒப் முகவர் / பத்திரம் அகெந்த் ஹிஸ்.அபொல்லஒ எஸ்டேட்ஸ் அந்த் பில்டர்ஸ் தனியார் ல்ட்ட் ரெப்ரெஸெந்த்எட் ப்ய் • ,..- '~ தெஇர் அதிகாரம் ஒப் முகவர் / பத்திரம் அகெந்த் ம்ர்.ஜமல் அஸன் அலியர்"
+    }
+  },
+  "previous_doc_reference": {
+    "value": "Mother Deed: Doc No. 7126 of 1995 (Dated 14.12.1995) at SRO Kodambakkam | GPA Deed: Doc No. 1698 of\n2010 (Dated 03.11.2010) at SRO Virugambakkam",
+    "confidence": 0.92,
+    "label": "முந்தைய ஆவணக் குறிப்பு (Previous Document Reference)",
+    "bilingual": {
+      "english": "Mother Deed: Doc No. 7126 of 1995 (Dated 14.12.1995) at SRO Kodambakkam | GPA Deed: Doc No. 1698 of\n2010 (Dated 03.11.2010) at SRO Virugambakkam (மொதெர் பத்திரம் டொக் நொ 7126 ஒப் 1995 டதெட் 14.12.1995 அட் சார்பதிவாளர் அலுவலகம் கொடம்பக்கம் | க்பா பத்திரம் டொக் நொ 1698 ஒப் 2010 டதெட் 03.11.2010 அட் சார்பதிவாளர் அலுவலகம் விருகம்பக்கம்)",
+      "tamil": "Mother Deed: Doc No. 7126 of 1995 (Dated 14.12.1995) at SRO Kodambakkam | GPA Deed: Doc No. 1698 of\n2010 (Dated 03.11.2010) at SRO Virugambakkam"
+    }
+  },
+  "schedule_property_type": {
+    "value": "Apartment / Flat (with UDS)",
+    "confidence": 0.95,
+    "label": "சொத்து விவரம் (Schedule of Property)",
+    "bilingual": {
+      "english": "Apartment / Flat",
+      "tamil": "with UDS) (அபர்ட்மெந்த் / அடுக்குமாடி குடியிருப்பு வித உட்ஸ்"
+    }
+  },
+  "flat_details": {
+    "value": "Flat No.A-2, Ground Floor, Apollo Twins",
+    "confidence": 0.94,
+    "label": "பிளாட் மற்றும் முகவரி (Flat & Building Details)",
+    "bilingual": {
+      "english": "Flat No.A-2, Ground Floor, Apollo Twins",
+      "tamil": "அடுக்குமாடி குடியிருப்பு நொ.அ-2 க்ரௌந்த் ப்லூர் அபொல்லஒ த்விந்ஸ்"
+    }
+  },
+  "survey_number": {
+    "value": "78 of Block No.1",
+    "confidence": 0.95,
+    "label": "புல எண் (Survey Number / S.No)",
+    "bilingual": {
+      "english": "78 of Block No.1",
+      "tamil": "78 ஒப் பிளாக் நொ.1"
+    }
+  },
+  "village_taluk_district": {
+    "value": "Puliyur Village (புலியுர் கிராமம்) / Egmore Nungambakkam Taluk (எழும்பூர் நுஙம்பக்கம் வட்டம்) / Chennai District (சென்னை மாவட்டம்)",
+    "confidence": 0.94,
+    "label": "கிராமம் / வட்டம் / மாவட்டம் (Village / Taluk / District)",
+    "bilingual": {
+      "english": "Puliyur Village",
+      "tamil": "puliyur Kiraamam) / Egmore Nungambakkam Taluk (ezhumboor Nungambagkam Vadtam) / Chennai District (sennai Maavadtam) (Puliyur Village (புலியுர் கிராமம்) / Egmore Nungambakkam Taluk (எழும்பூர் நுஙம்பக்கம் வட்டம்) / Chennai District (சென்னை மாவட்டம்)"
+    }
+  },
+  "corporation_division": {
+    "value": "Chennai Corporation Division No. 92",
+    "confidence": 0.94,
+    "label": "மாநகராட்சி பகுதி (Corporation Division / Ward)",
+    "bilingual": {
+      "english": "Chennai Corporation Division No. 92",
+      "tamil": "சென்னை கழகம் டிவிஸிஒந் நொ 92"
+    }
+  },
+  "land_extent": {
+    "value": "Two Grounds (Total Land Extent: 6,930 sq.ft)",
+    "confidence": 0.93,
+    "label": "மொத்த நிலப் பரப்பு (Total Land Extent)",
+    "bilingual": {
+      "english": "Two Grounds",
+      "tamil": "Total Land Extent: 6,930 sq.ft) (த்வொ க்ரௌந்த்ஸ் தொதல் லந்த் விஸ்தீரணம் / பரப்பு 6,930 சதுரடி"
+    }
+  },
+  "apartment_uds_floor": {
+    "value": "UDS: 768 sq.ft | Built-up Area: 907 sq.ft | Flat No.A-2, Ground Floor, Apollo Twins",
+    "confidence": 0.94,
+    "label": "பிரிக்கப்படா பங்கு / கட்டிடப் பரப்பு (UDS & Built-Up Area)",
+    "bilingual": {
+      "english": "UDS: 768 sq.ft | Built-up Area: 907 sq.ft | Flat No.A-2, Ground Floor, Apollo Twins",
+      "tamil": "உட்ஸ் 768 சதுரடி | புஇல்ட்-உப் அரெஅ 907 சதுரடி | அடுக்குமாடி குடியிருப்பு நொ.அ-2 க்ரௌந்த் ப்லூர் அபொல்லஒ த்விந்ஸ்"
+    }
+  },
+  "boundaries": {
+    "value": "North: land belonging to Duraiswamy Pillai | South: Public Road | East: land belongino to Manogarammal | West: land K~puswamy Naicker",
+    "confidence": 0.95,
+    "label": "நான்கு எல்லைகள் (Four Boundaries N/S/E/W)",
+    "structured_boundaries": {
+      "North": "land belonging to Duraiswamy Pillai",
+      "South": "Public Road",
+      "East": "land belongino to Manogarammal",
+      "West": "land K~puswamy Naicker"
+    },
+    "bilingual": {
+      "english": "North: land belonging to Duraiswamy Pillai | South: Public Road | East: land belongino to Manogarammal | West: land K~puswamy Naicker",
+      "tamil": "வடக்கு லந்த் பெலொஙிங தொ டுரைஸ்வம்ய் பில்லஐ | தெற்கு பொது சாலை | கிழக்கு லந்த் பெலொஙிநொ தொ மனொகரம்மஅல் | மேற்கு லந்த் க்~புஸ்வம்ய் நைக்கஎர்"
+    }
+  },
+  "land_classification": {
+    "value": "House Site / Residential",
+    "confidence": 0.85,
+    "label": "நில வகைப்பாடு (Classification - Wet/Dry/House Site)",
+    "bilingual": {
+      "english": "House Site / Residential",
+      "tamil": "ஹௌஸெ ஸிதெ / குடியிருப்பு"
+    }
+  },
+  "consideration_amount": {
+    "value": "Rs. 23,00,000/-",
+    "confidence": 0.96,
+    "label": "கிரையத் தொகை (Consideration Amount)",
+    "bilingual": {
+      "english": "Rs. 23,00,000/-",
+      "tamil": "ர்ஸ் 23,00,000"
+    }
+  },
+  "market_value": {
+    "value": "Rs. 23,00,000/- (Rupees twenty three lakhs only)",
+    "confidence": 0.95,
+    "label": "சந்தை மதிப்பு (Market Value of Property)",
+    "bilingual": {
+      "english": "Rs. 23,00,000/-",
+      "tamil": "Rupees twenty three lakhs only) (ர்ஸ் 23,00,000 ருபீஸ் த்வெந்த்ய் த்ரஈ லகஸ் ஒந்ல்ய்"
+    }
+  },
+  "payment_breakdown": {
+    "value": "1. Advance: Rs. 1,00,000/- (Cheque No. 340705 on Canara Bank dated 08.09.2010) | 2. Demand Draft: Rs. 2,00,000/- (DD No. 050749 on Canara Bank dated 18.11.2010) | 3. Housing Loan: Rs. 20,00,000/- (HDFC Ltd Banker's Cheque No. 005403 dated 19.11.2010)",
+    "confidence": 0.95,
+    "label": "செலுத்தல் விபரம் (Payment & Loan Mode)",
+    "bilingual": {
+      "english": "1. Advance: Rs. 1,00,000/-",
+      "tamil": "Cheque No. 340705 on Canara Bank dated 08.09.2010) | 2. Demand Draft: Rs. 2,00,000/- (DD No. 050749 on Canara Bank dated 18.11.2010) | 3. Housing Loan: Rs. 20,00,000/- (HDFC Ltd Banker's Cheque No. 005403 dated 19.11.2010) (1 அட்வன்கெ ர்ஸ் 1,00,000 செகுஎ நொ 340705 ஒந் கனரா பாங்க் டதெட் 08.09.2010 | 2 டெமந்த் டாக்டர். அப்ட் ர்ஸ் 2,00,000 ட்ட நொ 050749 ஒந் கனரா பாங்க் டதெட் 18.11.2010 | 3 ஹவுஸிங் கடன் ர்ஸ் 20,00,000 ஹ்ட்ப்க் ல்ட்ட் பன்கெர்'ஸ் செகுஎ நொ 005403 டதெட் 19.11.2010"
+    }
+  },
+  "sro_details": {
+    "value": "SRO Kodambakkam",
+    "confidence": 0.95,
+    "label": "பதிவாளர் அலுவலகம் (SRO Details)",
+    "bilingual": {
+      "english": "SRO Kodambakkam",
+      "tamil": "சார்பதிவாளர் அலுவலகம் கொடம்பக்கம்"
+    }
+  },
+  "document_number": {
+    "value": "Doc No. 3978 of 2010",
+    "confidence": 0.96,
+    "label": "ஆவண எண் (Document Number)",
+    "bilingual": {
+      "english": "Doc No. 3978 of 2010",
+      "tamil": "டொக் நொ 3978 ஒப் 2010"
+    }
+  },
+  "registration_date": {
+    "value": "22-11-2010 (22nd November 2010)",
+    "confidence": 0.95,
+    "label": "பதிவு நாள் (Registration Date)",
+    "bilingual": {
+      "english": "22-11-2010",
+      "tamil": "22nd November 2010) (22-11-2010 22ந்த் நொவெம்பெர் 2010"
+    }
+  },
+  "utility_tax_identifiers": {
+    "value": "TNEB Connection: 09-285-003-181 | CMWSSB Customer ID: 79090 | Property Tax: New Door No.53/A2 and Old No.119/A2",
+    "confidence": 0.94,
+    "label": "மின் & வரி இணைப்பு (Utility & Tax Identifiers)",
+    "tneb": "09-285-003-181",
+    "cmwssb": "79090",
+    "tax_assessment": "New Door No.53/A2 and Old No.119/A2",
+    "bilingual": {
+      "english": "TNEB Connection: 09-285-003-181 | CMWSSB Customer ID: 79090 | Property Tax: New Door No.53/A2 and Old No.119/A2",
+      "tamil": "த்னெப் கொண்ணஎக்திஒந் 09-285-003-181 | க்ம்வ்ஸ்ஸப் குஸ்தொமெர் இட் 79090 | சொத்து தக்ஸ் புதிய கதவு நொ.53/அ2 அந்த் பழைய நொ.119/அ2"
+    }
+  },
+  "document_drafter": {
+    "value": "N. Mohanambal, Document Writer (Licence No. A/894/MS(S)/99)",
+    "confidence": 0.94,
+    "label": "பத்திர எழுத்தர் (Document Writer / Drafter)",
+    "bilingual": {
+      "english": "N. Mohanambal, Document Writer",
+      "tamil": "Licence No. A/894/MS(S)/99) (ந் மொஹனம்பல் ஆவணம் வ்ரிதெர் லிகெந்கெ நொ அ/894/ம்ஸ்(ஸ்)/99"
+    }
+  },
+  "masked_aadhaar": {
+    "value": "Not Detected",
+    "confidence": 0.0,
+    "label": "ஆதார் (DPDP Masked Aadhaar - Last 4 Digits)",
+    "bilingual": {
+      "english": "Not Detected",
+      "tamil": "Not Detected"
+    }
+  },
+  "pan_number": {
+    "value": "Not Detected",
+    "confidence": 0.0,
+    "label": "பான் எண் (PAN Number)",
+    "bilingual": {
+      "english": "Not Detected",
+      "tamil": "Not Detected"
+    }
+  },
+  "checklist": [
+    {
+      "rule": "விற்பவர் மற்றும் வாங்குபவர் விபரம் (Parties to Deed Identified)",
+      "is_valid": true,
+      "details": "Vendor: Mr.N.MUTHUKARUPPAN, Son of Mr.Nagappa Chettia... | Purchaser: Mr.M.6.NAAGESH, Son of Late.M.N.Gopal, Hindu,..."
+    },
+    {
+      "rule": "சொத்து விபரம் மற்றும் புல எண் (Schedule of Property & Survey No)",
+      "is_valid": true,
+      "details": "Survey No: 78 of Block No.1 in Puliyur Village"
+    },
+    {
+      "rule": "நான்கு எல்லைகள் குறிப்பிடப்பட்டுள்ளது (Four Boundaries Specified)",
+      "is_valid": true,
+      "details": "Boundaries: North: land belonging to Duraiswamy Pillai | South: Public R..."
+    },
+    {
+      "rule": "கிரையத் தொகை மற்றும் சந்தை மதிப்பு (Consideration & Market Value)",
+      "is_valid": true,
+      "details": "Consideration: Rs. 23,00,000/-"
+    },
+    {
+      "rule": "சார்பதிவாளர் பதிவு & ஆவண எண் (SRO Registration & Doc No)",
+      "is_valid": true,
+      "details": "3978 of 2010 registered at SRO Kodambakkam"
+    },
+    {
+      "rule": "முந்தைய மூல ஆவணத் தொடர்பு (Mother Deed / Prior Title Chain Trace)",
+      "is_valid": true,
+      "details": "Prior Title: Mother Deed: Doc No. 7126 of 1995 (Dated 14.12.1995) at SRO Kodambakkam | GPA Deed: Doc No. 1698 of\n2010 (Dated 03.11.2010) at SRO Virugambakkam"
+    },
+    {
+      "rule": "DPDP சட்டம் அடையாளப் பாதுகாப்பு (DPDP Identity Compliance)",
+      "is_valid": true,
+      "details": "Aadhaar / ID numbers securely masked and processed under DPDP Act norms."
+    }
+  ]
+}

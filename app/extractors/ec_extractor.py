@@ -20,7 +20,10 @@ from datetime import datetime
 from collections import defaultdict
 from typing import Dict, Any, List, Optional, Tuple
 
-import pdfplumber
+try:
+    import pdfplumber
+except ImportError:
+    pdfplumber = None
 from app.translator import (
     format_bilingual_entity,
     transliterate_tamil_text,

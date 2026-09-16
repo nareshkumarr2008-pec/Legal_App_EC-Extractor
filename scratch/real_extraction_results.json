@@ -1,0 +1,183 @@
+{
+  "vendor_details": {
+    "value": "Mr.N.MUTHUKARUPPAN, Son of Mr.Nagappa Chettiar, Hindu, aged about 60 years, and I residing at Flat No.A-2, Ground Floor, Apollo Twins, Old No.119, No.53, Periyar Pathai, Choolaimedu, Chennai 600094",
+    "confidence": 0.95,
+    "label": "விற்பவர் விவரம் (Vendor / Executant Details)",
+    "box_query": "VENDOR | MUTHUKARUPPAN | RAJENDRAN"
+  },
+  "purchaser_details": {
+    "value": "Mr.M.6.NAAGESH, Son of Late.M.N.Gopal, Hindu, aged about 42 years,! residing at o.6/2, Sri Ramar Street, Devaraj Nagar, lhasarathapura, Saligramam, Chennai 600093, by his General Power of Attorney Agent I ' t --- PAGE 2 --- ...... f'.-t.-/tTA-'l- ,C;, ~L.oc'2-, AA>L-LO\"\"tV \\n~ r llf(;~, f'r::~J.y~ f'P.11'/ll., CttoolJ-l-ME:OVr AAMPM'1ol~C.. \"7, -.,. • -:. ~ \"i 't f'-' I'! • µ \" 7 , ' .SI\" r \" '1 I/ ~ -\"'\"\" S /o If N ~\"f ~ . ,o.. f3 H a s I'>-A Iv IV1 I 2-, ft. S le-, \"\"\"1;;, I-<.' .s-.J.:r- IZ/P.'2- 91 .,._..,. • 'r E --- PAGE 3 --- 9657 . I ~,. • . - -2- ........ l •, . .. . Mrs.V.M.BHUWANEESVARI, Wife of Mr~M.B.Naagesh, Hindu, aged about 3S years, residing at No.6/2, Sri Ramar Street, Devaraj Nagar, Dasarathapuram, Saligramam, Chennai 600093, (Represented by POA Agent: His.APOLLO ESTATES AND BUILDERS PRIVATE LTD, represented by)",
+    "confidence": 0.95,
+    "label": "வாங்குபவர் விவரம் (Purchaser / Claimant Details)",
+    "box_query": "PURCHASER | NAAGESH | LAKSHMI"
+  },
+  "poa_agent_details": {
+    "value": "His.APOLLO ESTATES AND BUILDERS PRIVATE LTD, represented by",
+    "confidence": 0.94,
+    "label": "பவர் ஏஜென்ட் விவரம் (Power of Attorney Agent)",
+    "box_query": "Power of Attorney | BHUWANEESVARI"
+  },
+  "history_previous_owner": {
+    "value": "(1) I A.D.BALAKRI~HNAN (2) D.B.GOPINATH and (3) D.B.BALAJI represented by their General Power of Attorney Agent His.APOLLO ESTATES AND BUILDERS PRIVATE LTD, represented by • ,..- '~ their Power of Attorney Agent Mr.JAMAL ASAN ALIYAR",
+    "confidence": 0.92,
+    "label": "முந்தைய உரிமையாளர் (Previous Owner / History)",
+    "box_query": "purchased | previous owner | BALAKRISHNAN | Classic Foundations"
+  },
+  "previous_doc_reference": {
+    "value": "Not Detected",
+    "confidence": 0.0,
+    "label": "முந்தைய ஆவணக் குறிப்பு (Previous Document Reference)",
+    "box_query": "7126 | 1820 | previous document"
+  },
+  "schedule_property_type": {
+    "value": "Apartment / Flat (with UDS)",
+    "confidence": 0.95,
+    "label": "சொத்து விவரம் (Schedule of Property)"
+  },
+  "flat_details": {
+    "value": "Flat No.A-2, Ground Floor, Apollo Twins",
+    "confidence": 0.94,
+    "label": "பிளாட் மற்றும் முகவரி (Flat & Building Details)",
+    "box_query": "Flat No"
+  },
+  "survey_number": {
+    "value": "78 of Block No.1",
+    "confidence": 0.95,
+    "label": "புல எண் (Survey Number / S.No)",
+    "box_query": "78 of Block No.1"
+  },
+  "village_taluk_district": {
+    "value": "Puliyur Village (புலியுர் கிராமம்) / Egmore Nungambakkam Taluk (எழும்பூர் நுஙம்பக்கம் வட்டம்) / Chennai District (சென்னை மாவட்டம்)",
+    "confidence": 0.94,
+    "label": "கிராமம் / வட்டம் / மாவட்டம் (Village / Taluk / District)",
+    "box_query": "Village | Taluk | District"
+  },
+  "corporation_division": {
+    "value": "Chennai Corporation Division No. 92",
+    "confidence": 0.94,
+    "label": "மாநகராட்சி பகுதி (Corporation Division / Ward)"
+  },
+  "land_extent": {
+    "value": "a) Value of the site (LAND) it• .",
+    "confidence": 0.93,
+    "label": "மொத்த நிலப் பரப்பு (Total Land Extent)",
+    "box_query": "extent | square feet | Ground"
+  },
+  "apartment_uds_floor": {
+    "value": "UDS: 768 sq.ft | Built-up Area: 907 sq.ft | Flat No.A-2, Ground Floor, Apollo Twins",
+    "confidence": 0.94,
+    "label": "பிரிக்கப்படா பங்கு / கட்டிடப் பரப்பு (UDS & Built-Up Area)",
+    "box_query": "undivided share | 907 | 768"
+  },
+  "boundaries": {
+    "value": "North: land belonging to Duraiswamy Pillai | South: Public Road | East: land belongino to Manogarammal | West: land K~puswamy Naicker",
+    "confidence": 0.95,
+    "label": "நான்கு எல்லைகள் (Four Boundaries N/S/E/W)",
+    "structured_boundaries": {
+      "North": "land belonging to Duraiswamy Pillai",
+      "South": "Public Road",
+      "East": "land belongino to Manogarammal",
+      "West": "land K~puswamy Naicker"
+    },
+    "box_query": "bounded on | North by | South by"
+  },
+  "land_classification": {
+    "value": "House Site / Residential",
+    "confidence": 0.85,
+    "label": "நில வகைப்பாடு (Classification - Wet/Dry/House Site)"
+  },
+  "consideration_amount": {
+    "value": "Rs. 23,00,000/- (Rupees\ntwenty if,ree\n....\n\"\n:I\n--- PAGE 8 ---\n• l .\n• ,.. ; ~ I\n'.\nl\n\\ \\\n. ...\n'\n...\n( '\\' > .\n.. -\n,..... ..\n...\n.. -.-- .\n.....-.-...\n...\n--- PAGE 9 ---\nI\n~.5000\n,{\nF~\nS.\nf\n~\n/!f.~}ve\nU\nnd\nS\ne\nA\nr\nMZ..J\nLicence No.: 15 / 03 / 97\n-5-\nl<..K. t.Ja9ar. Chennai -78.\nWHEREAS the Purchaser offered to purchase the schedule\npropertyl for the said amount free of encumbrances and the\nVendor hive agreed to the same.\nthe Purchaser herein has approached the HDFC\nLTD, Chefnai, for a housing loan and got sanctioned a loan of\nRs.20,00,000/- (Rupees twenty lakhs only)",
+    "confidence": 0.96,
+    "label": "கிரையத் தொகை (Consideration Amount)",
+    "box_query": "23,00,000 | consideration"
+  },
+  "market_value": {
+    "value": "Rs. 23,00,000/- (Rupees twenty three lakhs only)",
+    "confidence": 0.95,
+    "label": "சந்தை மதிப்பு (Market Value of Property)"
+  },
+  "payment_breakdown": {
+    "value": "Payment: Rs. 1,00,000/- | Payment: Rs. 20,00,000/-",
+    "confidence": 0.95,
+    "label": "செலுத்தல் விபரம் (Payment & Loan Mode)"
+  },
+  "sro_details": {
+    "value": "SRO Kodambakkam",
+    "confidence": 0.95,
+    "label": "பதிவாளர் அலுவலகம் (SRO Details)",
+    "box_query": "Kodambakkam | Sub-Registrar | SRO"
+  },
+  "document_number": {
+    "value": "Not Detected",
+    "confidence": 0.0,
+    "label": "ஆவண எண் (Document Number)",
+    "box_query": "3978"
+  },
+  "registration_date": {
+    "value": "1-1-11",
+    "confidence": 0.94,
+    "label": "பதிவு நாள் (Registration Date)",
+    "box_query": "1-1-11"
+  },
+  "utility_tax_identifiers": {
+    "value": "TNEB Connection: 09-285-003-181 | CMWSSB Customer ID: 79090 | Property Tax: New Door No.53/A2 and Old No.119/A2",
+    "confidence": 0.94,
+    "label": "மின் & வரி இணைப்பு (Utility & Tax Identifiers)",
+    "tneb": "09-285-003-181",
+    "cmwssb": "79090",
+    "tax_assessment": "New Door No.53/A2 and Old No.119/A2"
+  },
+  "document_drafter": {
+    "value": "L. No. A/894/MS(S)/99",
+    "confidence": 0.93,
+    "label": "பத்திர எழுத்தர் (Document Writer / Drafter)"
+  },
+  "masked_aadhaar": {
+    "value": "Not Detected",
+    "confidence": 0.0,
+    "label": "ஆதார் (DPDP Masked Aadhaar - Last 4 Digits)"
+  },
+  "pan_number": {
+    "value": "Not Detected",
+    "confidence": 0.0,
+    "label": "பான் எண் (PAN Number)"
+  },
+  "checklist": [
+    {
+      "rule": "விற்பவர் மற்றும் வாங்குபவர் விபரம் (Parties to Deed Identified)",
+      "is_valid": true,
+      "details": "Vendor: Mr.N.MUTHUKARUPPAN, Son of Mr.Nagappa Chettia... | Purchaser: Mr.M.6.NAAGESH, Son of Late.M.N.Gopal, Hindu,..."
+    },
+    {
+      "rule": "சொத்து விபரம் மற்றும் புல எண் (Schedule of Property & Survey No)",
+      "is_valid": true,
+      "details": "Survey No: 78 of Block No.1 in Puliyur Village"
+    },
+    {
+      "rule": "நான்கு எல்லைகள் குறிப்பிடப்பட்டுள்ளது (Four Boundaries Specified)",
+      "is_valid": true,
+      "details": "Boundaries: North: land belonging to Duraiswamy Pillai | South: Public R..."
+    },
+    {
+      "rule": "கிரையத் தொகை மற்றும் சந்தை மதிப்பு (Consideration & Market Value)",
+      "is_valid": true,
+      "details": "Consideration: Rs. 23,00,000/- (Rupees\ntwenty if,ree\n....\n\"\n:I\n--- PAGE 8 ---\n• l .\n• ,.. ; ~ I\n'.\nl\n\\ \\\n. ...\n'\n...\n( '\\' > .\n.. -\n,..... ..\n...\n.. -.-- .\n.....-.-...\n...\n--- PAGE 9 ---\nI\n~.5000\n,{\nF~\nS.\nf\n~\n/!f.~}ve\nU\nnd\nS\ne\nA\nr\nMZ..J\nLicence No.: 15 / 03 / 97\n-5-\nl<..K. t.Ja9ar. Chennai -78.\nWHEREAS the Purchaser offered to purchase the schedule\npropertyl for the said amount free of encumbrances and the\nVendor hive agreed to the same.\nthe Purchaser herein has approached the HDFC\nLTD, Chefnai, for a housing loan and got sanctioned a loan of\nRs.20,00,000/- (Rupees twenty lakhs only)"
+    },
+    {
+      "rule": "சார்பதிவாளர் பதிவு & ஆவண எண் (SRO Registration & Doc No)",
+      "is_valid": false,
+      "details": "No Doc No registered at SRO Kodambakkam"
+    },
+    {
+      "rule": "முந்தைய மூல ஆவணத் தொடர்பு (Mother Deed / Prior Title Chain Trace)",
+      "is_valid": false,
+      "details": "Prior Title: Chain traced from developer/vendor"
+    },
+    {
+      "rule": "DPDP சட்டம் அடையாளப் பாதுகாப்பு (DPDP Identity Compliance)",
+      "is_valid": true,
+      "details": "Aadhaar / ID numbers securely masked and processed under DPDP Act norms."
+    }
+  ]
+}

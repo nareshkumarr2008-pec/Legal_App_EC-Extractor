@@ -1390,7 +1390,7 @@ def generate_ocr_pdf_report(data: Dict[str, Any], lang: str = "en") -> bytes:
             status_color = "#16a34a" if passed else "#dc2626"
             status_html = f"<font color='{status_color}'><b>{status_word}</b></font>"
             rule_name = item.get("title") or item.get("rule_name", "")
-            remarks = item.get("detail") or item.get("remarks", "")
+            remarks = item.get("details") or item.get("detail") or item.get("remarks", "")
             if len(remarks) > 400:
                 remarks = remarks[:400] + "..."
             chk_rows.append([

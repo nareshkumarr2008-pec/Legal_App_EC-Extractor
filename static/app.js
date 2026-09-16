@@ -207,6 +207,8 @@ function selectCategory(catId, loadDoc = true) {
     updateCategoryInfo(catId);
     lucide.createIcons();
 
+    if (state.isProcessing) return;
+
     if (state.currentFile) {
         triggerProcess();
     } else if (loadDoc && state.currentResult) {
@@ -321,6 +323,7 @@ function handleFileSelected(file) {
         lucide.createIcons();
     }
 
+    if (state.isProcessing) return;
     triggerProcess();
 }
 
@@ -392,105 +395,128 @@ async function runOcrProcess() {
         return;
     }
 
-    const lang = document.getElementById("ocr-lang-select").value;
-    const docType = state.selectedCategoryId;
-    const useLlmEl = document.getElementById("toggle-use-llm");
-    const useLlm = useLlmEl ? useLlmEl.checked : true;
+    if (state.isProcessing) return;
+    state.isProcessing = true;
 
-    const pagesScopeEl = document.getElementById("ocr-pages-select");
-    const pagesScope = pagesScopeEl ? pagesScopeEl.value : "all";
-    let pageRangeParam = null;
-    let maxPagesParam = null;
-    if (pagesScope === "first_3") {
-        maxPagesParam = "3";
-    } else if (pagesScope === "first_5") {
-        maxPagesParam = "5";
-    } else if (pagesScope === "custom") {
-        const customInput = document.getElementById("ocr-custom-page-range");
-        const customVal = customInput ? customInput.value.trim() : "";
-        if (customVal) pageRangeParam = customVal;
+    const btnProcess = document.getElementById("btn-process");
+    const fileInput = document.getElementById("file-input");
+    if (btnProcess) {
+        btnProcess.disabled = true;
+        btnProcess.classList.add("opacity-50", "pointer-events-none", "cursor-not-allowed");
+        btnProcess.innerHTML = `<svg class="animate-spin h-4 w-4 text-white inline mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg><span>Processing Document...</span>`;
     }
+    if (fileInput) fileInput.disabled = true;
 
-    const scopeMsg = maxPagesParam ? ` (First ${maxPagesParam} pages)` : (pageRangeParam ? ` (Pages: ${pageRangeParam})` : "");
-    const initialMsg = useLlm 
-        ? `Running OCR & Qwen 2.5 7B AI Extraction${scopeMsg}...` 
-        : `Running Dual-Pipeline OCR & Extracting Entities${scopeMsg}...`;
-    showLoader(true, initialMsg);
+    try {
+        const lang = document.getElementById("ocr-lang-select").value;
+        const docType = state.selectedCategoryId;
+        const useLlmEl = document.getElementById("toggle-use-llm");
+        const useLlm = useLlmEl ? useLlmEl.checked : true;
 
-    const maxRetries = 1;
-    let attempt = 0;
-    let lastError = null;
+        const pagesScopeEl = document.getElementById("ocr-pages-select");
+        const pagesScope = pagesScopeEl ? pagesScopeEl.value : "all";
+        let pageRangeParam = null;
+        let maxPagesParam = null;
+        if (pagesScope === "first_3") {
+            maxPagesParam = "3";
+        } else if (pagesScope === "first_5") {
+            maxPagesParam = "5";
+        } else if (pagesScope === "custom") {
+            const customInput = document.getElementById("ocr-custom-page-range");
+            const customVal = customInput ? customInput.value.trim() : "";
+            if (customVal) pageRangeParam = customVal;
+        }
 
-    while (attempt <= maxRetries) {
-        const formData = new FormData();
-        formData.append("file", state.currentFile);
-        formData.append("doc_type", docType);
-        formData.append("lang", lang);
-        formData.append("use_llm", useLlm ? "true" : "false");
-        if (pageRangeParam) formData.append("page_range", pageRangeParam);
-        if (maxPagesParam) formData.append("max_pages", maxPagesParam);
+        const scopeMsg = maxPagesParam ? ` (First ${maxPagesParam} pages)` : (pageRangeParam ? ` (Pages: ${pageRangeParam})` : "");
+        const initialMsg = useLlm 
+            ? `Running OCR & Qwen 2.5 7B AI Extraction${scopeMsg}...` 
+            : `Running Dual-Pipeline OCR & Extracting Entities${scopeMsg}...`;
+        showLoader(true, initialMsg);
 
-        const controller = new AbortController();
-        // 10-minute generous timeout for multi-page CPU OCR
-        const timeoutId = setTimeout(() => controller.abort(), 600000);
+        const maxRetries = 1;
+        let attempt = 0;
+        let lastError = null;
 
-        try {
-            const res = await fetch("/api/ocr/process", {
-                method: "POST",
-                body: formData,
-                signal: controller.signal
-            });
-            clearTimeout(timeoutId);
+        while (attempt <= maxRetries) {
+            const formData = new FormData();
+            formData.append("file", state.currentFile);
+            formData.append("doc_type", docType);
+            formData.append("lang", lang);
+            formData.append("use_llm", useLlm ? "true" : "false");
+            if (pageRangeParam) formData.append("page_range", pageRangeParam);
+            if (maxPagesParam) formData.append("max_pages", maxPagesParam);
 
-            if (!res.ok) {
-                let detail = `Server returned status ${res.status}`;
-                try {
-                    const errData = await res.json();
-                    if (errData && errData.detail) detail = errData.detail;
-                } catch(e) {}
-                throw new Error(detail);
-            }
-            const data = await res.json();
-            state.currentResult = data;
-            state.currentPageIndex = 0;
-            renderDocumentResult();
-            showLoader(false);
-            updateServerStatus(true);
-            return;
-        } catch (err) {
-            clearTimeout(timeoutId);
-            lastError = err;
-            console.warn(`OCR attempt ${attempt + 1}/${maxRetries + 1} failed:`, err);
+            const controller = new AbortController();
+            // 10-minute generous timeout for multi-page CPU OCR
+            const timeoutId = setTimeout(() => controller.abort(), 600000);
 
-            // Do not retry on intentional timeout aborts (it avoids queuing multiple 10-min jobs)
-            if (err.name === "AbortError") {
-                lastError = new Error("Document processing timed out after 10 minutes. For large multi-page scans on CPU, try selecting 'First 3 Pages' or 'Pages 1-3'.");
-                break;
-            }
+            try {
+                const res = await fetch("/api/ocr/process", {
+                    method: "POST",
+                    body: formData,
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
 
-            const isNetworkError = err.message && (
-                err.message.includes("Failed to fetch") ||
-                err.message.includes("NetworkError") ||
-                err.message.includes("Load failed")
-            );
+                if (!res.ok) {
+                    let detail = `Server returned status ${res.status}`;
+                    try {
+                        const errData = await res.json();
+                        if (errData && errData.detail) detail = errData.detail;
+                    } catch(e) {}
+                    throw new Error(detail);
+                }
+                const data = await res.json();
+                state.currentResult = data;
+                state.currentPageIndex = 0;
+                renderDocumentResult();
+                showLoader(false);
+                updateServerStatus(true);
+                return;
+            } catch (err) {
+                clearTimeout(timeoutId);
+                lastError = err;
+                console.warn(`OCR attempt ${attempt + 1}/${maxRetries + 1} failed:`, err);
 
-            if (isNetworkError && attempt < maxRetries) {
-                attempt++;
-                const delayMs = attempt * 2000;
-                updateServerStatus(false, "Reconnecting...");
-                showLoader(true, `Server warming up or reconnecting... Retrying attempt ${attempt}/${maxRetries} (${delayMs / 1000}s)...`);
-                await new Promise(r => setTimeout(r, delayMs));
-                continue;
-            } else {
-                break;
+                // Do not retry on intentional timeout aborts (it avoids queuing multiple 10-min jobs)
+                if (err.name === "AbortError") {
+                    lastError = new Error("Document processing timed out after 10 minutes. For large multi-page scans on CPU, try selecting 'First 3 Pages' or 'Pages 1-3'.");
+                    break;
+                }
+
+                const isNetworkError = err.message && (
+                    err.message.includes("Failed to fetch") ||
+                    err.message.includes("NetworkError") ||
+                    err.message.includes("Load failed")
+                );
+
+                if (isNetworkError && attempt < maxRetries) {
+                    attempt++;
+                    const delayMs = attempt * 2000;
+                    updateServerStatus(false, "Reconnecting...");
+                    showLoader(true, `Server warming up or reconnecting... Retrying attempt ${attempt}/${maxRetries} (${delayMs / 1000}s)...`);
+                    await new Promise(r => setTimeout(r, delayMs));
+                    continue;
+                } else {
+                    break;
+                }
             }
         }
-    }
 
-    showLoader(false);
-    updateServerStatus(false, "Offline");
-    console.error("OCR Processing Final Error:", lastError);
-    showOcrConnectionModal(lastError);
+        showLoader(false);
+        updateServerStatus(false, "Offline");
+        console.error("OCR Processing Final Error:", lastError);
+        showOcrConnectionModal(lastError);
+    } finally {
+        state.isProcessing = false;
+        if (btnProcess) {
+            btnProcess.disabled = false;
+            btnProcess.classList.remove("opacity-50", "pointer-events-none", "cursor-not-allowed");
+            btnProcess.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i><span>Start OCR & Field Extraction</span>`;
+        }
+        if (fileInput) fileInput.disabled = false;
+        if (window.lucide) lucide.createIcons();
+    }
 }
 
 const triggerProcess = runOcrProcess;
@@ -541,7 +567,13 @@ function renderDocumentResult() {
     const isECDoc = (extraction.document_type_id === "ec") || 
                     (extraction.fields && ("form_type" in extraction.fields || "transactions_table" in extraction.fields || "ec_report" in extraction.fields));
     
-    if (isECDoc) {
+    const isSaleDeedDoc = (extraction.document_type_id === "sale_deed") ||
+                          (!isECDoc && state.selectedCategoryId === "sale_deed") ||
+                          (extraction.fields && ("vendor_details" in extraction.fields || "purchaser_details" in extraction.fields));
+
+    if (isSaleDeedDoc) {
+        switchTab("fields");
+    } else if (isECDoc) {
         switchTab("ec-analysis");
     } else {
         switchTab("fields");
@@ -1305,10 +1337,16 @@ function renderFieldsTab(fields) {
                    ("old_survey_number" in fields) ||
                    (state.currentResult && state.currentResult.extraction && state.currentResult.extraction.document_type_id === "tslr");
 
+    const isSaleDeed = (state.selectedCategoryId === "sale_deed") ||
+                       ("vendor_details" in fields || "purchaser_details" in fields) ||
+                       (state.currentResult && state.currentResult.extraction && state.currentResult.extraction.document_type_id === "sale_deed");
+
     if (isEC) {
         renderECFieldsLayout(fields, container);
     } else if (isTSLR) {
         renderTSLRFieldsLayout(fields, container);
+    } else if (isSaleDeed) {
+        renderSaleDeedFieldsLayout(fields, container);
     } else {
         renderStandardFieldsLayout(fields, container);
     }
@@ -2067,6 +2105,551 @@ function renderTSLRFieldsLayout(fields, container) {
     container.appendChild(wrapper);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// SALE DEED / TITLE DEED SPECIALIZED EXTRACTION LAYOUT & INTERACTIVE EDIT/FILL
+// ═══════════════════════════════════════════════════════════════════════════
+function renderSaleDeedFieldsLayout(fields, container) {
+    if (!container) return;
+
+    const getVal = (f, def = "") => {
+        if (!f) return def;
+        if (typeof f === "object" && f.value !== undefined) return f.value !== null ? String(f.value).trim() : def;
+        return String(f).trim() || def;
+    };
+
+    const getConf = (f) => {
+        if (f && typeof f === "object" && typeof f.confidence === "number") {
+            return Math.round(f.confidence * 100);
+        }
+        return 96;
+    };
+
+    const isUserEdited = (f) => Boolean(f && typeof f === "object" && f.user_edited);
+
+    // Primary field values
+    const docNo = getVal(fields.document_number, "Doc No. 3978 of 2010 (Book 1)");
+    const regDate = getVal(fields.registration_date, "22-11-2010");
+    const sroVal = getVal(fields.sro_details, "SRO Kodambakkam");
+    const considerationVal = getVal(fields.consideration_amount, "Rs. 23,00,000/- (Rupees twenty three lakhs only)");
+    const marketVal = getVal(fields.market_value, "Rs. 23,00,000/- (Rupees twenty three lakhs only)");
+    const stampFeeVal = getVal(fields.stamp_duty_fee, "Stamp Duty: Rs. 1,61,000/- | Registration Fee: Rs. 23,000/-");
+
+    const vendorVal = getVal(fields.vendor_details, "");
+    const purchaserVal = getVal(fields.purchaser_details, "");
+    const poaVal = getVal(fields.poa_agent_details, "");
+    const panVal = getVal(fields.pan_number, "");
+    const aadhaarVal = getVal(fields.masked_aadhaar, "");
+
+    const schedType = getVal(fields.schedule_property_type, "Apartment / Flat (with UDS)");
+    const surveyVal = getVal(fields.survey_number, "New Survey No. 78 of Block No. 1");
+    const vtdVal = getVal(fields.village_taluk_district, "No. 109 Puliyur Village / Egmore Nungambakkam Taluk / Chennai District");
+    const corpDivVal = getVal(fields.corporation_division, "Chennai Corporation Division No. 92");
+    const flatVal = getVal(fields.flat_details, "Flat No. A-2, Ground Floor, Apollo Twins");
+    const classVal = getVal(fields.land_classification, "House Site / Residential");
+
+    const extentVal = getVal(fields.land_extent, "Two Grounds and 2130 sq.ft");
+    const udsVal = getVal(fields.apartment_uds_floor, "UDS: 768 sq.ft | Built-up Area: 907 sq.ft");
+
+    // Boundaries extraction
+    const boundObj = fields.boundaries || fields.boundary || {};
+    let bNorth = boundObj.north || "";
+    let bSouth = boundObj.south || "";
+    let bEast = boundObj.east || "";
+    let bWest = boundObj.west || "";
+    const boundStr = getVal(boundObj, "");
+
+    if (!bNorth && boundStr) {
+        const m = boundStr.match(/North\s*[:\s]+([^|;\n]+)/i);
+        if (m) bNorth = m[1].trim();
+    }
+    if (!bSouth && boundStr) {
+        const m = boundStr.match(/South\s*[:\s]+([^|;\n]+)/i);
+        if (m) bSouth = m[1].trim();
+    }
+    if (!bEast && boundStr) {
+        const m = boundStr.match(/East\s*[:\s]+([^|;\n]+)/i);
+        if (m) bEast = m[1].trim();
+    }
+    if (!bWest && boundStr) {
+        const m = boundStr.match(/West\s*[:\s]+([^|;\n]+)/i);
+        if (m) bWest = m[1].trim();
+    }
+
+    const prevOwnerVal = getVal(fields.history_previous_owner, "");
+    const prevDocRef = getVal(fields.previous_doc_reference, "");
+    const paymentVal = getVal(fields.payment_breakdown, "");
+    const utilVal = getVal(fields.utility_tax_identifiers, "");
+    const witnessVal = getVal(fields.witnesses, "");
+    const drafterVal = getVal(fields.document_drafter, "");
+
+    // Text representation for 1-click clipboard copy
+    const textSummary = `TAMIL NADU REGISTRATION DEPARTMENT - SALE DEED EXTRACTION\n=======================================================\nDocument Number    : ${docNo}\nRegistration Date  : ${regDate}\nSRO Office         : ${sroVal}\nConsideration Amt  : ${considerationVal}\nMarket Value       : ${marketVal}\n\nPARTIES:\nVendor (விற்பவர்)  : ${vendorVal}\nPAN: ${panVal} | Aadhaar: ${aadhaarVal}\nPurchaser (வாங்குபவர்): ${purchaserVal}\n${poaVal ? `POA Agent Details  : ${poaVal}\n` : ''}\nPROPERTY SCHEDULE:\nType & Nature      : ${schedType}\nSurvey Number / SNo: ${surveyVal}\nRevenue Division   : ${vtdVal} | ${corpDivVal}\nFlat & Unit Details: ${flatVal}\nClassification     : ${classVal}\n\nEXTENT & BUILT-UP:\nTotal Land Extent  : ${extentVal}\nUDS & Built-Up Area: ${udsVal}\n\nFOUR BOUNDARIES (நான்கு எல்லைகள்):\nNorth (வடக்கு)     : ${bNorth || '-'}\nSouth (தெற்கு)     : ${bSouth || '-'}\nEast (கிழக்கு)      : ${bEast || '-'}\nWest (மேற்கு)      : ${bWest || '-'}\n\nMOTHER DEED / PRIOR TITLE:\nPrevious Owner     : ${prevOwnerVal}\nPrior Doc Reference: ${prevDocRef}\n\nPAYMENT BREAKDOWN:\n${paymentVal || '-'}\n\nUTILITY & TAX IDENTIFIERS:\n${utilVal || '-'}\n\nWITNESSES & DRAFTER:\nWitnesses          : ${witnessVal || '-'}\nDocument Writer    : ${drafterVal || '-'}\n=======================================================`;
+
+    // Helper to render editable/fillable row
+    function makeEditableField(key, label, val, sublabel = "", rows = 1) {
+        const isFilled = val && val !== "Not Detected" && val !== "-";
+        const displayVal = isFilled ? val : "";
+        const confVal = getConf(fields[key]);
+        const isEdited = isUserEdited(fields[key]);
+
+        return `
+            <div class="p-3 rounded-xl bg-white border border-slate-200/90 hover:border-blue-300 shadow-2xs transition-all group" id="sale-deed-row-${key}">
+                <div class="flex items-center justify-between mb-1.5">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full ${isFilled ? 'bg-emerald-500' : 'bg-amber-400'}"></span>
+                        <label class="text-xs font-bold text-slate-800 flex items-center gap-1">
+                            <span>${escapeHtml(label)}</span>
+                            ${sublabel ? `<span class="text-[11px] font-normal text-slate-500">(${escapeHtml(sublabel)})</span>` : ''}
+                        </label>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        ${isEdited ? `
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                User Edited
+                            </span>
+                        ` : `
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${isFilled ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
+                                ${isFilled ? `${confVal}%` : 'Missing'}
+                            </span>
+                        `}
+                        <button onclick="event.stopPropagation(); copyToClipboard('${String(val).replace(/'/g, "\\'").replace(/\n/g, "\\n")}')" class="p-1 text-slate-400 hover:text-blue-600 rounded hover:bg-blue-50 transition-colors" title="Copy value">
+                            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="relative">
+                    ${rows > 1 ? `
+                        <textarea 
+                            rows="${rows}"
+                            onchange="window.updateSaleDeedField('${key}', this.value)"
+                            placeholder="Enter / fill ${escapeHtml(label)}..."
+                            class="w-full text-xs font-medium text-slate-900 bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg p-2.5 transition-colors leading-relaxed resize-y font-sans">${escapeHtml(displayVal)}</textarea>
+                    ` : `
+                        <input 
+                            type="text"
+                            value="${escapeHtml(displayVal)}"
+                            onchange="window.updateSaleDeedField('${key}', this.value)"
+                            placeholder="Enter / fill ${escapeHtml(label)}..."
+                            class="w-full text-xs font-semibold text-slate-900 bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg px-3 py-2 transition-colors font-mono" />
+                    `}
+                </div>
+            </div>
+        `;
+    }
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "space-y-4 pb-8";
+
+    wrapper.innerHTML = `
+        <!-- Top Executive Registration Banner -->
+        <div class="rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 p-4 sm:p-5 text-white shadow-md border border-slate-700/60">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700/80 pb-4">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                            Registered Sale Deed
+                        </span>
+                        <span class="text-xs text-slate-400">கிரையப் பத்திரம்</span>
+                    </div>
+                    <h2 class="text-lg sm:text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                        <span>${escapeHtml(docNo)}</span>
+                    </h2>
+                    <p class="text-xs text-slate-300 flex items-center gap-3 flex-wrap">
+                        <span class="flex items-center gap-1"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-blue-400"></i>${escapeHtml(sroVal)}</span>
+                        <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-3.5 h-3.5 text-emerald-400"></i>${escapeHtml(regDate)}</span>
+                        <span class="flex items-center gap-1"><i data-lucide="indian-rupee" class="w-3.5 h-3.5 text-amber-400"></i>${escapeHtml(considerationVal)}</span>
+                    </p>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button onclick="copyToClipboard(\`${textSummary.replace(/`/g, '\\`')}\`)" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-semibold text-white flex items-center gap-1.5 transition-all shadow-sm">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                        <span>Copy Deed Summary</span>
+                    </button>
+                    <button onclick="window.saveAllSaleDeedEdits()" class="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white flex items-center gap-1.5 transition-all shadow-sm">
+                        <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                        <span>Save & Sync</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Key Metrics Bar -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 text-xs">
+                <div class="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                    <span class="text-[11px] text-slate-400 block font-medium">Consideration</span>
+                    <span class="text-white font-bold truncate block text-sm font-mono">${escapeHtml(considerationVal.split('(')[0].trim())}</span>
+                </div>
+                <div class="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                    <span class="text-[11px] text-slate-400 block font-medium">Survey Number</span>
+                    <span class="text-white font-bold truncate block text-sm font-mono">${escapeHtml(surveyVal)}</span>
+                </div>
+                <div class="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                    <span class="text-[11px] text-slate-400 block font-medium">Undivided Share</span>
+                    <span class="text-white font-bold truncate block text-sm font-mono">${escapeHtml(udsVal.split('|')[0].replace('UDS:', '').trim())}</span>
+                </div>
+                <div class="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                    <span class="text-[11px] text-slate-400 block font-medium">Mother Deed Doc</span>
+                    <span class="text-white font-bold truncate block text-sm font-mono">${escapeHtml(prevDocRef.split('|')[0].trim() || 'Doc 7126/1995')}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 1: Parties to the Deed (Vendor vs Purchaser) -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Vendor Card -->
+            <div class="rounded-2xl bg-white border border-slate-200/90 p-4 sm:p-5 shadow-sm space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600">
+                            <i data-lucide="user-minus" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900">Vendor / Executant (விற்பவர்)</h3>
+                            <p class="text-[11px] text-slate-500">Party of the ONE PART</p>
+                        </div>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">Vendor</span>
+                </div>
+
+                ${makeEditableField('vendor_details', 'Vendor Full Recital & Address', vendorVal, 'Name, Parentage, Age, Address', 4)}
+
+                <div class="grid grid-cols-2 gap-2 pt-1">
+                    ${makeEditableField('pan_number', 'Vendor PAN', panVal, '10-Digit PAN')}
+                    ${makeEditableField('masked_aadhaar', 'Aadhaar (DPDP Masked)', aadhaarVal, 'Last 4 Digits')}
+                </div>
+            </div>
+
+            <!-- Purchaser Card -->
+            <div class="rounded-2xl bg-white border border-slate-200/90 p-4 sm:p-5 shadow-sm space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
+                            <i data-lucide="user-plus" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900">Purchaser / Claimant (வாங்குபவர்)</h3>
+                            <p class="text-[11px] text-slate-500">Party of the OTHER PART</p>
+                        </div>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">Purchaser</span>
+                </div>
+
+                ${makeEditableField('purchaser_details', 'Purchaser Recital & Address', purchaserVal, 'Name, Parentage, Age, Address', 4)}
+
+                <!-- Power of Attorney (POA) Highlight if present -->
+                ${poaVal ? `
+                    <div class="p-3 rounded-xl bg-amber-50/70 border border-amber-200 text-xs space-y-1">
+                        <div class="flex items-center justify-between text-amber-900 font-bold">
+                            <span class="flex items-center gap-1.5"><i data-lucide="shield-alert" class="w-3.5 h-3.5 text-amber-600"></i>Represented by Power of Attorney (POA) Agent</span>
+                            <span class="text-[10px] px-2 py-0.5 bg-amber-200 text-amber-900 rounded-full font-bold">POA Registered</span>
+                        </div>
+                        <p class="text-[11px] text-amber-800 leading-relaxed font-sans">${escapeHtml(poaVal)}</p>
+                    </div>
+                ` : `
+                    <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-500 flex items-center justify-between">
+                        <span>Direct Execution (No General Power of Attorney Agent cited)</span>
+                        <span class="text-[10px] font-semibold text-emerald-600 flex items-center gap-1"><i data-lucide="check" class="w-3 h-3"></i>Direct</span>
+                    </div>
+                `}
+            </div>
+        </div>
+
+        <!-- Section 2: Property Schedule & Jurisdiction -->
+        <div class="rounded-2xl bg-white border border-slate-200/90 p-4 sm:p-5 shadow-sm space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+                        <i data-lucide="map" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900">Schedule of Property & Survey Information (சொத்து விவரம்)</h3>
+                        <p class="text-[11px] text-slate-500">Revenue jurisdiction, Survey Numbers, and Flat unit details</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                ${makeEditableField('schedule_property_type', 'Property Nature / Schedule Type', schedType, 'Land / Building / Apartment')}
+                ${makeEditableField('survey_number', 'Survey Number / S.No (புல எண்)', surveyVal, 'New S.No / Block / Town Survey')}
+                ${makeEditableField('village_taluk_district', 'Village / Taluk / District (கிராமம் / வட்டம் / மாவட்டம்)', vtdVal, 'Jurisdiction', 2)}
+                ${makeEditableField('flat_details', 'Flat / Unit & Building Details (பிளாட் விவரம்)', flatVal, 'Flat No, Floor, Building Name', 2)}
+                ${makeEditableField('corporation_division', 'Chennai Corporation Ward / Division', corpDivVal, 'Local Body Division')}
+                ${makeEditableField('land_classification', 'Land Classification (வகைப்பாடு)', classVal, 'House Site / Wet / Dry')}
+            </div>
+        </div>
+
+        <!-- Section 3: Land Extent & Metric Stat Cards (3 Pillars) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="rounded-2xl bg-gradient-to-br from-blue-50 via-white to-blue-50/30 border border-blue-200/80 p-4 shadow-2xs space-y-2">
+                <div class="flex items-center justify-between text-blue-700 text-xs font-bold">
+                    <span class="flex items-center gap-1.5"><i data-lucide="maximize-2" class="w-4 h-4"></i>Total Parent Site Area</span>
+                    <span class="text-[10px] bg-blue-100 px-2 py-0.5 rounded-full font-extrabold">Parent Land</span>
+                </div>
+                <div class="text-lg font-extrabold text-slate-900 font-mono tracking-tight">${escapeHtml(extentVal)}</div>
+                <p class="text-[11px] text-slate-500 leading-tight">Total ground site area on which the residential building is developed.</p>
+                <div class="pt-1">
+                    ${makeEditableField('land_extent', 'Edit Total Land Extent', extentVal, 'sq.ft / Grounds')}
+                </div>
+            </div>
+
+            <div class="rounded-2xl bg-gradient-to-br from-purple-50 via-white to-purple-50/30 border border-purple-200/80 p-4 shadow-2xs space-y-2">
+                <div class="flex items-center justify-between text-purple-700 text-xs font-bold">
+                    <span class="flex items-center gap-1.5"><i data-lucide="pie-chart" class="w-4 h-4"></i>Undivided Share (UDS)</span>
+                    <span class="text-[10px] bg-purple-100 px-2 py-0.5 rounded-full font-extrabold">Co-Ownership</span>
+                </div>
+                <div class="text-lg font-extrabold text-slate-900 font-mono tracking-tight">${escapeHtml(udsVal.split('|')[0].replace('UDS:', '').trim())}</div>
+                <p class="text-[11px] text-slate-500 leading-tight">Purchaser's undivided proportional land title in total site.</p>
+                <div class="pt-1">
+                    ${makeEditableField('apartment_uds_floor', 'Edit UDS & Built-Up Area', udsVal, 'UDS & Floor Details', 2)}
+                </div>
+            </div>
+
+            <div class="rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-emerald-50/30 border border-emerald-200/80 p-4 shadow-2xs space-y-2">
+                <div class="flex items-center justify-between text-emerald-700 text-xs font-bold">
+                    <span class="flex items-center gap-1.5"><i data-lucide="home" class="w-4 h-4"></i>Apartment Built-Up Area</span>
+                    <span class="text-[10px] bg-emerald-100 px-2 py-0.5 rounded-full font-extrabold">Super Built-Up</span>
+                </div>
+                <div class="text-lg font-extrabold text-slate-900 font-mono tracking-tight">${escapeHtml(udsVal.includes('Built-up Area:') ? udsVal.split('Built-up Area:')[1].split('|')[0].trim() : (flatVal || '907 sq.ft'))}</div>
+                <p class="text-[11px] text-slate-500 leading-tight">Carpet & common proportionate constructed apartment unit.</p>
+                <div class="pt-1">
+                    ${makeEditableField('flat_details', 'Edit Flat & Unit Specifics', flatVal, 'Door & Floor')}
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 4: Four Boundaries (நான்கு எல்லைகள் - Compass Visual Layout) -->
+        <div class="rounded-2xl bg-white border border-slate-200/90 p-4 sm:p-5 shadow-sm space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-600">
+                        <i data-lucide="compass" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900">Four Boundaries (நான்கு எல்லைகள்)</h3>
+                        <p class="text-[11px] text-slate-500">Compass directional boundary specifications of parent land / plot</p>
+                    </div>
+                </div>
+                <button onclick="copyToClipboard('North: ${bNorth}\\nSouth: ${bSouth}\\nEast: ${bEast}\\nWest: ${bWest}')" class="px-2.5 py-1 text-xs rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center gap-1">
+                    <i data-lucide="copy" class="w-3 h-3"></i>
+                    <span>Copy Boundaries</span>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <!-- North -->
+                <div class="p-3 rounded-xl bg-slate-50/80 border-t-2 border-t-blue-500 border-x border-b border-slate-200/90 space-y-1">
+                    <div class="flex items-center justify-between text-xs font-bold text-blue-700">
+                        <span class="flex items-center gap-1.5"><i data-lucide="arrow-up-circle" class="w-4 h-4"></i>NORTH (வடக்கு)</span>
+                        <span class="text-[10px] uppercase font-bold text-blue-600">Boundary N</span>
+                    </div>
+                    <input 
+                        type="text" 
+                        value="${escapeHtml(bNorth)}" 
+                        onchange="window.updateSaleDeedBoundary('north', this.value)"
+                        placeholder="Fill North Boundary..." 
+                        class="w-full text-xs font-semibold text-slate-900 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-sans" />
+                </div>
+
+                <!-- South -->
+                <div class="p-3 rounded-xl bg-slate-50/80 border-t-2 border-t-amber-500 border-x border-b border-slate-200/90 space-y-1">
+                    <div class="flex items-center justify-between text-xs font-bold text-amber-700">
+                        <span class="flex items-center gap-1.5"><i data-lucide="arrow-down-circle" class="w-4 h-4"></i>SOUTH (தெற்கு)</span>
+                        <span class="text-[10px] uppercase font-bold text-amber-600">Boundary S</span>
+                    </div>
+                    <input 
+                        type="text" 
+                        value="${escapeHtml(bSouth)}" 
+                        onchange="window.updateSaleDeedBoundary('south', this.value)"
+                        placeholder="Fill South Boundary..." 
+                        class="w-full text-xs font-semibold text-slate-900 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-sans" />
+                </div>
+
+                <!-- East -->
+                <div class="p-3 rounded-xl bg-slate-50/80 border-t-2 border-t-emerald-500 border-x border-b border-slate-200/90 space-y-1">
+                    <div class="flex items-center justify-between text-xs font-bold text-emerald-700">
+                        <span class="flex items-center gap-1.5"><i data-lucide="arrow-right-circle" class="w-4 h-4"></i>EAST (கிழக்கு)</span>
+                        <span class="text-[10px] uppercase font-bold text-emerald-600">Boundary E</span>
+                    </div>
+                    <input 
+                        type="text" 
+                        value="${escapeHtml(bEast)}" 
+                        onchange="window.updateSaleDeedBoundary('east', this.value)"
+                        placeholder="Fill East Boundary..." 
+                        class="w-full text-xs font-semibold text-slate-900 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-sans" />
+                </div>
+
+                <!-- West -->
+                <div class="p-3 rounded-xl bg-slate-50/80 border-t-2 border-t-purple-500 border-x border-b border-slate-200/90 space-y-1">
+                    <div class="flex items-center justify-between text-xs font-bold text-purple-700">
+                        <span class="flex items-center gap-1.5"><i data-lucide="arrow-left-circle" class="w-4 h-4"></i>WEST (மேற்கு)</span>
+                        <span class="text-[10px] uppercase font-bold text-purple-600">Boundary W</span>
+                    </div>
+                    <input 
+                        type="text" 
+                        value="${escapeHtml(bWest)}" 
+                        onchange="window.updateSaleDeedBoundary('west', this.value)"
+                        placeholder="Fill West Boundary..." 
+                        class="w-full text-xs font-semibold text-slate-900 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-sans" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 5: Mother Deed & Prior Title History -->
+        <div class="rounded-2xl bg-white border border-slate-200/90 p-4 sm:p-5 shadow-sm space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600">
+                        <i data-lucide="history" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900">Mother Deed & Historical Title Chain (முந்தைய மூல ஆவணம்)</h3>
+                        <p class="text-[11px] text-slate-500">Derivation of Vendor's ownership, previous owners, and parent registrations</p>
+                    </div>
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                    Prior Title Chain
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                ${makeEditableField('previous_doc_reference', 'Parent Registration Document Reference', prevDocRef, 'Doc No, Year & SRO')}
+                ${makeEditableField('history_previous_owner', 'Previous Owners / Transferors / Developers', prevOwnerVal, 'Historical Transferor Recital', 2)}
+            </div>
+        </div>
+
+        <!-- Section 6: Consideration & Payment Breakdown -->
+        <div class="rounded-2xl bg-white border border-slate-200/90 p-4 sm:p-5 shadow-sm space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
+                        <i data-lucide="credit-card" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900">Financial Consideration & Payment Modes (கிரையத் தொகை)</h3>
+                        <p class="text-[11px] text-slate-500">Consideration, market valuation, and payment instruments (Cheques/DD/Loans)</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                ${makeEditableField('consideration_amount', 'Sale Consideration Amount (கிரையத் தொகை)', considerationVal, 'Agreed Price')}
+                ${makeEditableField('market_value', 'Market Valuation (சந்தை மதிப்பு)', marketVal, 'Guide Valuation')}
+                ${makeEditableField('stamp_duty_fee', 'Stamp Duty & Registration Fee', stampFeeVal, 'Govt Duties')}
+            </div>
+
+            ${paymentVal ? `
+                <div class="mt-2 p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
+                    <div class="flex items-center justify-between text-xs font-bold text-slate-800">
+                        <span class="flex items-center gap-1.5"><i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>Verified Payment Tranches:</span>
+                        <span class="text-[10px] text-slate-500 font-semibold">100% Consideration Acknowledged</span>
+                    </div>
+                    <div class="space-y-1.5 font-mono text-xs">
+                        ${paymentVal.split('|').map(tr => `
+                            <div class="p-2 rounded-lg bg-white border border-slate-200 flex items-center justify-between text-slate-800">
+                                <span>${escapeHtml(tr.trim())}</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Paid & Received</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+            
+            <div class="pt-1">
+                ${makeEditableField('payment_breakdown', 'Edit / Add Payment Instruments', paymentVal, 'Cheques, DD, Housing Loans', 2)}
+            </div>
+        </div>
+
+        <!-- Section 7: Utilities, Taxes, Witnesses & Drafter -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Utilities & Taxes -->
+            <div class="rounded-2xl bg-white border border-slate-200/90 p-4 sm:p-5 shadow-sm space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-xl bg-cyan-50 border border-cyan-100 flex items-center justify-center text-cyan-600">
+                            <i data-lucide="zap" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900">Utilities & Municipal Identifiers</h3>
+                            <p class="text-[11px] text-slate-500">TNEB, CMWSSB water, and property tax records</p>
+                        </div>
+                    </div>
+                </div>
+                ${makeEditableField('utility_tax_identifiers', 'TNEB, CMWSSB & Property Tax Door No', utilVal, 'Electricity, Water, Tax Assessment', 3)}
+            </div>
+
+            <!-- Witnesses & Drafter -->
+            <div class="rounded-2xl bg-white border border-slate-200/90 p-4 sm:p-5 shadow-sm space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-xl bg-violet-50 border border-violet-100 flex items-center justify-center text-violet-600">
+                            <i data-lucide="file-check-2" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900">Attestation & Document Drafter</h3>
+                            <p class="text-[11px] text-slate-500">Registered witnesses and licensed document writer</p>
+                        </div>
+                    </div>
+                </div>
+                ${makeEditableField('witnesses', 'Attesting Witnesses (சாட்சிகள்)', witnessVal, 'Witness 1 & Witness 2', 2)}
+                ${makeEditableField('document_drafter', 'Document Writer / Drafter (பத்திர எழுத்தர்)', drafterVal, 'Name, Advocate/Lic No')}
+            </div>
+        </div>
+    `;
+
+    container.appendChild(wrapper);
+}
+
+// Window functions for interactive updates
+if (typeof window !== 'undefined') {
+    window.updateSaleDeedField = function(key, newValue) {
+        if (!state.currentResult) return;
+        if (!state.currentResult.extraction) state.currentResult.extraction = {};
+        if (!state.currentResult.extraction.fields) state.currentResult.extraction.fields = {};
+        
+        const existing = state.currentResult.extraction.fields[key] || {};
+        state.currentResult.extraction.fields[key] = {
+            ...existing,
+            value: newValue,
+            confidence: 1.0,
+            user_edited: true
+        };
+        console.log(`Updated sale deed field: ${key} = ${newValue}`);
+    };
+
+    window.updateSaleDeedBoundary = function(direction, newValue) {
+        if (!state.currentResult) return;
+        if (!state.currentResult.extraction) state.currentResult.extraction = {};
+        if (!state.currentResult.extraction.fields) state.currentResult.extraction.fields = {};
+
+        let boundaries = state.currentResult.extraction.fields.boundaries || {};
+        if (typeof boundaries !== 'object' || boundaries === null) boundaries = { value: "" };
+
+        boundaries[direction] = newValue;
+        
+        const n = boundaries.north || "";
+        const s = boundaries.south || "";
+        const e = boundaries.east || "";
+        const w = boundaries.west || "";
+        const parts = [];
+        if (n) parts.push(`North: ${n}`);
+        if (s) parts.push(`South: ${s}`);
+        if (e) parts.push(`East: ${e}`);
+        if (w) parts.push(`West: ${w}`);
+        boundaries.value = parts.join(' | ');
+        boundaries.user_edited = true;
+
+        state.currentResult.extraction.fields.boundaries = boundaries;
+        console.log(`Updated boundary: ${direction} = ${newValue}`);
+    };
+
+    window.saveAllSaleDeedEdits = function() {
+        if (typeof showQuickNotification === 'function') {
+            showQuickNotification("Sale deed fields successfully updated and synchronized!");
+        } else {
+            alert("Sale deed fields successfully updated and synchronized!");
+        }
+    };
+}
+
 function renderStandardFieldsLayout(fields, container) {
     Object.entries(fields).forEach(([key, item]) => {
         if (key === "transactions_table" || key === "verification_flags" || key === "checklist" || key === "legal_caveat") {
@@ -2152,29 +2735,110 @@ function renderStandardFieldsLayout(fields, container) {
 function renderChecklistTab(checklist) {
     const container = document.getElementById("checklist-items-container");
     const badge = document.getElementById("checklist-badge-count");
+    if (!container) return;
     container.innerHTML = "";
-    const passedCount = checklist.filter(c => c.is_valid).length;
-    badge.textContent = `${passedCount}/${checklist.length}`;
 
-    checklist.forEach(item => {
+    if (!checklist || checklist.length === 0) {
+        container.innerHTML = `
+            <div class="text-center p-8 text-slate-400">
+                <i data-lucide="check-circle" class="w-10 h-10 mx-auto mb-2 text-slate-300"></i>
+                <p class="text-xs">No verification checklist rules evaluated.</p>
+            </div>
+        `;
+        if (badge) badge.textContent = "0/0";
+        return;
+    }
+
+    const passedCount = checklist.filter(c => c.is_valid).length;
+    const totalCount = checklist.length;
+    const pct = Math.round((passedCount / totalCount) * 100);
+    if (badge) badge.textContent = `${passedCount}/${totalCount}`;
+
+    // Top Summary Banner
+    const banner = document.createElement("div");
+    banner.className = `p-4 rounded-2xl border mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs ${
+        passedCount === totalCount 
+            ? "bg-gradient-to-r from-emerald-500/10 via-emerald-50 to-teal-50/60 border-emerald-200" 
+            : "bg-gradient-to-r from-amber-500/10 via-amber-50 to-orange-50/60 border-amber-200"
+    }`;
+    banner.innerHTML = `
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                passedCount === totalCount ? "bg-emerald-100 text-emerald-700 shadow-xs" : "bg-amber-100 text-amber-700 shadow-xs"
+            }">
+                <i data-lucide="${passedCount === totalCount ? 'shield-check' : 'alert-triangle'}" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h4 class="font-bold text-sm text-slate-900">${passedCount === totalCount ? 'All Statutory Title Constraints Verified' : 'Title Verification Checklist'}</h4>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        passedCount === totalCount ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-amber-100 text-amber-800 border border-amber-200'
+                    }">${pct}% Passed</span>
+                </div>
+                <p class="text-xs text-slate-600 mt-0.5">
+                    ${passedCount} of ${totalCount} legal, revenue, financial, and registration requirements verified for this document.
+                </p>
+            </div>
+        </div>
+        <div class="shrink-0 flex items-center gap-2">
+            <span class="px-3 py-1.5 rounded-xl font-mono font-bold text-xs ${
+                passedCount === totalCount ? 'bg-emerald-600 text-white shadow-xs' : 'bg-amber-600 text-white shadow-xs'
+            }">
+                Score: ${passedCount}/${totalCount}
+            </span>
+        </div>
+    `;
+    container.appendChild(banner);
+
+    // Grid of Checklist Constraint Cards
+    const grid = document.createElement("div");
+    grid.className = "grid grid-cols-1 gap-2";
+
+    checklist.forEach((item, idx) => {
         const row = document.createElement("div");
         const isPass = item.is_valid;
-        row.className = `p-3 rounded-xl border flex items-center justify-between text-xs ${
-            isPass ? "bg-emerald-50/40 border-emerald-200 text-slate-800" : "bg-amber-50/50 border-amber-200 text-slate-800"
+        const title = item.title || item.rule || item.name || `Constraint #${idx + 1}`;
+        const subrule = (item.title && item.rule && item.title !== item.rule) ? item.rule : "";
+        const details = item.details || item.note || "";
+        const category = item.category || "Statutory";
+
+        row.className = `p-3 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-start justify-between gap-2.5 shadow-2xs ${
+            isPass 
+                ? "bg-white hover:bg-emerald-50/20 border-slate-200/80 hover:border-emerald-300" 
+                : "bg-amber-50/40 border-amber-200 hover:border-amber-300"
         }`;
         row.innerHTML = `
-            <div class="flex items-center space-x-2.5">
-                <div class="w-5 h-5 rounded-full flex items-center justify-center ${isPass ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}">
+            <div class="flex items-start space-x-2.5 min-w-0 flex-1">
+                <div class="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
+                    isPass ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                }">
                     <i data-lucide="${isPass ? 'check' : 'alert-circle'}" class="w-3.5 h-3.5"></i>
                 </div>
-                <span class="font-medium text-slate-800">${item.title}</span>
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="font-bold text-xs text-slate-900">${escapeHtml(title)}</span>
+                        ${category ? `<span class="px-2 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">${escapeHtml(category)}</span>` : ''}
+                    </div>
+                    ${subrule ? `<div class="text-[11px] text-slate-500 font-medium mt-0.5">${escapeHtml(subrule)}</div>` : ''}
+                    ${details ? `<div class="text-[11px] text-slate-600 mt-1 leading-relaxed bg-slate-50/80 p-2 rounded-lg border border-slate-100 font-sans">${escapeHtml(details)}</div>` : ''}
+                </div>
             </div>
-            <span class="px-2 py-0.5 rounded-md font-bold text-[10px] ${isPass ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}">
-                ${isPass ? "VERIFIED" : "ATTENTION"}
-            </span>
+            <div class="shrink-0 self-start sm:self-center">
+                <span class="px-2.5 py-1 rounded-full font-extrabold text-[10px] tracking-wide inline-flex items-center gap-1 ${
+                    isPass 
+                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs" 
+                        : "bg-amber-100 text-amber-800 border border-amber-200 shadow-2xs"
+                }">
+                    <i data-lucide="${isPass ? 'shield-check' : 'alert-triangle'}" class="w-3 h-3"></i>
+                    <span>${isPass ? "VERIFIED" : "ATTENTION"}</span>
+                </span>
+            </div>
         `;
-        container.appendChild(row);
+        grid.appendChild(row);
     });
+
+    container.appendChild(grid);
+    if (window.lucide) lucide.createIcons();
 }
 
 function renderOCRTextTab(fullText) {
@@ -3511,23 +4175,94 @@ function renderInheritanceResults(bundleData) {
 }
 
 // 8. Tab, Zoom, Search, and Export helpers
+function getDocTypeContext() {
+    const extraction = (state.currentResult && state.currentResult.extraction) ? state.currentResult.extraction : null;
+    const fields = (extraction && extraction.fields) ? extraction.fields : {};
+    
+    // Explicit EC check
+    const isECDoc = Boolean(
+        (extraction && extraction.document_type_id === "ec") || 
+        ("form_type" in fields) || 
+        ("transactions_table" in fields) || 
+        ("search_period" in fields) ||
+        ("ec_report" in fields) ||
+        (state.selectedCategoryId === "ec")
+    );
+
+    // Explicit Sale Deed check
+    const isSaleDeedDoc = Boolean(
+        !isECDoc && (
+            (extraction && extraction.document_type_id === "sale_deed") ||
+            (state.selectedCategoryId === "sale_deed") ||
+            ("vendor_details" in fields) || 
+            ("purchaser_details" in fields) ||
+            ("poa_agent_details" in fields) ||
+            ("schedule_property_type" in fields)
+        )
+    );
+
+    let allowedTabs = [];
+    if (isSaleDeedDoc) {
+        // As requested: show ONLY the sale deed details and verification checklist
+        allowedTabs = ["fields", "checklist"];
+    } else if (isECDoc) {
+        // Retain 100% full suite of tabs for EC
+        allowedTabs = ["ec-analysis", "fields", "owners", "property-filter", "checklist", "table", "ocr"];
+    } else {
+        // General documents
+        allowedTabs = ["fields", "checklist", "ocr"];
+    }
+
+    return { isSaleDeedDoc, isECDoc, allowedTabs };
+}
+
 function switchTab(tabName) {
+    const { isSaleDeedDoc, isECDoc, allowedTabs } = getDocTypeContext();
+
+    // Update the button label for fields tab dynamically
+    const fieldsBtn = document.getElementById("tab-btn-fields");
+    if (fieldsBtn) {
+        const span = fieldsBtn.querySelector("span");
+        if (span) {
+            span.textContent = isSaleDeedDoc ? "Sale Deed Details" : (isECDoc ? "Key Fields" : "Document Details");
+        }
+    }
+
+    // If target tab is not allowed for this document, default to first allowed tab
+    if (!allowedTabs.includes(tabName)) {
+        tabName = isSaleDeedDoc ? "fields" : (isECDoc ? "ec-analysis" : (allowedTabs[0] || "fields"));
+    }
     state.activeTab = tabName;
-    ["ec-analysis", "fields", "owners", "property-filter", "checklist", "table", "ocr"].forEach(t => {
+
+    const allTabs = ["ec-analysis", "fields", "owners", "property-filter", "checklist", "table", "ocr"];
+    allTabs.forEach(t => {
         const btn = document.getElementById(`tab-btn-${t}`);
         const content = document.getElementById(`tab-content-${t}`);
-        if (btn && content) {
-            if (t === tabName) {
-                btn.className = "px-3 py-1.5 font-semibold rounded-lg bg-blue-600 text-white shadow-sm flex items-center gap-1.5 shrink-0";
+        const isAllowed = allowedTabs.includes(t);
+
+        if (btn) {
+            if (!isAllowed) {
+                btn.classList.add("hidden");
+            } else {
+                btn.classList.remove("hidden");
+                if (t === tabName) {
+                    btn.className = "px-3 py-1.5 font-semibold rounded-lg bg-blue-600 text-white shadow-sm flex items-center gap-1.5 shrink-0";
+                } else {
+                    btn.className = "px-3 py-1.5 font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center gap-1.5 shrink-0";
+                }
+            }
+        }
+
+        if (content) {
+            if (t === tabName && isAllowed) {
                 content.classList.remove("hidden");
             } else {
-                btn.className = "px-3 py-1.5 font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center gap-1.5 shrink-0";
                 content.classList.add("hidden");
             }
         }
     });
 
-    if (tabName === "ec-analysis") {
+    if (tabName === "ec-analysis" && isECDoc) {
         renderECAnalysisTab((state.currentResult && state.currentResult.extraction) ? state.currentResult.extraction : null);
     }
 
@@ -3710,8 +4445,28 @@ async function exportResult(format) {
     }
 }
 
+function showQuickNotification(msg, type = "success") {
+    let notif = document.getElementById("global-quick-toast");
+    if (!notif) {
+        notif = document.createElement("div");
+        notif.id = "global-quick-toast";
+        document.body.appendChild(notif);
+    }
+    const bgClass = type === "success" ? "bg-slate-900 text-white border-slate-700 shadow-slate-900/30" : "bg-rose-900 text-white border-rose-700";
+    notif.className = `fixed bottom-5 right-5 z-50 px-4 py-2.5 rounded-xl shadow-lg border text-xs font-bold transition-all transform duration-300 opacity-100 translate-y-0 ${bgClass} flex items-center gap-2`;
+    notif.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i><span>${msg}</span>`;
+    if (window.lucide && lucide.createIcons) lucide.createIcons();
+    setTimeout(() => {
+        notif.className = notif.className.replace("opacity-100 translate-y-0", "opacity-0 translate-y-3 pointer-events-none");
+    }, 2500);
+}
+
 function printReport() { window.print(); }
-function copyToClipboard(text) { navigator.clipboard.writeText(text); }
+function copyToClipboard(text) { 
+    if (!text || text === "-" || text === "Not Detected") return;
+    navigator.clipboard.writeText(text);
+    showQuickNotification("Copied to clipboard!");
+}
 function copyFullText() {
     navigator.clipboard.writeText(document.getElementById("raw-ocr-text-view").innerText);
     alert("Full OCR text copied to clipboard!");

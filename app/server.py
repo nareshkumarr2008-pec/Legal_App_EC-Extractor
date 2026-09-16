@@ -148,6 +148,10 @@ async def get_sample_document(category_id: str):
 
     # Run extraction on sample raw text
     extraction_result = extractor.extract(sample["raw_text"], doc_type=category_id)
+    if "structured" in sample:
+        for k, v in sample["structured"].items():
+            if k not in extraction_result["fields"] or not extraction_result["fields"][k].get("value"):
+                extraction_result["fields"][k] = v
 
     # Generate synthetic bounding boxes
     simulated_boxes = []

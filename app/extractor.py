@@ -392,7 +392,10 @@ class DocumentExtractor:
         if doc_type == "ec":
             fields = self.extractors[doc_type].extract(text, pdf_bytes=file_bytes, **kwargs)
         elif doc_type in self.extractors:
-            fields = self.extractors[doc_type].extract(text)
+            try:
+                fields = self.extractors[doc_type].extract(text, filename=filename, **kwargs)
+            except TypeError:
+                fields = self.extractors[doc_type].extract(text)
         else:
             handler = getattr(self, f"_extract_{doc_type}", self._extract_generic)
             fields = handler(text)
@@ -460,169 +463,7 @@ class DocumentExtractor:
     # ═══════════════════════════════════════════════════════════════════
 
     def _extract_sale_deed(self, text):
-        fields = {}
-
-        # Executant / Seller / Vendor
-        vendor = self._find_value(text, [
-            r'(?:விற்பவர்|vendor|seller|executant)[^\n:]*[:\s]+([^\n]+)',
-        ])
-        fields["vendor_details"] = {
-            "value": vendor or "Not Detected",
-            "confidence": 0.95 if vendor else 0.0,
-            "label": "விற்பவர் விவரம் (Vendor / Executant Details)",
-            "box_query": vendor,
-        }
-
-        # Purchaser / Buyer / Claimant
-        purchaser = self._find_value(text, [
-            r'(?:வாங்குபவர்|purchaser|buyer|claimant)[^\n:]*[:\s]+([^\n]+)',
-        ])
-        fields["purchaser_details"] = {
-            "value": purchaser or "Not Detected",
-            "confidence": 0.95 if purchaser else 0.0,
-            "label": "வாங்குபவர் விவரம் (Purchaser / Claimant Details)",
-            "box_query": purchaser,
-        }
-
-        # Previous Owner / Mother Deed
-        prev_owner = self._find_value(text, [
-            r'(?:முந்தைய|previous owner|prior deed|mother deed|parent deed|doc(?:ument)?\s*no)[^\n]*([^\n]+)',
-        ])
-        fields["history_previous_owner"] = {
-            "value": prev_owner or "Not Detected",
-            "confidence": 0.92 if prev_owner else 0.0,
-            "label": "முந்தைய உரிமையாளர் (Previous Owner / History)",
-            "box_query": prev_owner,
-        }
-
-        # Schedule of Property
-        prop_type = "Apartment / Flat" if any(k in text.lower() for k in ["flat", "apartment", "குடியிருப்பு"]) else "Land / Plot"
-        fields["schedule_property_type"] = {
-            "value": prop_type,
-            "confidence": 0.90,
-            "label": "சொத்து விவரம் (Schedule of Property)",
-        }
-
-        # Survey Number
-        survey = self._find_value(text, [
-            r'(?:புல\s*எண்|survey|sy|t\.?s\.?)\s*(?:no\.?|number)?[^\n:]*[:\s]+([0-9A-Za-z/,\s-]+)',
-            r'\b(\d{1,4}\s*[-/]\s*\d{1,3}[A-Za-z]?)\b',
-        ])
-        fields["survey_number"] = {
-            "value": survey or "Not Detected",
-            "confidence": 0.94 if survey else 0.0,
-            "label": "புல எண் (Survey Number / S.No)",
-            "box_query": survey,
-        }
-
-        # Village / Taluk / District
-        vtd = self._extract_vtd(text)
-        fields["village_taluk_district"] = {
-            "value": vtd or "Not Detected",
-            "confidence": 0.92 if vtd else 0.0,
-            "label": "கிராமம் / வட்டம் / மாவட்டம் (Village / Taluk / District)",
-            "box_query": "மாவட்டம் | வட்டம் | கிராமம்",
-        }
-
-        # Land Extent
-        extent = self._find_value(text, [
-            r'(?:பரப்பு|extent|area)[^\n:]*[:\s]+([^\n]+)',
-            r'([0-9.]+\s*(?:sq\.?\s*ft|cents?|acres?|grounds?|ஏர்|ares|hectare))',
-        ])
-        fields["land_extent"] = {
-            "value": extent or "Not Detected",
-            "confidence": 0.92 if extent else 0.0,
-            "label": "பரப்பு (Land Extent)",
-            "box_query": extent,
-        }
-
-        # Building / UDS / Flat
-        uds = self._find_value(text, [
-            r'(?:undivided share|uds|பிரிக்கப்படா பங்கு)[^\n:]*[:\s]+([^\n]+)',
-        ])
-        fields["apartment_uds_floor"] = {
-            "value": uds or "Not Detected",
-            "confidence": 0.90 if uds else 0.0,
-            "label": "பிரிக்கப்படா பங்கு / மாடி (UDS / Built-up / Floor)",
-        }
-
-        # Boundaries
-        boundaries = self._extract_boundaries(text)
-        fields["boundaries"] = {
-            "value": boundaries or "Not Detected",
-            "confidence": 0.90 if boundaries else 0.0,
-            "label": "எல்லைகள் (Boundaries N/S/E/W)",
-        }
-
-        # SRO Details
-        sro = self._find_value(text, [
-            r'(?:sub.?registrar|sro|பதிவாளர்|பதிவு அலுவலகம்)[^\n:]*[:\s]+([^\n]+)',
-        ])
-        fields["sro_details"] = {
-            "value": sro or "Not Detected",
-            "confidence": 0.92 if sro else 0.0,
-            "label": "பதிவாளர் அலுவலகம் (SRO Details)",
-            "box_query": sro,
-        }
-
-        # Document Number & Registration Date
-        doc_no = self._find_value(text, [
-            r'(?:ஆவண எண்|document\s*no|doc\.?\s*no)[^\n:]*[:\s]+([^\n]+)',
-        ])
-        fields["document_number"] = {
-            "value": doc_no or "Not Detected",
-            "confidence": 0.92 if doc_no else 0.0,
-            "label": "ஆவண எண் (Document Number)",
-            "box_query": doc_no,
-        }
-
-        reg_date = self._find_value(text, [
-            r'(?:பதிவு நாள்|registration date|dated)[^\n:]*[:\s]+([0-9./-]+)',
-            r'\b(\d{2}[-/.]\d{2}[-/.]\d{4})\b',
-        ])
-        fields["registration_date"] = {
-            "value": reg_date or "Not Detected",
-            "confidence": 0.92 if reg_date else 0.0,
-            "label": "பதிவு நாள் (Registration Date)",
-            "box_query": reg_date,
-        }
-
-        # Sale Consideration
-        sale_amt = self._find_value(text, [
-            r'(?:விற்பனை தொகை|sale consideration|consideration amount)[^\n:]*[:\s]+([^\n]+)',
-            r'(?:Rs\.?|INR|₹)\s*([0-9,]+)',
-        ])
-        fields["sale_consideration"] = {
-            "value": sale_amt or "Not Detected",
-            "confidence": 0.90 if sale_amt else 0.0,
-            "label": "விற்பனை தொகை (Sale Consideration)",
-        }
-
-        # Masked Aadhaar
-        aadhaar = self._find_value(text, [
-            r'(XXXX[\s-]*XXXX[\s-]*\d{4})',
-            r'(\d{4}\s*\d{4}\s*\d{4})',
-        ])
-        if aadhaar and len(re.sub(r'\D', '', aadhaar)) == 12:
-            digits = re.sub(r'\D', '', aadhaar)
-            aadhaar = f"XXXX-XXXX-{digits[-4:]}"
-        fields["masked_aadhaar"] = {
-            "value": aadhaar or "Not Detected",
-            "confidence": 0.85 if aadhaar else 0.0,
-            "label": "ஆதார் (Masked Aadhaar - Last 4 digits)",
-        }
-
-        # PAN
-        pan = self._find_value(text, [
-            r'\b([A-Z]{5}\d{4}[A-Z])\b',
-        ])
-        fields["pan_number"] = {
-            "value": pan or "Not Detected",
-            "confidence": 0.90 if pan else 0.0,
-            "label": "பான் எண் (PAN Number)",
-        }
-
-        return fields
+        return self.extractors["sale_deed"].extract(text)
 
     # ═══════════════════════════════════════════════════════════════════
     # 2. PATTA DOCUMENT
@@ -940,11 +781,12 @@ class DocumentExtractor:
             return isinstance(f, dict) and f.get("value") and f.get("value") != "Not Detected"
 
         if doc_type == "sale_deed":
-            checklist.append({"title": "விற்பவர் & வாங்குபவர் அடையாளம் (Vendor & Purchaser Identified)", "is_valid": _detected("vendor_details") and _detected("purchaser_details")})
-            checklist.append({"title": "முந்தைய ஆவணம் இணைப்பு (Prior Mother Deed Linked)", "is_valid": _detected("history_previous_owner")})
-            checklist.append({"title": "சொத்து விவரம் - பரப்பு (Property Schedule - Extent/UDS)", "is_valid": _detected("land_extent")})
-            checklist.append({"title": "நான்கு பக்க எல்லைகள் (4-Side Boundaries)", "is_valid": _detected("boundaries")})
-            checklist.append({"title": "பதிவாளர் & ஆவண எண் (SRO & Document Number)", "is_valid": _detected("document_number")})
+            sd_cl = fields.get("checklist")
+            if sd_cl:
+                checklist = sd_cl
+            else:
+                sd_res = self.extractors["sale_deed"].extract(text)
+                checklist = sd_res.get("checklist", [])
         elif doc_type == "patta":
             p_val = fields.get("patta_number", {}).get("value", "")
             p_str = f": {p_val}" if p_val and p_val != "Not Detected" else ""

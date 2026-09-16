@@ -163,59 +163,129 @@ Document Number: 4521 / 2023 | Book 1
 Stamp Duty Paid: Rs. 5,25,000/- | Registration Fee: Rs. 1,50,000/-""",
         "structured": {
             "document_type": "Sale deed / title deed",
+            "document_number": {
+                "value": "Doc No. 4521 of 2023 (Book 1)",
+                "confidence": 0.98,
+                "label": "Document Number",
+                "box": {"x_pct": 5.0, "y_pct": 8.0, "w_pct": 88.0, "h_pct": 3.5}
+            },
+            "registration_date": {
+                "value": "14.09.2023",
+                "confidence": 0.96,
+                "label": "Registration Date",
+                "box": {"x_pct": 5.0, "y_pct": 10.0, "w_pct": 40.0, "h_pct": 3.0}
+            },
+            "consideration_amount": {
+                "value": "Rs. 75,00,000/- (Rupees seventy five lakhs only)",
+                "confidence": 0.96,
+                "label": "Consideration Amount",
+                "box": {"x_pct": 5.0, "y_pct": 11.5, "w_pct": 88.0, "h_pct": 3.5}
+            },
+            "market_value": {
+                "value": "Rs. 75,00,000/- (Rupees seventy five lakhs only)",
+                "confidence": 0.95,
+                "label": "Market Value",
+                "box": {"x_pct": 5.0, "y_pct": 13.0, "w_pct": 88.0, "h_pct": 3.0}
+            },
             "vendor_details": {
-                "value": "Mr. K. RAJENDRAN (S/o Late Kumarasamy) | PAN: ABCPR1234K | Masked Aadhaar: XXXX-XXXX-4512",
+                "value": "Mr. K. RAJENDRAN, Son of Late Kumarasamy, residing at Old No. 12, New No. 25, 1st Cross Street, Velachery, Chennai - 600042",
                 "confidence": 0.95,
                 "label": "Vendor Details",
-                "box": {"x_pct": 5.0, "y_pct": 12.0, "w_pct": 88.0, "h_pct": 4.5}
+                "box": {"x_pct": 5.0, "y_pct": 15.0, "w_pct": 88.0, "h_pct": 4.5}
             },
             "purchaser_details": {
-                "value": "Mrs. S. LAKSHMI PRIYA (W/o Mr. M. Senthil Kumar) | PAN: BKZPL9876Q | Masked Aadhaar: XXXX-XXXX-8921",
+                "value": "Mrs. S. LAKSHMI PRIYA, Wife of Mr. M. Senthil Kumar, residing at Flat 3B, Sunshine Apartments, Velachery, Chennai - 600042",
                 "confidence": 0.95,
                 "label": "Purchaser Details",
-                "box": {"x_pct": 5.0, "y_pct": 18.0, "w_pct": 88.0, "h_pct": 4.5}
+                "box": {"x_pct": 5.0, "y_pct": 20.0, "w_pct": 88.0, "h_pct": 4.5}
+            },
+            "pan_number": {
+                "value": "ABCPR1234K",
+                "confidence": 0.95,
+                "label": "PAN Number",
+                "box": {"x_pct": 5.0, "y_pct": 25.0, "w_pct": 40.0, "h_pct": 3.0}
+            },
+            "masked_aadhaar": {
+                "value": "XXXX-XXXX-4512",
+                "confidence": 0.95,
+                "label": "DPDP Masked Aadhaar",
+                "box": {"x_pct": 50.0, "y_pct": 25.0, "w_pct": 40.0, "h_pct": 3.0}
             },
             "history_previous_owner": {
-                "value": "Classic Foundations Pvt Ltd | Prior Deed Doc No. 1820 / 2008, SRO Velachery",
+                "value": "Classic Foundations Pvt Ltd, represented by Managing Director",
                 "confidence": 0.92,
                 "label": "History / Previous Owner Details",
-                "box": {"x_pct": 5.0, "y_pct": 24.5, "w_pct": 88.0, "h_pct": 4.0}
+                "box": {"x_pct": 5.0, "y_pct": 28.5, "w_pct": 88.0, "h_pct": 4.0}
+            },
+            "previous_doc_reference": {
+                "value": "Doc No. 1820 / 2008, registered at SRO Velachery on 24.03.2008",
+                "confidence": 0.94,
+                "label": "Previous Document Reference",
+                "box": {"x_pct": 5.0, "y_pct": 33.0, "w_pct": 88.0, "h_pct": 3.5}
             },
             "schedule_property_type": {
                 "value": "Apartment or flat with Undivided Share of Land (UDS)",
                 "confidence": 0.95,
                 "label": "Schedule of Property",
-                "box": {"x_pct": 5.0, "y_pct": 30.5, "w_pct": 88.0, "h_pct": 3.8}
+                "box": {"x_pct": 5.0, "y_pct": 37.0, "w_pct": 88.0, "h_pct": 3.8}
             },
             "survey_number": {
-                "value": "T.S. No. 142/2A (Old S.No 458/1B), Velachery Village, Velachery Taluk, Chennai",
+                "value": "T.S. No. 142/2A (Old S.No 458/1B), Velachery Village, Velachery Taluk, Chennai South",
                 "confidence": 0.94,
                 "label": "Survey Number / S No",
-                "box": {"x_pct": 5.0, "y_pct": 36.0, "w_pct": 88.0, "h_pct": 3.8}
+                "box": {"x_pct": 5.0, "y_pct": 41.0, "w_pct": 88.0, "h_pct": 3.8}
+            },
+            "village_taluk_district": {
+                "value": "Velachery Village / Velachery Taluk / Chennai South District",
+                "confidence": 0.94,
+                "label": "Village / Taluk / District",
+                "box": {"x_pct": 5.0, "y_pct": 45.0, "w_pct": 88.0, "h_pct": 3.5}
+            },
+            "flat_details": {
+                "value": "Flat No. 3B, Third Floor, Sunshine Apartments",
+                "confidence": 0.94,
+                "label": "Flat Details",
+                "box": {"x_pct": 5.0, "y_pct": 49.0, "w_pct": 88.0, "h_pct": 3.5}
             },
             "land_extent": {
                 "value": "Total Land Extent: 4800 Sq.Ft (2 Grounds)",
                 "confidence": 0.92,
                 "label": "Land Extent",
-                "box": {"x_pct": 5.0, "y_pct": 41.5, "w_pct": 88.0, "h_pct": 3.5}
+                "box": {"x_pct": 5.0, "y_pct": 53.0, "w_pct": 88.0, "h_pct": 3.5}
             },
             "apartment_uds_floor": {
-                "value": "Flat No. 3B, 3rd Floor | Built-Up Area: 1250 Sq.Ft | UDS: 480 Sq.Ft",
+                "value": "UDS: 480 Sq.Ft | Built-Up Area: 1250 Sq.Ft | Flat No. 3B, 3rd Floor",
                 "confidence": 0.95,
                 "label": "Apartment UDS & Floor",
-                "box": {"x_pct": 5.0, "y_pct": 46.5, "w_pct": 88.0, "h_pct": 4.0}
+                "box": {"x_pct": 5.0, "y_pct": 57.0, "w_pct": 88.0, "h_pct": 4.0}
             },
-            "boundary": {
-                "value": "North: 30ft Road | South: Plot 29 | East: Plot 27 | West: 40ft Main Road",
-                "confidence": 0.91,
-                "label": "Boundary",
-                "box": {"x_pct": 5.0, "y_pct": 52.5, "w_pct": 88.0, "h_pct": 4.0}
+            "boundaries": {
+                "value": "North: 30 Feet Scheme Road | South: Plot No. 29 & Property of Mr. Raghavan | East: Plot No. 27 & Compound Wall | West: 40 Feet Main Road",
+                "north": "30 Feet Scheme Road",
+                "south": "Plot No. 29 & Property of Mr. Raghavan",
+                "east": "Plot No. 27 & Compound Wall",
+                "west": "40 Feet Main Road",
+                "confidence": 0.93,
+                "label": "Four Boundaries",
+                "box": {"x_pct": 5.0, "y_pct": 62.0, "w_pct": 88.0, "h_pct": 4.0}
             },
             "sro_details": {
-                "value": "SRO Velachery | Doc No. 4521 / 2023 | Date: 14.09.2023",
+                "value": "SRO Velachery",
                 "confidence": 0.95,
                 "label": "SRO Details",
-                "box": {"x_pct": 5.0, "y_pct": 58.5, "w_pct": 88.0, "h_pct": 3.8}
+                "box": {"x_pct": 5.0, "y_pct": 67.0, "w_pct": 88.0, "h_pct": 3.8}
+            },
+            "stamp_duty_fee": {
+                "value": "Stamp Duty: Rs. 5,25,000/- | Registration Fee: Rs. 1,50,000/-",
+                "confidence": 0.95,
+                "label": "Stamp Duty & Fees",
+                "box": {"x_pct": 5.0, "y_pct": 71.0, "w_pct": 88.0, "h_pct": 3.5}
+            },
+            "payment_breakdown": {
+                "value": "Advance Cheque: Rs. 10,00,000/- (Cheque No. 201412, SBI) | Housing Loan: Rs. 65,00,000/- (Sanctioned by HDFC)",
+                "confidence": 0.94,
+                "label": "Payment Breakdown",
+                "box": {"x_pct": 5.0, "y_pct": 75.0, "w_pct": 88.0, "h_pct": 3.5}
             }
         }
     },

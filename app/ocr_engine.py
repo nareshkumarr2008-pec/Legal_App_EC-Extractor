@@ -57,7 +57,7 @@ class OCREngine:
             cpu_count = os.cpu_count() or 4
             thread_count = str(min(8, max(2, (cpu_count // 2))))
             os.environ["CPU_NUM"] = thread_count
-            os.environ["OMP_NUM_THREADS"] = "1"
+            os.environ["OMP_NUM_THREADS"] = thread_count
 
             # Disable MKLDNN/oneDNN PIR CPU instruction bug on Windows & skip remote model check hangs
             os.environ["PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK"] = "True"
@@ -72,7 +72,6 @@ class OCREngine:
                     'FLAGS_use_mkldnn': False,
                     'FLAGS_enable_pir_api': False,
                     'FLAGS_enable_pir_in_executor': False,
-                    'FLAGS_cpu_num': int(thread_count)
                 })
             except Exception:
                 pass
@@ -111,48 +110,74 @@ class OCREngine:
         Disables textline orientation checking for standard deeds/certificates to avoid
         redundant CNN passes per box, reducing per-page CPU inference time by ~40%.
         """
-        extra_kwargs = {}
-        if self.device == "cpu":
-            extra_kwargs["enable_mkldnn"] = False
+        def _init_ocr(dev):
+            extra_kwargs = {}
+            if dev == "cpu":
+                extra_kwargs["enable_mkldnn"] = False
+
+            det_model = "PP-OCRv6_medium_det"
+            rec_model = "ta_PP-OCRv5_mobile_rec" if lang == "ta" else "PP-OCRv6_medium_rec"
+
+            # Attempt 1: High-speed PP-OCRv6 detection + mobile recognition + batched inference
+            try:
+                return self.PaddleOCR(
+                    text_detection_model_name=det_model,
+                    text_recognition_model_name=rec_model,
+                    device=dev,
+                    use_doc_orientation_classify=False,
+                    use_doc_unwarping=False,
+                    use_textline_orientation=False,
+                    text_det_limit_type="max",
+                    text_det_limit_side_len=960,
+                    text_recognition_batch_size=16,
+                    text_det_thresh=0.35,
+                    text_det_box_thresh=0.5,
+                    text_rec_score_thresh=0.45,
+                    **extra_kwargs
+                )
+            except Exception as ex1:
+                logger.warning(f"PaddleOCR v6 init note: {ex1}, trying standard lang config...")
+
+            # Attempt 2: Standard language config with det limit
+            try:
+                return self.PaddleOCR(
+                    lang=lang,
+                    device=dev,
+                    use_doc_orientation_classify=False,
+                    use_doc_unwarping=False,
+                    use_textline_orientation=False,
+                    text_det_limit_type="max",
+                    text_det_limit_side_len=960,
+                    text_recognition_batch_size=16,
+                    **extra_kwargs
+                )
+            except Exception as ex2:
+                logger.warning(f"PaddleOCR fallback config note: {ex2}")
+                return self.PaddleOCR(lang=lang, device=dev, **extra_kwargs)
 
         try:
-            pipeline = self.PaddleOCR(
-                lang=lang,
-                device=self.device,
-                use_doc_orientation_classify=False,
-                use_doc_unwarping=False,
-                use_textline_orientation=False,
-                **extra_kwargs
-            )
-            return pipeline
+            return _init_ocr(self.device)
         except Exception as e:
             if self.device != "cpu":
                 logger.warning(f"GPU pipeline init failed for lang='{lang}' ({e}) — falling back to CPU.")
                 self.device = "cpu"
-                return self.PaddleOCR(
-                    lang=lang,
-                    device="cpu",
-                    enable_mkldnn=False,
-                    use_doc_orientation_classify=False,
-                    use_doc_unwarping=False,
-                    use_textline_orientation=False,
-                )
+                return _init_ocr("cpu")
             raise
 
     def _get_pipeline_ta(self):
-        """Primary Tamil pipeline: PaddleOCR-VL-1.6 with PP-OCRv5_server_det + ta_PP-OCRv5_mobile_rec."""
+        """Primary Tamil pipeline: High-speed PaddleOCR PP-OCRv6_medium_det + ta_PP-OCRv5_mobile_rec."""
         if self._pipeline_ta is None and self.paddle_available:
-            logger.info(f"Loading PaddleOCR-VL-1.6 Tamil pipeline: PaddleOCR(lang='ta', device='{self.device}')...")
+            logger.info(f"Loading high-speed Tamil OCR pipeline: PP-OCRv6_medium_det + ta_PP-OCRv5_mobile_rec on device='{self.device}'...")
             self._pipeline_ta = self._load_pipeline("ta")
-            logger.info(f"PaddleOCR-VL-1.6 Tamil pipeline loaded on device='{self.device}'.")
+            logger.info(f"High-speed Tamil OCR pipeline loaded on device='{self.device}'.")
         return self._pipeline_ta
 
     def _get_pipeline_en(self):
-        """Secondary English pipeline: PaddleOCR-VL-1.6 with PP-OCRv6_medium_det + PP-OCRv6_medium_rec."""
+        """Secondary English pipeline: High-speed PaddleOCR PP-OCRv6_medium_det + PP-OCRv6_medium_rec."""
         if self._pipeline_en is None and self.paddle_available:
-            logger.info(f"Loading PaddleOCR-VL-1.6 English pipeline: PaddleOCR(lang='en', device='{self.device}')...")
+            logger.info(f"Loading high-speed English pipeline: PP-OCRv6_medium_det + PP-OCRv6_medium_rec on device='{self.device}'...")
             self._pipeline_en = self._load_pipeline("en")
-            logger.info(f"PaddleOCR-VL-1.6 English pipeline loaded on device='{self.device}'.")
+            logger.info(f"High-speed English pipeline loaded on device='{self.device}'.")
         return self._pipeline_en
 
     # -- File Conversion --
@@ -171,7 +196,7 @@ class OCREngine:
                 pdf = pdfium.PdfDocument(file_bytes)
                 for page_index in range(len(pdf)):
                     page = pdf[page_index]
-                    bitmap = page.render(scale=3.0)  # Higher scale = better Tamil OCR accuracy
+                    bitmap = page.render(scale=1.5)  # Scale 1.5 provides optimal resolution & fast CPU inference
                     pil_image = bitmap.to_pil().copy()
                     images.append(pil_image)
                     try:
@@ -549,17 +574,17 @@ class OCREngine:
 
     def process_image(self, image, lang="ta"):
         """Process a single image through the dual OCR pipeline with EasyOCR fallback and image pre-processing."""
-        # Pre-process image: upscale low-res documents for crisp character segmentation
+        # Pre-process image: upscale low-res thumbnail documents for crisp character segmentation
         orig_w, orig_h = image.size
         processed_img = image
         scale_factor = 1.0
 
-        if max(orig_w, orig_h) < 1600:
-            scale_factor = min(3.0, 1800.0 / max(orig_w, orig_h))
+        if max(orig_w, orig_h) < 900:
+            scale_factor = min(2.5, 1200.0 / max(orig_w, orig_h))
             new_w = int(orig_w * scale_factor)
             new_h = int(orig_h * scale_factor)
-            processed_img = image.resize((new_w, new_h), Image.Resampling.LANCZOS)
-            logger.info(f"Upscaled image {orig_w}x{orig_h} -> {new_w}x{new_h} (scale={scale_factor:.2f}) for enhanced Tamil OCR.")
+            processed_img = image.resize((new_w, new_h), Image.Resampling.BILINEAR)
+            logger.info(f"Upscaled low-res image {orig_w}x{orig_h} -> {new_w}x{new_h} (scale={scale_factor:.2f}) for enhanced Tamil OCR.")
 
         if processed_img.mode != "RGB":
             processed_img = processed_img.convert("RGB")
@@ -815,7 +840,7 @@ class OCREngine:
                     if idx < total_ium:
                         try:
                             ium_page = pdf_ium[idx]
-                            bitmap = ium_page.render(scale=2.0)
+                            bitmap = ium_page.render(scale=1.5)
                             pil_img = bitmap.to_pil().copy()
                             try:
                                 bitmap.close()
@@ -899,8 +924,8 @@ class OCREngine:
                     empty_paren_count = len(re.findall(r'\(\s*\)', joined_text))
                     has_dropped_bilingual_text = has_legacy_tamil_font and (not has_tamil_unicode) and empty_paren_count >= 3
 
-                    if (len(joined_text.strip()) >= 15 and native_lines
-                            and not is_cid_corrupted and not has_dropped_bilingual_text):
+                    # Use native digital PDF lines directly if present and uncorrupted
+                    if (native_lines and not is_cid_corrupted and not has_dropped_bilingual_text):
                         full_text = "\n".join(l["text"] for l in native_lines)
                         page_res = {
                             "page_number": idx + 1,
@@ -912,13 +937,35 @@ class OCREngine:
                             "preview_url": preview_url,
                         }
                     else:
-                        if is_cid_corrupted:
-                            logger.info(f"Page {idx + 1} contains non-Unicode CID-encoded fonts ({len(cid_matches)} occurrences). Running PaddleOCR-VL-1.6 Vision Engine for clean character extraction...")
-                        elif has_dropped_bilingual_text:
-                            logger.info(f"Page {idx + 1} uses a legacy Tamil font ({sorted(page_fonts)}) whose text layer dropped the Tamil characters. Running PaddleOCR-VL-1.6 Vision Engine to read the rendered glyphs instead...")
-                        page_res = self.process_image(pil_image, lang=lang) if pil_image else {"lines": [], "words": [], "full_text": ""}
-                        page_res["page_number"] = idx + 1
-                        page_res["preview_url"] = preview_url
+                        # Check if this page is essentially a blank/uniform reverse side
+                        is_blank = False
+                        if pil_image:
+                            try:
+                                gray_arr = np.array(pil_image.convert('L'))
+                                if (np.mean(gray_arr) > 215 and np.std(gray_arr) < 22) or (np.mean(gray_arr) > 185 and np.std(gray_arr) < 14):
+                                    is_blank = True
+                            except Exception:
+                                pass
+
+                        if is_blank:
+                            logger.info(f"Page {idx + 1} is a blank/reverse sheet — fast skipping vision OCR.")
+                            page_res = {
+                                "page_number": idx + 1,
+                                "width": int(width_pt),
+                                "height": int(height_pt),
+                                "lines": [],
+                                "words": [],
+                                "full_text": "",
+                                "preview_url": preview_url,
+                            }
+                        else:
+                            if is_cid_corrupted:
+                                logger.info(f"Page {idx + 1} contains non-Unicode CID-encoded fonts ({len(cid_matches)} occurrences). Running PaddleOCR-VL-1.6 Vision Engine for clean character extraction...")
+                            elif has_dropped_bilingual_text:
+                                logger.info(f"Page {idx + 1} uses a legacy Tamil font ({sorted(page_fonts)}) whose text layer dropped the Tamil characters. Running PaddleOCR-VL-1.6 Vision Engine to read the rendered glyphs instead...")
+                            page_res = self.process_image(pil_image, lang=lang) if pil_image else {"lines": [], "words": [], "full_text": ""}
+                            page_res["page_number"] = idx + 1
+                            page_res["preview_url"] = preview_url
 
                     page_dur = time.time() - page_start_time
                     lines_count = len(page_res.get("lines", []))

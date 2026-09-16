@@ -43,6 +43,60 @@ class TestPropertyDocumentOCR(unittest.TestCase):
         self.assertIn("sro_details", fields)
         self.assertIn("RAJENDRAN", fields["vendor_details"]["value"])
 
+    def test_real_sale_deed_pdf_extraction(self):
+        """Verify comprehensive extraction of real Tamil Nadu Sale Deed (Doc No 3978 of 2010)."""
+        real_deed_text = """
+SALE DEED
+THIS DEED OF ABSOLUTE SALE IS EXECUTED at Chennai on this 22nd day of NOVEMBER 2010, between: Mr.N.MUTHUKARUPPAN, Son of Mr.Nagappa Chettiar, Hindu, aged about 60 years, and residing at Flat No.A-2, Ground Floor, Apollo Twins, Old No.119, New No.53, Periyar Pathai, Choolaimedu, Chennai 600094, hereinafter called the 'VENDOR' of the ONE PART.
+TO AND IN FAVOUR OF
+Mr.M.G.NAAGESH, Son of Late.M.N.Gopal, Hindu, aged about 42 years, residing at No.6/2, Sri Ramar Street, Devaraj Nagar, Dasarathapuram, Saligramam, Chennai 600093, represented by his General Power of Attorney Agent
+Mrs.V.M.BHUWANEESVARI, Wife of Mr.M.G.Naagesh, Hindu, aged about 35 years, residing at No.6/2, Sri Ramar Street, Devaraj Nagar, Dasarathapuram, Saligramam, Chennai 600093, (which deed of Power was duly registered under document No.1698 of 2010, dated 03.11.2010, registered with SRO Virugambakkam) hereinafter called the 'PURCHASER' of the OTHER PART.
+
+WHEREAS the schedule mentioned property situated at No.109 Puliyur Village, Egmore Nungambakkam Taluk, Chennai District, Ananthakkupallam otherwise called Anaipallathakku
+bearing new survey No.78 of Block No.1 presently Periyar Pathai, land measuring an extent of 768 sq.ft, of undivided share of land in Two Grounds and 2130 sq.ft, was purchased by the Vendor herein out of his self earned funds from (1) A.D.BALAKRISHNAN (2) D.B.GOPINATH and (3) D.B.BALAJI represented by their General Power of Attorney Agent M/s.APOLLO ESTATES AND BUILDERS PRIVATE LTD, represented by their Power of Attorney Agent Mr.JAMAL ASAN ALIYAR, and the same was registered under document No.7126 of 1995, dated 14.12.1995, registered on the file of SRO Kodambakkam.
+
+And thereafter the Vendor herein had put up construction along with other undivided share co owners with the help of the builder M/s.APOLLO ESTATES AND BUILDERS PRIVATE LTD, represented by its Executive Director Mr.H.SYED SHAH ALAM, and constructed a flat measuring 907 sq.ft, including common area with proportionate share situated at Chennai Corporation division No.92, No.109 Puliyur Village, Ananthakkupallam Comprised in survey No.78, Block No.I, presently Flat No.A-2, Ground Floor, Apollo Twins, Old No.119, New No.53, Periyar Pathai, Choolaimedu, Chennai 600094.
+
+WHEREAS the Vendor intends to sell the schedule property for a sale consideration of Rs.23,00,000/- (Rupees twenty three lakhs only).
+Purchaser herein has approached the HDFC LTD, Chennai, for a housing loan and got sanctioned a loan of Rs.20,00,000/-.
+a. Rs.1,00,000/- paid as advance by cheque No.340705 CANARA BANK.
+b. Rs.2,00,000/- paid as D.D. No.050749 CANARA BANK.
+c. Rs.20,00,000/- balance paid by Banker's Cheque No.005403 HDFC Bank Ltd.
+
+SCHEDULE OF PROPERTY:
+All that piece and parcel of property situated at No.109 Puliyur Village, Egmore Nungambakkam Taluk, Chennai District, new survey No.78 of Block No.1, presently Flat No.A-2, Ground Floor, Apollo Twins, Old No.119, New No.53, Periyar Pathai, Choolaimedu, Chennai 600094, along with TNEB Service connection No.09-285-003-181, CMWSSB customer ID No.79090, property tax assessment New Door No.53/A2 and Old No.119/A2 (Zone No.05, Divn.No.075, Bill No.2635), bounded on the:
+North by: land belonging to Duraiswamy Pillai
+South by: Public Road
+East by: land belonging to Manogarammal
+West by: land belonging to Kuppuswamy Naicker
+
+REGISTERED As No. 3978 of 2010 of Book 1
+Sub-Registrar of Kodambakkam, Date: 22-11-2010
+Present market value of the property is Rs.23,00,000/-
+PAN: AAMPM9014C
+"""
+        extracted = self.extractor.extract(real_deed_text, doc_type="sale_deed")
+        fields = extracted["fields"]
+
+        self.assertIn("MUTHUKARUPPAN", fields["vendor_details"]["value"])
+        self.assertIn("NAAGESH", fields["purchaser_details"]["value"])
+        self.assertIn("BHUWANEESVARI", fields["poa_agent_details"]["value"])
+        self.assertIn("BALAKRISHNAN", fields["history_previous_owner"]["value"])
+        self.assertIn("7126 of 1995", fields["previous_doc_reference"]["value"])
+        self.assertIn("78 of Block No.1", fields["survey_number"]["value"])
+        self.assertIn("Puliyur", fields["village_taluk_district"]["value"])
+        self.assertIn("768", fields["apartment_uds_floor"]["value"])
+        self.assertIn("907", fields["apartment_uds_floor"]["value"])
+        self.assertIn("Duraiswamy Pillai", fields["boundaries"]["value"])
+        self.assertIn("Public Road", fields["boundaries"]["value"])
+        self.assertIn("23,00,000", fields["consideration_amount"]["value"])
+        self.assertIn("Kodambakkam", fields["sro_details"]["value"])
+        self.assertIn("3978 of 2010", fields["document_number"]["value"])
+        self.assertIn("22-11-2010", fields["registration_date"]["value"])
+        self.assertIn("09-285-003-181", fields["utility_tax_identifiers"]["value"])
+        self.assertIn("AAMPM9014C", fields["pan_number"]["value"])
+
+
     def test_dynamic_ec_header_extraction(self):
         """Verify zero-fallback dynamic extraction of EC header fields."""
         sample_text = """OAT
