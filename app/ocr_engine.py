@@ -547,27 +547,52 @@ class OCREngine:
 
     @staticmethod
     def clean_tamil_ocr_text(text: str) -> str:
-        """Normalize Tamil OCR ligatures, punctuation artifacts, and common character misrecognitions."""
+        """Normalize Tamil OCR ligatures, visual-order Kombu/pulli, and common character misrecognitions."""
         if not text:
             return ""
         import unicodedata
         t = unicodedata.normalize('NFC', text)
         # Strip raw CID font artifacts e.g. (cid:2), (cid:39)
         t = re.sub(r'\(cid:\d+\)', '', t)
+
         # Fix noisy quotes and punctuation inserted inside words
         t = re.sub(r"மாவ['`’]டம்", "மாவட்டம்", t)
+        t = re.sub(r"\bமராவட்டம்\b", "மாவட்டம்", t)
         t = re.sub(r"வ['`’]டம்", "வட்டம்", t)
         t = re.sub(r"ப['`’]டா", "பட்டா", t)
         t = re.sub(r"\bதநாடூ\s*அர\b", "தமிழ்நாடு அரசு", t)
         t = re.sub(r"\bமேலாணமை\b", "மேலாண்மை", t)
         t = re.sub(r"இ\.எ[ரர]\s*10\(1\)", "படிவம் எண் 10(1)", t)
         t = re.sub(r"இ\.எ[ரர]", "படிவம் எண்", t)
-        t = re.sub(r"உரிமையாள[கேர][\s|]*பெய[ரர]", "உரிமையாளர்கள் பெயர்", t)
+        t = re.sub(r"உரிம[ைா\s]*யாள[ரர்கே\s]*[ெ\s]*பெய[ரர்\s]*்?", "உரிமையாளர்கள் பெயர்", t)
         t = re.sub(r"\bமக\+\b", "மகன்", t)
         t = re.sub(r"\bந\+செ\b", "நஞ்சை", t)
         t = re.sub(r"\b7\+செ\b", "புஞ்சை", t)
         t = re.sub(r"எ[ரர]\b", "எண்", t)
         t = re.sub(r"பெய[ரர]\b", "பெயர்", t)
+
+        # OCR dropped kombu (ெ) and misrecognition repairs for revenue localities & terms
+        t = re.sub(r"\b(?:சமெ்பாக்கம்|சம்பாக்கம்|ெசம்பாக்கம்)\b", "செம்பாக்கம்", t)
+        t = re.sub(r"\b(?:சங்கல்பட்டு|ெசங்கல்பட்டு)\b", "செங்கல்பட்டு", t)
+        t = re.sub(r"\bபட்டா\s*(?:ஏன்|எஏண்|ஏண்|என|எண)\b", "பட்டா எண்", t)
+        t = re.sub(r"\bபழய\b", "பழைய", t)
+        t = re.sub(r"\bதர்வை\b", "தீர்வை", t)
+        t = re.sub(r"\bஹக்\b(?=\s*[-–—]\s*ஏர்)", "ஹெக்", t)
+        t = re.sub(r"\bதுண\b(?=\s*வட்டாட்சியர்)", "துணை", t)
+        t = re.sub(r"\bநரத்தில்\b", "நேரத்தில்", t)
+        t = re.sub(r"\bமின்கயாப்பம்\b", "மின்கையொப்பம்", t)
+        t = re.sub(r"\bகயாப்பம்\b", "கையொப்பம்", t)
+        t = re.sub(r"\bஇணய\b", "இணைய", t)
+        t = re.sub(r"\bசெைய்து\b|\bசய்து\b", "செய்து", t)
+        t = re.sub(r"\bமூுலம்\b", "மூலம்", t)
+        t = re.sub(r"\bசேர்கப்பட்டுள்ளது\b", "சேர்க்கப்பட்டுள்ளது", t)
+        t = re.sub(r"\bரயத\s*்\s*வாரி\b", "ரயத்துவாரி", t)
+        t = re.sub(r"(?<!சி)ன்னக்கண்(?!ணு)", "சின்னக்கண்ணு", t)
+        t = re.sub(r"சின்னக்கண்(?!ணு)", "சின்னக்கண்ணு", t)
+
+        # Normalize visual order Kombu signs (ெ, ே, ை) appearing before consonant
+        t = re.sub(r'([ெேை])([\u0b95-\u0bb9])', r'\2\1', t)
+
         return t.strip()
 
     # -- Public API --
@@ -924,8 +949,30 @@ class OCREngine:
                     empty_paren_count = len(re.findall(r'\(\s*\)', joined_text))
                     has_dropped_bilingual_text = has_legacy_tamil_font and (not has_tamil_unicode) and empty_paren_count >= 3
 
+                    # Check for dropped Tamil glyphs in digital PDFs (e.g. subset NirmalaUI or eServices export where characters like சி, ணு, பு, தீ, ரு are stripped leaving orphaned spaces or pullis)
+                    has_dropped_tamil_glyphs = False
+                    if has_tamil_unicode:
+                        broken_tamil_patterns = [
+                            r'(?:\s|^)[்][\u0b80-\u0bff]',  # word starting with virama/pulli like " ன்னக்கண்"
+                            r'த\s+ழ்நா',                     # த ழ்நா (தமிழ்நாடு)
+                            r'வ\s+வாய்',                     # வ வாய் (வருவாய்)
+                            r'மற்\s+ம்',                     # மற் ம் (மற்றும்)
+                            r'(?:\s|^)ல\s*எண்',              # ல எண் (புல எண்)
+                            r'உட\s*்\s*ரி',                 # உட ் ரி (உட்பிரிவு)
+                            r'பரப்\s+',                      # பரப் (பரப்பு)
+                            r'ரயத\s*்\s*வாரி',              # ரயத ் வாரி (ரயத்துவாரி)
+                            r'சான்றளிக்கப்ப\s+ற',            # சான்றளிக்கப்ப  ற
+                            r'ன்னக்கண்',                     # ன்னக்கண் (சின்னக்கண்ணு)
+                            r'\s+ரை்\s*வ',                   #  ரை் வ (தீர்வை)
+                            r'\s+ப்\s*:',                    #  ப் : (குறிப்பு :)
+                        ]
+                        broken_count = sum(1 for pat in broken_tamil_patterns if re.search(pat, joined_text))
+                        if broken_count >= 2:
+                            has_dropped_tamil_glyphs = True
+                            logger.info(f"Page {idx + 1}: Detected {broken_count} dropped/corrupted Tamil glyph patterns in native PDF text. Forcing full OCR pipeline.")
+
                     # Use native digital PDF lines directly if present and uncorrupted
-                    if (native_lines and not is_cid_corrupted and not has_dropped_bilingual_text):
+                    if (native_lines and not is_cid_corrupted and not has_dropped_bilingual_text and not has_dropped_tamil_glyphs):
                         full_text = "\n".join(l["text"] for l in native_lines)
                         page_res = {
                             "page_number": idx + 1,

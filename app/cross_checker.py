@@ -22,37 +22,53 @@ class CrossVerificationEngine:
     def normalize_extent_to_sqft(extent_str: str) -> Optional[float]:
         if not extent_str:
             return None
-        text = str(extent_str).lower().replace(",", "")
+        raw_text = str(extent_str).lower()
 
-        cents_match = re.search(r'([0-9.]+)\s*(?:cents?|சென்ட்)', text)
-        if cents_match:
-            return float(cents_match.group(1)) * 435.6
+        # If a multiline or multi-survey schedule has a Total row, focus on total
+        text = raw_text
+        for total_pattern in [r'(?:total\s*extent|மொத்தம்)[^\n]+', r'total[^\n]+']:
+            tm = re.search(total_pattern, raw_text)
+            if tm:
+                text = tm.group(0)
+                break
 
-        acres_match = re.search(r'([0-9.]+)\s*(?:acres?|ஏக்கர்)', text)
-        if acres_match:
-            return float(acres_match.group(1)) * 43560.0
+        text = text.replace(",", "")
 
-        grounds_match = re.search(r'([0-9.]+)\s*(?:grounds?|கிரவுண்ட்)', text)
-        if grounds_match:
-            return float(grounds_match.group(1)) * 2400.0
+        # 1. Direct Sq.Ft / Sq.Feet
+        sqft_match = re.search(r'([0-9.]+)\s*(?:sq\.?\s*ft|sq\.?\s*feet|சதுர\s*அடி)', text)
+        if sqft_match:
+            return float(sqft_match.group(1))
 
-        ha_match = re.search(r'([0-9]+)[-.]?([0-9]+)?\s*(?:hectare|ares?|ஹெக்டேர்|ஏர்ஸ்)', text)
-        if ha_match:
-            try:
-                parts = ha_match.groups()
-                hectares = float(parts[0]) if parts[0] else 0.0
-                ares = float(parts[1]) if len(parts) > 1 and parts[1] else 0.0
-                return (hectares * 107639.0) + (ares * 1076.39)
-            except Exception:
-                pass
-
+        # 2. Sq.Meters
         sqm_match = re.search(r'([0-9.]+)\s*(?:sq\.?\s*m|sq\.?\s*meters?|சதுர\s*மீட்டர்)', text)
         if sqm_match:
             return float(sqm_match.group(1)) * 10.7639
 
-        sqft_match = re.search(r'([0-9.]+)\s*(?:sq\.?\s*ft|sq\.?\s*feet|சதுர\s*அடி)', text)
-        if sqft_match:
-            return float(sqft_match.group(1))
+        # 3. Grounds
+        grounds_match = re.search(r'([0-9.]+)\s*(?:grounds?|கிரவுண்ட்)', text)
+        if grounds_match:
+            return float(grounds_match.group(1)) * 2400.0
+
+        # 4. Acres
+        acres_match = re.search(r'([0-9.]+)\s*(?:acres?|ஏக்கர்)', text)
+        if acres_match:
+            return float(acres_match.group(1)) * 43560.0
+
+        # 5. Cents
+        cents_match = re.search(r'([0-9.]+)\s*(?:cents?|சென்ட்)', text)
+        if cents_match:
+            return float(cents_match.group(1)) * 435.6
+
+        # 6. Hectares & Ares: e.g. 0-40.00 or 0 Ha 40.00 Ares
+        ha_ares_match = re.search(r'([0-9]+)\s*(?:ha|hectares?|ஹெக்)?\s*[-–.]?\s*([0-9.]+)\s*(?:ares?|ஏர்ஸ்)', text)
+        if ha_ares_match:
+            h = float(ha_ares_match.group(1))
+            a = float(ha_ares_match.group(2))
+            return (h * 107639.1) + (a * 1076.391)
+
+        ha_match = re.search(r'([0-9.]+)\s*(?:hectares?|ஹெக்டேர்)', text)
+        if ha_match:
+            return float(ha_match.group(1)) * 107639.1
 
         num_match = re.search(r'^([0-9.]+)$', text.strip())
         if num_match:
@@ -129,7 +145,7 @@ class CrossVerificationEngine:
         deed_sy_obj = sale_deed.get("survey_number", sale_deed.get("survey_subdivision_no", ""))
         deed_sy = deed_sy_obj.get("value", str(deed_sy_obj)) if isinstance(deed_sy_obj, dict) else str(deed_sy_obj)
 
-        rev_sy_obj = revenue_doc.get("survey_number", revenue_doc.get("tslr_town_survey_no", revenue_doc.get("survey_and_subdivision", "")))
+        rev_sy_obj = revenue_doc.get("survey_numbers", revenue_doc.get("survey_number", revenue_doc.get("tslr_town_survey_no", revenue_doc.get("survey_and_subdivision", ""))))
         rev_sy = rev_sy_obj.get("value", str(rev_sy_obj)) if isinstance(rev_sy_obj, dict) else str(rev_sy_obj)
 
         norm_deed_sy = self.normalize_survey_no(deed_sy)
@@ -164,7 +180,7 @@ class CrossVerificationEngine:
         deed_ext_obj = sale_deed.get("land_extent", sale_deed.get("extent_area", sale_deed.get("extent", "")))
         deed_ext_raw = deed_ext_obj.get("value", str(deed_ext_obj)) if isinstance(deed_ext_obj, dict) else str(deed_ext_obj)
 
-        rev_ext_obj = revenue_doc.get("extent", revenue_doc.get("extent_area", revenue_doc.get("land_extent", "")))
+        rev_ext_obj = revenue_doc.get("extent_details", revenue_doc.get("extent", revenue_doc.get("extent_area", revenue_doc.get("land_extent", ""))))
         rev_ext_raw = rev_ext_obj.get("value", str(rev_ext_obj)) if isinstance(rev_ext_obj, dict) else str(rev_ext_obj)
 
         deed_sqft = self.normalize_extent_to_sqft(str(deed_ext_raw))

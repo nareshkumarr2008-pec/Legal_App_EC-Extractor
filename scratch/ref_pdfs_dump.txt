@@ -1,0 +1,154 @@
+=== MEDIA 1 (Patta Ref) ===
+Pages: 2
+--- Page 1 ---
+PlotChoice Legal OCR & Document Intelligence Report 15-Sep-2026 10:12 AM
+REAL ESTATE DOCUMENT OCR & INTELLIGENCE REPORT
+Document Category: Patta document • படா ஆவண (Patta Document)
+DOCUMENT FILE patta tst 1.pdf TOTAL PAGES 2
+PROCESSED DATE 15 September 2026, 10:12 AM STATUS High Confidence (98%)
+1. Extracted Key Legal Fields
+Key Field Extracted Value & Schedule Breakdown Confidenc
+e
+Patta Number 242 98%
+Owner Name(s) Ranganathan, S/o Chinnakannu (சனக மக ரகநாத) 98%
+Village Sembakkam (ெசபாக) 98%
+District Chengalpattu (ெசகப) 98%
+Taluk Tambaram (தாபர) 98%
+Survey Number(s) 128/7 98%
+Extent of Land under each 128/7: 0.00.06 Hectares (நெச / Wet) — Tax: Rs. 2.00 98%
+Survey Number Total: 0.00.06 Hectares (0 Sq.M / 0 Sq.Ft / 0.00 Grounds / 0.000 Acres) — Total
+Tax: Rs. 2.00
+Nature of Land Rayathuvari Manai (Residential Plot) — ரயவாரி மைன 98%
+Digital Signature 22/01/2024 at 05:47:27 PM 99%
+Timestamp
+(மிைகெயாப)
+Authorized Signatory Kavitha S (Tahsildar) 99%
+(மடல ைண
+வடாசய)
+e-Services Reference / S/NA/35/05/128/00242/20878 99%
+Application Number
+Certificate Print 15-09-2026 at 08:42:26 AM 99%
+Timestamp
+(அசகபட ேநர)
+Government Verification https://eservices.tn.gov.in 99%
+Portal
+Total Land Revenue Tax / Rs. 2.00 98%
+Assessment (ைவ)
+Confidential • Automatically Extracted via GPU OCR & Document Intelligence Engine Page 1 of 2
+--- Page 2 ---
+PlotChoice Legal OCR & Document Intelligence Report 15-Sep-2026 10:12 AM
+2. Cadastral Survey Schedule & Area Normalization
+Sl Survey No Land Type Extent (Ha) Sq. Meters Sq. Feet Tax (ைவ)
+1 128/7 ரயவாரி 0.00.06 6 Sq.M 65 Sq.Ft Rs. 2.00
+மைன (Residential Hectares
+Site / Manai)
+3. Document Verification Checklist
+Verification Item Status Details / Assessment
+Patta Number Validation PASSED Valid Patta number 242 extracted and verified in Form 10(1) revenue
+(படா எ: 242) heading.
+Owner & Kinship PASSED Registered Pattadhar authenticated: Ranganathan, S/o Chinnakannu
+Authentication (படாதார & (சனக மக ரகநாத)
+உறைற)
+Survey Numbers Schedule PASSED All 1 cadastral survey number(s) identified (128/7) in revenue table.
+(ல எக: 128/7)
+Extent & Revenue Balance PASSED Land area (0.40.00 Hectares = 4,000 Sq.M) and cumulative totals
+(பரபள & ைவ verified mathematically across revenue table.
+சரிபா)
+Digital Signature & PASSED Authorized Government Digital Signature confirmed: Kavitha S
+Authenticity (Tahsildar) [22/01/2024 at 05:47:27 PM].
+(மிைகெயாப)
+TN e-Services Portal PASSED Online verification reference S/NA/35/05/128/00242/20878 active on
+Verification (Ref: official portal https://eservices.tn.gov.in.
+S/NA/35/05/128/00242/20878)
+Confidential • Automatically Extracted via GPU OCR & Document Intelligence Engine Page 2 of 2
+
+================================================================================
+
+=== MEDIA 2 (TSLR Ref) ===
+Pages: 2
+--- Page 1 ---
+PlotChoice Legal OCR & Document Intelligence Report 16-Sep-2026 10:55 AM
+REAL ESTATE DOCUMENT OCR & INTELLIGENCE REPORT
+Document Category: TSLR document (Town Survey Land Record) • நகர நல அளைவ ஆவண (TSLR)
+DOCUMENT FILE TSLR tst 2.pdf TOTAL PAGES 2
+PROCESSED DATE 16 September 2026, 10:55 AM STATUS High Confidence (98%)
+1. Extracted Key Legal Fields
+Key Field Extracted Value & Schedule Breakdown Confidenc
+e
+District (மாவட) Chengalpattu (ெசகப) 98%
+Taluk (வட) Tambaram (தாபர) 98%
+Town / Revenue Village Tambaram (தாபர) 98%
+(நகர / வவா
+கராம)
+Ward (வா) Ward-CTambaram 98%
+Digital Signature SARAVANNAN V — Tahsildar — தாபர வட / Tambaram, 98%
+Authority (வடாசய / ெசகப மாவட / Chengalpattu
+மி ைகெயாப)
+Signature Date 21-01-2020 98%
+(ைகெயாப நா)
+eServices Verification Ref URB/35/05/003/003/0027/2/0 99%
+No (சரிபா ற
+எ)
+Certificate Print Date & 16-09-2026 at 08:05:24 AM 95%
+Time (அசகபட
+நா)
+Verification Portal https://eservices.tn.gov.in 99%
+(சரிபா
+இைணயதள)
+Sl.No (வரிைச எ) 1 95%
+Town Survey Number / 2/0 98%
+S.No (நகர ல எ / T.S.
+No)
+Old Survey Number 357/A,B-/358/A,B-359A,361/364/366/368/1,2-3691-2,370/1-357/1A-1B/358/1 96%
+(பைழய சேவ எ / A1B,393/394/395/396/397
+O.Sur No & Letter)
+Ward + Block (வா & Ward-CTambaram, Block 0027 96%
+பளா)
+Municipal Door No. Not Recorded (-) 90%
+(நகராச கத எ)
+Name (உரிைமயாள Not Recorded (-) (பத ெசயபடவைல) 97%
+ெபய / Adangal Holder)
+Tenure Type (நல Government (சகா / அர) 98%
+உரிைம ைற: Govt/Mit
+ta/Zamindari/Inam)
+Confidential • Automatically Extracted via GPU OCR & Document Intelligence Engine Page 1 of 2
+--- Page 2 ---
+PlotChoice Legal OCR & Document Intelligence Report 16-Sep-2026 10:55 AM
+Land Classification (நல Government Poramboke (றேபா) 98%
+வைகபா: Dry/Wet/Pr
+omboke/House-site)
+Current Land Use Not Recorded (-) (பத ெசயபடவைல) 90%
+(தேபாைதய
+பயபா: How holding
+is utilised)
+Extent By Town Survey 30 Hectare, 14 Are(s), 5.0 Sq.Meter(s) [ 301,405.0 Sq.M / 3,244,293.3 Sq.Ft 98%
+(நல வரண: (1,351.79 Grounds)]
+Hectare, Ares, Sq.Meter)
+Assessment (ைவ / Municipal=-, Govt=0.00 95%
+நல வரி: Municipal,
+Govt.)
+Municipal Register Not Recorded (-) 90%
+(நகராச பதேவ)
+Remarks (றக / TR DT: 21-01-2020 98%
+மாத உதர)
+Multi-Page & Survey Map 2 Pages Total — Page 2 Verified — eServices Official 2D Barcode & Portal 99%
+Audit (பக & வைரபட Attestation (Reference: URB/35/05/003/003/0027/2/0)
+சரிபா)
+2. Document Verification Checklist
+Verification Item Status Details / Assessment
+Adangal Holding & Owner PASSED Government Poramboke Land (சகா றேபா). Vested with
+Verification (உரிைமயாள Government of Tamil Nadu; private Adangal holding not applicable.
+சரிபா)
+Town Survey & Old Revenue PASSED Town Survey No: 2/0, Old Revenue Survey No: 357/A,B-/358/A,B-359A
+Survey Correlation (ல எ ,361/364/366/368/1,2-3691-2,370/1-357/1A-1B/358/1A1B,393/394/39
+இைண) 5/396/397.
+Tenure Type Verification (நல PASSED Tenure: Government (சகா / அர).
+உரிைம உத)
+Land Classification & Use PASSED Classification: 'Government Poramboke (றேபா)', Use: 'Not
+(மைன வைகபா) Recorded (-)'.
+Digital Signature & eServices PASSED Signed by SARAVANNAN Von 21-01-2020. Ref:
+Validity (மி ைகெயாப) URB/35/05/003/003/0027/2/0.
+Multi-Page & Survey Map PASSED 2 Pages Total — Page 2 Verified — eServices Official 2D Barcode &
+Audit (பக & வைரபட Portal Attestation (Reference: URB/35/05/003/003/0027/2/0).
+சரிபா)
+Confidential • Automatically Extracted via GPU OCR & Document Intelligence Engine Page 2 of 2

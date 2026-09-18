@@ -91,6 +91,7 @@ CANONICAL_PLACES = {
     "கன்னியாகுமரி": "Kanyakumari", "kanyakumari": "கன்னியாகுமரி",
     "கள்ளக்குறிச்சி": "Kallakurichi", "kallakurichi": "கள்ளக்குறிச்சி",
     "செங்கல்பட்டு": "Chengalpattu", "chengalpattu": "செங்கல்பட்டு", "chengleput": "செங்கல்பட்டு",
+    "சங்கல்பட்டு": "Chengalpattu", "ெசங்கல்பட்டு": "Chengalpattu",
     "chengleput joint i": "செங்கல்பட்டு இணை I", "chengleput joint 1": "செங்கல்பட்டு இணை I", "chengleput joint": "செங்கல்பட்டு இணை",
     "மயிலாடுதுறை": "Mayiladuthurai", "mayiladuthurai": "மயிலாடுதுறை",
 
@@ -112,6 +113,12 @@ CANONICAL_PLACES = {
     "திருவொற்றியூர்": "Tiruvottiyur", "tiruvottiyur": "திருவொற்றியூர்",
     "மேட்டுப்பாளையம்": "Mettupalayam", "mettupalayam": "மேட்டுப்பாளையம்",
     "சூலூர்": "Sulur", "sulur": "சூலூர்",
+    "தாம்பரம்": "Tambaram", "tambaram": "தாம்பரம்",
+    "பல்லாவரம்": "Pallavaram", "pallavaram": "பல்லாவரம்",
+    "ஆலந்தூர்": "Alandur", "alandur": "ஆலந்தூர்",
+    "ஆவடி": "Avadi", "avadi": "ஆவடி",
+    "சேலையூர்": "Selaiyur", "selaiyur": "சேலையூர்",
+    "பூந்தமல்லி": "Poonamallee", "poonamallee": "பூந்தமல்லி",
 
     # Villages
     "அலப்பாக்கம்": "Alappakkam", "alappakkam": "அலப்பாக்கம்",
@@ -122,6 +129,8 @@ CANONICAL_PLACES = {
     "செங்கபடை": "Sengapadai", "sengapadai": "செங்கபடை",
     "குமாரப்பாளையம்": "Kumarapalayam", "kumarapalayam": "குமாரப்பாளையம்",
     "வேளச்சேரி": "Velachery", "velachery": "வேளச்சேரி",
+    "செம்பாக்கம்": "Sembakkam", "sembakkam": "செம்பாக்கம்",
+    "சம்பாக்கம்": "Sembakkam", "ெசம்பாக்கம்": "செம்பாக்கம்", "சமெ்பாக்கம்": "Sembakkam",
     "சோழிங்கநல்லூர்": "Sholinganallur", "sholinganallur": "சோழிங்கநல்லூர்",
     "ஆலந்தூர்": "Alandur", "alandur": "ஆலந்தூர்",
     "அடையாறு": "Adyar", "adyar": "அடையாறு", "adayar": "அடையாறு",
@@ -158,11 +167,17 @@ COMMON_NAMES = {
     "ராஜேந்திரன்": "Rajendran", "rajendran": "ராஜேந்திரன்", "இராஜந்திரன்": "Rajendran", "இராஜேந்திரன்": "Rajendran",
     "பக்கிரிசாமி": "Pakkirisamy", "pakkirisamy": "பக்கிரிசாமி",
     "கோவிந்தராசு": "Govindarasu", "govindarasu": "கோவிந்தராசு",
+    "கோவிந்தராஜூ": "Govindarajoo", "govindarajoo": "கோவிந்தராஜூ", "கோவிந்தராஜு": "Govindarajoo", "கோவிந்தராஜ்": "Govindaraj",
+    "நாராயணன்": "Narayanan", "narayanan": "நாராயணன்", "நாராயண": "Narayanan",
     "வேலுசாமி": "Velusamy", "velusamy": "வேலுசாமி",
     "பான்னுசாமி": "Ponnusamy", "பொன்னுசாமி": "Ponnusamy", "ponnusamy": "பொன்னுசாமி",
     "தனலட்சுமி": "Dhanalakshmi", "dhanalakshmi": "தனலட்சுமி",
     "சுப்பிரமணியம்": "Subramaniam", "subramaniam": "சுப்பிரமணியம்",
     "பாலசுப்பிரமணியம்": "Balasubramaniam", "balasubramaniam": "பாலசுப்பிரமணியம்",
+    "சின்னக்கண்ணு": "Chinnakannu", "chinnakannu": "சின்னக்கண்ணு", "சின்னகண்ணு": "Chinnakannu",
+    "ரங்கநாதன்": "Ranganathan", "ranganathan": "ரங்கநாதன்", "ரெங்கநாதன்": "Ranganathan",
+    "அருண்குமார்": "Arunkumar", "arunkumar": "அருண்குமார்",
+    "ராமநாதன்": "Ramanathan", "ramanathan": "ராமநாதன்",
     "சின்னசாமி": "Chinnaswamy", "chinnaswamy": "சின்னசாமி",
     "அம்சவல்லி": "Amsavalli", "amsavalli": "அம்சவல்லி",
     "கிருஷ்ணன்": "Krishnan", "krishnan": "கிருஷ்ணன்",
@@ -1165,19 +1180,29 @@ def format_bilingual_entity(text: str) -> str:
     if not clean:
         return "Not Detected"
 
+    # Normalize visual order & repair known OCR dropped Kombu / typo entities
+    clean = normalize_tamil_visual_order(clean)
+    clean = re.sub(r'\b(?:சமெ்பாக்கம்|சம்பாக்கம்|ெசம்பாக்கம்)\b', 'செம்பாக்கம்', clean)
+    clean = re.sub(r'\b(?:சங்கல்பட்டு|ெசங்கல்பட்டு)\b', 'செங்கல்பட்டு', clean)
+    clean = re.sub(r'\bமராவட்டம்\b', 'மாவட்டம்', clean)
+
     # 1. Check if Tamil (English) e.g. 'விழுப்புரம் (Villupuram)'
     m1 = re.match(r'^([\u0b80-\u0bff\s,\./\-]+?)\s*\(([A-Za-z0-9\s,\./\-]+)\)$', clean)
     if m1:
         ta_part = m1.group(1).strip()
         en_part = m1.group(2).strip()
-        return f"{en_part} ({ta_part})"
+        ta_norm = CANONICAL_PLACES.get(en_part.lower()) or ta_part
+        return f"{en_part} ({ta_norm})"
 
     # 2. Check if English (Tamil) e.g. 'Villupuram (விழுப்புரம்)'
     m2 = re.match(r'^([A-Za-z0-9\s,\./\-]+?)\s*\(([\u0b80-\u0bff\s,\./\-]+)\)$', clean)
     if m2:
         en_part = m2.group(1).strip()
         ta_part = m2.group(2).strip()
-        return f"{en_part} ({ta_part})"
+        if ta_part in CANONICAL_PLACES:
+            en_part = CANONICAL_PLACES[ta_part]
+        ta_norm = CANONICAL_PLACES.get(en_part.lower()) or ta_part
+        return f"{en_part} ({ta_norm})"
 
     has_tamil = any('\u0b80' <= c <= '\u0bff' for c in clean)
     has_english = any('a' <= c.lower() <= 'z' for c in clean)
@@ -1189,7 +1214,13 @@ def format_bilingual_entity(text: str) -> str:
             or REAL_ESTATE_TERMS.get(clean)
             or dynamic_transliterate_tamil(clean)
         )
-        return f"{en_val} ({clean})"
+        # Restore canonical Tamil spelling if registered, avoiding raw OCR typo reproduction
+        ta_canonical = (
+            CANONICAL_PLACES.get(en_val.lower())
+            or COMMON_NAMES.get(en_val.lower())
+            or clean
+        )
+        return f"{en_val} ({ta_canonical})"
     elif has_english and not has_tamil:
         # Check whole phrase first
         ta_val = (

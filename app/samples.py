@@ -291,68 +291,143 @@ Stamp Duty Paid: Rs. 5,25,000/- | Registration Fee: Rs. 1,50,000/-""",
     },
     "patta": {
         "title": "Patta document",
-        "raw_text": """தமிழ்நாடு அரசு - வருவாய்த்துறை
-நில உரிமை விபரங்கள் : 10(1) பிரிவு சான்று (பட்டா / சிட்டா நகல்)
-PATTA EXTRACT - TAMIL NADU REVENUE DEPARTMENT
-
-பட்டா எண் (Patta Number): 1092
-உரிமையாளர் பெயர் (Owner Name): பக்கிரிசாமி, த/பெ கோவிந்தராசு (Pakkirisamy, S/o Kovindarasu)
-புல எண் & உட்பிரிவு (Survey Number & Sub-division): 30-3B, 30-5B
-வருவாய் கிராமம் (Village): தூத்துக்குடி (Thoothukudi)
-வட்டம் (Taluk): நன்னிலம் (Nannilam)
-மாவட்டம் (District): திருவாரூர் (Thiruvarur)
-பரப்பளவு (Extent): 30-3B: 0.28.50 Hectares, 30-5B: 0.11.50 Hectares, Total: 0.40.00 Hectares
-நில வகைப்பாடு (Nature of Land): நஞ்சை நிலம் (Nanjai / Wet / Irrigated)""",
+        "raw_text": """தமிழ்நாடு அரசு
+வருவாய் மற்றும் பேரிடர் மேலாண்மைத் துறை
+நில உரிமை விவரங்கள் : இ.எண் 10(1) பிரிவு
+மாவட்டம் : செங்கல்பட்டு    வட்டம் : தாம்பரம்
+வருவாய் கிராமம் : செம்பாக்கம்    பட்டா எண் : 242
+உரிமையாளர்கள் பெயர் :
+சின்னக்கண்ணு மகன் ரங்கநாதன்
+புல எண் : 128/7
+ரயத்துவாரி மனை
+பரப்பு : 0.00.06 ஹெக்
+தீர்வை : ரூ. 2.00
+22/01/2024 at 05:47:27 PM
+Kavitha S (Tahsildar)
+S/NA/35/05/128/00242/20878
+15-09-2026 at 08:42:26 AM
+https://eservices.tn.gov.in""",
         "structured": {
             "document_type": "Patta document",
             "patta_number": {
-                "value": "1092",
+                "value": "242",
                 "confidence": 0.98,
-                "label": "Patta Number",
-                "box": {"x_pct": 5.0, "y_pct": 14.0, "w_pct": 45.0, "h_pct": 3.8}
+                "label": "Patta Number"
             },
             "owner_name": {
-                "value": "Pakkirisamy, S/o Kovindarasu (பக்கிரிசாமி, த/பெ கோவிந்தராசு)",
+                "value": "Ranganathan, S/o Chinnakannu (சின்னக்கண்ணு மகன் ரங்கநாதன்)",
                 "confidence": 0.98,
-                "label": "Owner Name(s)",
-                "box": {"x_pct": 5.0, "y_pct": 19.0, "w_pct": 85.0, "h_pct": 3.8}
-            },
-            "survey_numbers": {
-                "value": "30-3B\n30-5B",
-                "confidence": 0.98,
-                "label": "Survey Number(s) and Sub-division",
-                "box": {"x_pct": 5.0, "y_pct": 24.0, "w_pct": 50.0, "h_pct": 3.8}
+                "label": "Owner Name(s)"
             },
             "village": {
-                "value": "Thoothukudi (தூத்துக்குடி)",
+                "value": "Sembakkam (செம்பாக்கம்)",
                 "confidence": 0.98,
-                "label": "Village",
-                "box": {"x_pct": 5.0, "y_pct": 29.0, "w_pct": 60.0, "h_pct": 3.8}
-            },
-            "taluk": {
-                "value": "Nannilam (நன்னிலம்)",
-                "confidence": 0.98,
-                "label": "Taluk",
-                "box": {"x_pct": 5.0, "y_pct": 34.0, "w_pct": 60.0, "h_pct": 3.8}
+                "label": "Village"
             },
             "district": {
-                "value": "Thiruvarur (திருவாரூர்)",
+                "value": "Chengalpattu (செங்கல்பட்டு)",
                 "confidence": 0.98,
-                "label": "District",
-                "box": {"x_pct": 5.0, "y_pct": 39.0, "w_pct": 60.0, "h_pct": 3.8}
+                "label": "District"
+            },
+            "taluk": {
+                "value": "Tambaram (தாம்பரம்)",
+                "confidence": 0.98,
+                "label": "Taluk"
+            },
+            "survey_numbers": {
+                "value": "128/7",
+                "confidence": 0.98,
+                "label": "Survey Number(s)"
             },
             "extent_details": {
-                "value": "30-3B: 0.28.50 Hectares\n30-5B: 0.11.50 Hectares\nTotal: 0.40.00 Hectares",
+                "value": "128/7: 0.00.06 Hectares (நன்செய் / Wet) — Tax: Rs. 2.00\nTotal: 0.00.06 Hectares (0 Sq.M / 0 Sq.Ft / 0.00 Grounds / 0.000 Acres) — Total Tax: Rs. 2.00",
                 "confidence": 0.98,
-                "label": "Extent of Land under each Survey Number",
-                "box": {"x_pct": 5.0, "y_pct": 44.0, "w_pct": 85.0, "h_pct": 3.8}
+                "label": "Extent of Land under each Survey Number"
             },
             "nature_of_land": {
-                "value": "Nanjai (Wet/Irrigated) — for both survey numbers (நஞ்சை)",
-                "confidence": 0.96,
-                "label": "Nature of Land",
-                "box": {"x_pct": 5.0, "y_pct": 49.0, "w_pct": 75.0, "h_pct": 3.8}
-            }
+                "value": "Rayathuvari Manai (Residential Plot) — ரயத்துவாரி மனை",
+                "confidence": 0.98,
+                "label": "Nature of Land"
+            },
+            "digital_signature_timestamp": {
+                "value": "22/01/2024 at 05:47:27 PM",
+                "confidence": 0.99,
+                "label": "Digital Signature Timestamp (மின்கையொப்பம்)"
+            },
+            "authorized_signatory": {
+                "value": "Kavitha S (Tahsildar)",
+                "confidence": 0.99,
+                "label": "Authorized Signatory (மண்டல துணை வட்டாட்சியர்)"
+            },
+            "portal_reference": {
+                "value": "S/NA/35/05/128/00242/20878",
+                "confidence": 0.99,
+                "label": "e-Services Reference / Application Number"
+            },
+            "certificate_printed_date": {
+                "value": "15-09-2026 at 08:42:26 AM",
+                "confidence": 0.99,
+                "label": "Certificate Print Timestamp (அச்சிடப்பட்ட நேரம்)"
+            },
+            "verification_portal": {
+                "value": "https://eservices.tn.gov.in",
+                "confidence": 0.99,
+                "label": "Government Verification Portal"
+            },
+            "total_tax": {
+                "value": "Rs. 2.00",
+                "confidence": 0.98,
+                "label": "Total Land Revenue Tax / Assessment (தீர்வை)"
+            },
+            "cadastral_schedule": [
+                {
+                    "sl": "1",
+                    "survey_no": "128/7",
+                    "land_type": "ரயத்துவாரி மனை (Residential Site / Manai)",
+                    "extent_ha": "0.00.06 Hectares",
+                    "sq_meters": "6 Sq.M",
+                    "sq_feet": "65 Sq.Ft",
+                    "tax": "Rs. 2.00"
+                }
+            ],
+            "checklist": [
+                {
+                    "item": "Patta Number Validation",
+                    "title": "Patta Number Validation (பட்டா எண்: 242)",
+                    "status": "PASSED",
+                    "detail": "Valid Patta number 242 extracted and verified in Form 10(1) revenue heading."
+                },
+                {
+                    "item": "Owner & Kinship Authentication",
+                    "title": "Owner & Kinship Authentication (பட்டாதாரர் & உறவுமுறை)",
+                    "status": "PASSED",
+                    "detail": "Registered Pattadhar authenticated: Ranganathan, S/o Chinnakannu (சின்னக்கண்ணு மகன் ரங்கநாதன்)"
+                },
+                {
+                    "item": "Survey Numbers Schedule",
+                    "title": "Survey Numbers Schedule (புல எண்கள்: 128/7)",
+                    "status": "PASSED",
+                    "detail": "All 1 cadastral survey number(s) identified (128/7) in revenue table."
+                },
+                {
+                    "item": "Extent & Revenue Balance",
+                    "title": "Extent & Revenue Balance (பரப்பளவு & தீர்வை சரிபார்ப்பு)",
+                    "status": "PASSED",
+                    "detail": "Land area (0.40.00 Hectares = 4,000 Sq.M) and cumulative totals verified mathematically across revenue table."
+                },
+                {
+                    "item": "Digital Signature & Authenticity",
+                    "title": "Digital Signature & Authenticity (மின்கையொப்பம்)",
+                    "status": "PASSED",
+                    "detail": "Authorized Government Digital Signature confirmed: Kavitha S (Tahsildar) [22/01/2024 at 05:47:27 PM]."
+                },
+                {
+                    "item": "TN e-Services Portal Verification",
+                    "title": "TN e-Services Portal Verification (Ref: S/NA/35/05/128/00242/20878)",
+                    "status": "PASSED",
+                    "detail": "Online verification reference S/NA/35/05/128/00242/20878 active on official portal https://eservices.tn.gov.in."
+                }
+            ]
         }
     },
     "parent_docs": {
@@ -839,114 +914,178 @@ Discharge Status: FULLY PAID & DISCHARGED via Bank NOC & Receipt Doc No. 640/201
     },
     "tslr": {
         "title": "TSLR document (Town Survey Land Record)",
-        "raw_text": """Certified that the above is a true extract from the Town Survey Land Register maintained in the Taluk. Digital Signature : 18-12-2025
-பெயர் / Name : Kalpana C.M.
-பதவி / Designation : Tahsildar இடம் / Place : அயனாவரம் வட்டம் / Ayanavaram, சென்னை மாவட்டம் / Chennai
-
-CERTIFICATE - EXTRACT FROM THE TOWN SURVEY LAND REGISTER
-District : Chennai Taluk : Ayanavaram Town : Villivakkam Ward : 001
---------------------------------------------------------------
+        "raw_text": """District : Chengalpattu Taluk : Tambaram Town : Tambaram Ward : Ward-CTambaram
+URB/35/05/003/003/0027/2/0
 Sl.No 1
-  Name                      : K. Sukumar  (Tamil: கே. சுகுமார்)
-  Survey Number / S.No      : 35/2  (Old/O.Sur No: 249/3A1A3 pt -)
-  Extent                    : 1 Are(s), 73.5 Sq.Meter(s)
-  Ward + Block              : Ward 001, Block 0003
-  Land classification       : House-site (Manai)
-  Current land use          : Building --> Non-agricultural
-  Tenure type               : Ryotwari
-  Municipal Door No.        : -
-  Assessment (Rs.)          : Municipal=-, Govt=10.00
-  Remarks                   : 2023/0153/02/047290TR DT. 2023-11-30 TR DT: 18-12-2025
---------------------------------------------------------------
-Reference Number : URB/02/04/001/001/0003/35/2
-The certificate was printed on 13-08-2026 at 04:50:41 PM
-Verify at: https://eservices.tn.gov.in
-Page 1 of 2 (Page 2 Survey Field-Map Sketch: W9arpBWxOja8…)
-=============================================================""",
+2/0
+357/A,B-/358/A,B-359A,361/364/366/368/1,2-3691-2,370/1-357/1A-1B/358/1A1B,393/394/395/396/397
+Ward-CTambaram, Block 0027
+Door No : -
+Name : -
+Government (சர்க்கார் / அரசு)
+Government Poramboke (புறம்போக்கு)
+30 Hectare, 14 Are(s), 5.0 Sq.Meter(s) [~ 301,405.0 Sq.M / 3,244,293.3 Sq.Ft (1,351.79 Grounds)]
+Municipal=-, Govt=0.00
+TR DT: 21-01-2020
+SARAVANNAN V — Tahsildar — தாம்பரம் வட்டம் / Tambaram, செங்கல்பட்டு மாவட்டம் / Chengalpattu
+21-01-2020
+16-09-2026 at 08:05:24 AM
+https://eservices.tn.gov.in""",
         "structured": {
             "document_type": "TSLR document",
             "district": {
-                "value": "Chennai",
+                "value": "Chengalpattu (செங்கல்பட்டு)",
                 "confidence": 0.98,
-                "label": "District",
-                "box": {"x_pct": 5.0, "y_pct": 8.0, "w_pct": 45.0, "h_pct": 3.8}
+                "label": "District (மாவட்டம்)"
             },
             "taluk": {
-                "value": "Ayanavaram",
+                "value": "Tambaram (தாம்பரம்)",
                 "confidence": 0.98,
-                "label": "Taluk",
-                "box": {"x_pct": 5.0, "y_pct": 13.0, "w_pct": 50.0, "h_pct": 3.8}
+                "label": "Taluk (வட்டம்)"
             },
             "town_village": {
-                "value": "Villivakkam",
+                "value": "Tambaram (தாம்பரம்)",
                 "confidence": 0.98,
-                "label": "Town",
-                "box": {"x_pct": 5.0, "y_pct": 18.0, "w_pct": 50.0, "h_pct": 3.8}
+                "label": "Town / Revenue Village (நகரம் / வருவாய் கிராமம்)"
             },
             "ward": {
-                "value": "001",
+                "value": "Ward-CTambaram",
                 "confidence": 0.98,
-                "label": "Ward",
-                "box": {"x_pct": 5.0, "y_pct": 23.0, "w_pct": 30.0, "h_pct": 3.8}
+                "label": "Ward (வார்டு)"
+            },
+            "digital_signature_authority": {
+                "value": "SARAVANNAN V — Tahsildar — தாம்பரம் வட்டம் / Tambaram, செங்கல்பட்டு மாவட்டம் / Chengalpattu",
+                "confidence": 0.98,
+                "label": "Digital Signature Authority (வட்டாட்சியர் / மின் கையொப்பம்)"
+            },
+            "signature_date": {
+                "value": "21-01-2020",
+                "confidence": 0.98,
+                "label": "Signature Date (கையொப்ப நாள்)"
+            },
+            "portal_reference": {
+                "value": "URB/35/05/003/003/0027/2/0",
+                "confidence": 0.99,
+                "label": "eServices Verification Ref No (சரிபார்ப்பு குறிப்பு எண்)"
+            },
+            "certificate_printed_date": {
+                "value": "16-09-2026 at 08:05:24 AM",
+                "confidence": 0.95,
+                "label": "Certificate Print Date & Time (அச்சிடப்பட்ட நாள்)"
+            },
+            "verification_portal": {
+                "value": "https://eservices.tn.gov.in",
+                "confidence": 0.99,
+                "label": "Verification Portal (சரிபார்ப்பு இணையதளம்)"
             },
             "serial_no": {
                 "value": "1",
                 "confidence": 0.95,
-                "label": "Sl.No"
-            },
-            "owner_name": {
-                "value": "K. Sukumar  (Tamil: கே. சுகுமார்)",
-                "confidence": 0.98,
-                "label": "Name",
-                "box": {"x_pct": 5.0, "y_pct": 28.0, "w_pct": 85.0, "h_pct": 3.8}
+                "label": "Sl.No (வரிசை எண்)"
             },
             "survey_number": {
-                "value": "35/2  (Old/O.Sur No: 249/3A1A3 pt -)",
+                "value": "2/0",
                 "confidence": 0.98,
-                "label": "Survey Number / S.No",
-                "box": {"x_pct": 5.0, "y_pct": 33.0, "w_pct": 85.0, "h_pct": 3.8}
+                "label": "Town Survey Number / S.No (நகர புல எண் / T.S. No)"
             },
-            "extent": {
-                "value": "1 Are(s), 73.5 Sq.Meter(s)",
-                "confidence": 0.98,
-                "label": "Extent",
-                "box": {"x_pct": 5.0, "y_pct": 38.0, "w_pct": 85.0, "h_pct": 3.8}
+            "old_survey_number": {
+                "value": "357/A,B-/358/A,B-359A,361/364/366/368/1,2-3691-2,370/1-357/1A-1B/358/1A1B,393/394/395/396/397",
+                "confidence": 0.96,
+                "label": "Old Survey Number (பழைய சர்வே எண் / O.Sur No & Letter)"
             },
             "ward_block": {
-                "value": "Ward 001, Block 0003",
+                "value": "Ward-CTambaram, Block 0027",
                 "confidence": 0.96,
-                "label": "Ward + Block",
-                "box": {"x_pct": 5.0, "y_pct": 43.0, "w_pct": 60.0, "h_pct": 3.8}
+                "label": "Ward + Block (வார்டு & பிளாக்)"
             },
-            "land_classification": {
-                "value": "House-site (Manai)",
-                "confidence": 0.96,
-                "label": "Land classification",
-                "box": {"x_pct": 5.0, "y_pct": 48.0, "w_pct": 75.0, "h_pct": 3.8}
+            "municipal_door_no": {
+                "value": "Not Recorded (-)",
+                "confidence": 0.90,
+                "label": "Municipal Door No. (நகராட்சி கதவு எண்)"
             },
-            "current_land_use": {
-                "value": "Building --> Non-agricultural",
-                "confidence": 0.95,
-                "label": "Current land use",
-                "box": {"x_pct": 5.0, "y_pct": 53.0, "w_pct": 85.0, "h_pct": 3.8}
+            "owner_name": {
+                "value": "Not Recorded (-) (பதிவு செய்யப்படவில்லை)",
+                "confidence": 0.97,
+                "label": "Name (உரிமையாளர் பெயர் / Adangal Holder)"
             },
             "tenure_type": {
-                "value": "Ryotwari",
+                "value": "Government (சர்க்கார் / அரசு)",
                 "confidence": 0.98,
-                "label": "Tenure type",
-                "box": {"x_pct": 5.0, "y_pct": 58.0, "w_pct": 65.0, "h_pct": 3.8}
+                "label": "Tenure Type (நில உரிமை முறை: Govt/Mitta/Zamindari/Inam)"
+            },
+            "land_classification": {
+                "value": "Government Poramboke (புறம்போக்கு)",
+                "confidence": 0.98,
+                "label": "Land Classification (நில வகைப்பாடு: Dry/Wet/Promboke/House-site)"
+            },
+            "current_land_use": {
+                "value": "Not Recorded (-) (பதிவு செய்யப்படவில்லை)",
+                "confidence": 0.90,
+                "label": "Current Land Use (தற்போதைய பயன்பாடு: How holding is utilised)"
+            },
+            "extent": {
+                "value": "30 Hectare, 14 Are(s), 5.0 Sq.Meter(s) [~ 301,405.0 Sq.M / 3,244,293.3 Sq.Ft (1,351.79 Grounds)]",
+                "confidence": 0.98,
+                "label": "Extent By Town Survey (நில விஸ்தீரணம்: Hectare, Ares, Sq.Meter)"
             },
             "assessment": {
-                "value": "Municipal=-, Govt=10.00",
+                "value": "Municipal=-, Govt=0.00",
                 "confidence": 0.95,
-                "label": "Assessment (Rs.)"
+                "label": "Assessment (தீர்வை / நில வரி: Municipal, Govt.)"
+            },
+            "municipal_register": {
+                "value": "Not Recorded (-)",
+                "confidence": 0.90,
+                "label": "Municipal Register (நகராட்சி பதிவேடு)"
             },
             "remarks": {
-                "value": "2023/0153/02/047290TR DT. 2023-11-30 TR DT: 18-12-2025",
-                "confidence": 0.96,
-                "label": "Remarks",
-                "box": {"x_pct": 5.0, "y_pct": 68.0, "w_pct": 90.0, "h_pct": 4.0}
-            }
+                "value": "TR DT: 21-01-2020",
+                "confidence": 0.98,
+                "label": "Remarks (குறிப்புகள் / மாறுதல் உத்தரவு)"
+            },
+            "multi_page_audit": {
+                "value": "2 Pages Total — Page 2 Verified — eServices Official 2D Barcode & Portal Attestation (Reference: URB/35/05/003/003/0027/2/0)",
+                "confidence": 0.99,
+                "label": "Multi-Page & Survey Map Audit (பக்க & வரைபட சரிபார்ப்பு)"
+            },
+            "checklist": [
+                {
+                    "item": "Adangal Holding & Owner Verification",
+                    "title": "Adangal Holding & Owner Verification (உரிமையாளர் சரிபார்ப்பு)",
+                    "status": "PASSED",
+                    "detail": "Government Poramboke Land (சர்க்கார் புறம்போக்கு). Vested with Government of Tamil Nadu; private Adangal holding not applicable."
+                },
+                {
+                    "item": "Town Survey & Old Revenue Survey Correlation",
+                    "title": "Town Survey & Old Revenue Survey Correlation (புல எண் இணைப்பு)",
+                    "status": "PASSED",
+                    "detail": "Town Survey No: 2/0, Old Revenue Survey No: 357/A,B-/358/A,B-359A,361/364/366/368/1,2-3691-2,370/1-357/1A-1B/358/1A1B,393/394/395/396/397."
+                },
+                {
+                    "item": "Tenure Type Verification",
+                    "title": "Tenure Type Verification (நில உரிமை உறுதி)",
+                    "status": "PASSED",
+                    "detail": "Tenure: Government (சர்க்கார் / அரசு)."
+                },
+                {
+                    "item": "Land Classification & Use",
+                    "title": "Land Classification & Use (மனை வகைப்பாடு)",
+                    "status": "PASSED",
+                    "detail": "Classification: 'Government Poramboke (புறம்போக்கு)', Use: 'Not Recorded (-)'."
+                },
+                {
+                    "item": "Digital Signature & eServices Validity",
+                    "title": "Digital Signature & eServices Validity (மின் கையொப்பம்)",
+                    "status": "PASSED",
+                    "detail": "Signed by SARAVANNAN V on 21-01-2020. Ref: URB/35/05/003/003/0027/2/0."
+                },
+                {
+                    "item": "Multi-Page & Survey Map Audit",
+                    "title": "Multi-Page & Survey Map Audit (பக்க & வரைபட சரிபார்ப்பு)",
+                    "status": "PASSED",
+                    "detail": "2 Pages Total — Page 2 Verified — eServices Official 2D Barcode & Portal Attestation (Reference: URB/35/05/003/003/0027/2/0)."
+                }
+            ]
         }
     }
 }
@@ -977,10 +1116,10 @@ MULTI_DOC_BUNDLES = {
         "description": "Cross-verifies Rural Patta 1092 ↔ Thiruvarur Taluk ↔ EC ↔ Parent docs.",
         "documents": {
             "sale_deed": {
-                "executant_seller": "Mr. R. Karthikeyan",
-                "survey_number": "214/3B1",
-                "extent_area": "24 Cents (10,446 Sq.Ft)",
-                "previous_document_reference": "Doc No. 1420 / 2012"
+                "executant_seller": "Pakkirisamy (S/o Govindarasu)",
+                "survey_number": "30-3B, 30-5B",
+                "extent_area": "0.40.00 Hectares (43,056 Sq.Ft)",
+                "previous_document_reference": "Doc No. 1092 / 2024"
             },
             "patta": SAMPLE_DOCUMENTS["patta"]["structured"],
             "ec": SAMPLE_DOCUMENTS["ec"]["structured"],

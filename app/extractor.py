@@ -178,16 +178,16 @@ class DocumentExtractor:
         t = text.lower()
         scores = {cat_id: 0 for cat_id in self.categories.keys()}
 
-        if any(k in t for k in ["tslr", "town survey", "ward + block", "land classification", "tenure type", "ryotwari", "o.sur no", "நகர நில அளவை", "நகர சர்வே", "are(s)"]):
-            scores["tslr"] += 12
+        if any(k in t for k in ["tslr", "town survey", "ward + block", "land classification", "tenure type", "ryotwari", "o.sur no", "நகர நில அளவை", "நகர சர்வே", "are(s)", "extract from the town survey", "urb/"]):
+            scores["tslr"] += 15
 
         if any(k in t for k in ["sale deed", "absolute sale", "கிரையப் பத்திரம்", "கிரயப்", "vendor", "purchaser", "conveyance"]):
             scores["sale_deed"] += 6
         if any(k in t for k in ["schedule of property", "undivided share", "uds"]):
             scores["sale_deed"] += 3
 
-        if any(k in t for k in ["பட்டா", "சிட்டா", "patta", "chitta", "pattadhar", "10(1)", "நில உரிமை"]):
-            scores["patta"] += 8
+        if any(k in t for k in ["பட்டா", "சிட்டா", "patta", "chitta", "pattadhar", "10(1)", "நில உரிமை", "ப'டா", "இ.எண் 10(1)", "வ வா ம ேப ட", "10(1) பிரிவு"]):
+            scores["patta"] += 15
 
         if any(k in t for k in ["parent doc", "mother document", "chain of title", "முந்தைய ஆவணம்", "தாய் பத்திரம்", "prior deed"]):
             scores["parent_docs"] += 7
@@ -359,7 +359,19 @@ class DocumentExtractor:
         elif field_key == "patta_number":
             anchors.extend(["பட்டா எண்", "பட்டா", "patta no", "patta number"])
         elif field_key == "owner_name":
-            anchors.extend(["உரிமையாளர்கள் பெயர்", "உரிமையாளர் பெயர்", "உரிமையாளர்", "pattadhar"])
+            anchors.extend(["உரிமையாளர்கள் பெயர்", "உரிமையாளர் பெயர்", "உரிமையாளர்", "pattadhar", "adangal"])
+        elif field_key in ["survey_number", "town_survey_number"]:
+            anchors.extend(["sur. field", "sur field", "town survey no", "t.s.no", "survey number", "புல எண்"])
+        elif field_key == "old_survey_number":
+            anchors.extend(["o.sur no", "old survey", "பழைய சர்வே"])
+        elif field_key == "ward_block":
+            anchors.extend(["block", "ward", "தொகுதி"])
+        elif field_key == "tenure_type":
+            anchors.extend(["ryotwari", "govt,mitta", "ரயத்துவாரி"])
+        elif field_key == "land_classification":
+            anchors.extend(["dry,wet", "புஞ்சை", "நஞ்சை", "house-site"])
+        elif field_key == "municipal_door_no":
+            anchors.extend(["municipal door", "door no", "கதவு எண்"])
 
         for p_idx, page in enumerate(pages):
             page_num = page.get("page_number", p_idx + 1)
@@ -788,6 +800,8 @@ class DocumentExtractor:
                 sd_res = self.extractors["sale_deed"].extract(text)
                 checklist = sd_res.get("checklist", [])
         elif doc_type == "patta":
+            if hasattr(self.extractors["patta"], "evaluate_checklist"):
+                return self.extractors["patta"].evaluate_checklist(fields, text)
             p_val = fields.get("patta_number", {}).get("value", "")
             p_str = f": {p_val}" if p_val and p_val != "Not Detected" else ""
             checklist.append({"title": f"பட்டா எண் பதிவு (Patta Number Recorded{p_str})", "is_valid": _detected("patta_number")})
@@ -795,6 +809,9 @@ class DocumentExtractor:
             checklist.append({"title": "புல எண்கள் மற்றும் உட்பிரிவு சரிபார்ப்பு (Survey Numbers & Sub-division Verified)", "is_valid": _detected("survey_numbers")})
             checklist.append({"title": "வருவாய் கிராமம் / வட்டம் / மாவட்டம் (Revenue Village / Taluk / District Verified)", "is_valid": _detected("village") and _detected("taluk") and _detected("district")})
             checklist.append({"title": "பரப்பளவு மற்றும் நில வகைப்பாடு (Land Extent & Classification Verified)", "is_valid": _detected("extent_details") and _detected("nature_of_land")})
+        elif doc_type == "tslr":
+            if hasattr(self.extractors["tslr"], "evaluate_checklist"):
+                return self.extractors["tslr"].evaluate_checklist(fields, text)
         elif doc_type == "ec":
             checklist.append({"title": "30 ஆண்டு தேடல் காலம் சரிபார்ப்பு (30-Year Search Period Verified)", "is_valid": _detected("search_period")})
             checklist.append({"title": "படிவம் 15 / 16 வகைப்பாடு (Form 15/16 Classification Verified)", "is_valid": _detected("form_type")})
