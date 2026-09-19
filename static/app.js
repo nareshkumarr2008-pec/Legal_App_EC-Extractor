@@ -8,7 +8,6 @@ const DEFAULT_CATEGORIES = [
     {"id": "tax_eb", "name": "Property water tax and eb receipts", "tamil_name": "சொத்து வரி, குடிநீர் வரி & EB ரசீது", "key_fields": ["Property Tax Assessment No", "Property Owner Name", "Door Number & Locality", "Water Tax Connection & Status", "EB Consumer No & Tariff", "Payment Receipt Date & Amount"]},
     {"id": "layout_approval", "name": "Approved layout (if applicable) CMDA / DTCP", "tamil_name": "அங்கீகரிக்கப்பட்ட மனைப்பிரிவு (CMDA / DTCP)", "key_fields": ["Layout Approval Number (PPD/Lo)", "Sanctioning Authority (CMDA / DTCP)", "Survey Numbers & Village", "Total Extent & Number of Plots", "OSR Park & Road Gift Details"]},
     {"id": "death_legal_heir", "name": "Death certificate and legal hier certificate", "tamil_name": "இறப்பு & வாரிசுச் சான்றிதழ் (Varisu)", "key_fields": ["Deceased Name", "Date of Death & Reg No", "Varisu Certificate Order No & Date", "Surviving Legal Heirs List", "Heir Completeness Check (100%)", "Patta Mutation Status (TN Act 1983)"]},
-    {"id": "loan_docs", "name": "Loan documents (if applicable)", "tamil_name": "வங்கி கடன் ஆவணங்கள் / MODT", "key_fields": ["Lending Bank / Institution", "Borrower & Co-Borrower Names", "Loan Account & Sanctioned Amount", "Security / MODT Details", "MODT Doc No, Year & SRO", "NOC / Discharge Status"]},
     {"id": "tslr", "name": "TSLR document (Town Survey Land Record)", "tamil_name": "நகர நில அளவை ஆவணம் (TSLR)", "key_fields": ["District", "Taluk", "Town", "Ward", "Name", "Survey Number / S.No", "Extent", "Ward + Block", "Land classification", "Current land use", "Tenure type", "Assessment (Rs.)", "Remarks"]}
 ];
 
@@ -69,15 +68,15 @@ function updateServerStatus(online, customText) {
     if (!badge || !dot || !text) return;
 
     if (online) {
-        badge.className = "hidden md:flex items-center space-x-2 px-3 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium cursor-pointer";
+        badge.className = "hidden md:flex items-center space-x-2 px-3 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 text-xs font-medium cursor-pointer";
         dot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-ping";
         text.textContent = customText || "PaddleOCR Server Active";
     } else if (customText === "Reconnecting...") {
-        badge.className = "hidden md:flex items-center space-x-2 px-3 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-xs font-medium cursor-pointer";
+        badge.className = "hidden md:flex items-center space-x-2 px-3 py-1 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 text-amber-700 text-xs font-medium cursor-pointer";
         dot.className = "w-2 h-2 rounded-full bg-amber-500 animate-pulse";
         text.textContent = "Server Warming Up / Reconnecting...";
     } else {
-        badge.className = "hidden md:flex items-center space-x-2 px-3 py-1 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium cursor-pointer";
+        badge.className = "hidden md:flex items-center space-x-2 px-3 py-1 rounded-lg bg-rose-50 dark:bg-rose-900/20 border border-rose-200 text-rose-700 text-xs font-medium cursor-pointer";
         dot.className = "w-2 h-2 rounded-full bg-rose-500";
         text.textContent = customText ? `Server ${customText}` : "OCR Server Offline (Run start_app.bat)";
     }
@@ -94,13 +93,13 @@ async function checkLLMStatus() {
         const toggle = document.getElementById("toggle-use-llm");
         if (data && data.llm_available) {
             if (badge) {
-                badge.className = "hidden md:flex items-center space-x-2 px-3 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium";
+                badge.className = "hidden md:flex items-center space-x-2 px-3 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 text-xs font-medium";
             }
             if (text) text.textContent = "Qwen 2.5 7B AI Active";
             if (toggle) toggle.checked = true;
         } else {
             if (badge) {
-                badge.className = "hidden md:flex items-center space-x-2 px-3 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-600 text-xs font-medium";
+                badge.className = "hidden md:flex items-center space-x-2 px-3 py-1 rounded-lg bg-tm-upload border border-tm-border text-tm-text-sec text-xs font-medium";
             }
             if (text) text.textContent = "Qwen AI Offline (Rule-Engine Active)";
             if (toggle) toggle.checked = false;
@@ -120,10 +119,10 @@ function switchTrack(trackName) {
         const btn = document.getElementById(`track-btn-${t}`);
         const view = document.getElementById(`track-view-${t}`);
         if (t === trackName) {
-            btn.className = "track-btn-active px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5";
+            btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-[#E2C054] text-[#0B111A] shadow-md shadow-amber-900/20";
             view.classList.remove("hidden");
         } else {
-            btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition-all flex items-center gap-1.5 shadow-2xs";
+            btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold bg-tm-card text-tm-text-sec border border-tm-border hover:bg-tm-bg transition-all flex items-center gap-1.5 shadow-2xs";
             view.classList.add("hidden");
         }
     });
@@ -161,22 +160,22 @@ function renderCategoriesGrid() {
         const card = document.createElement("div");
         card.id = `cat-card-${cat.id}`;
         card.onclick = () => selectCategory(cat.id, true);
-        card.className = `p-3 rounded-xl border cursor-pointer transition-all duration-150 flex flex-col justify-between ${
+        card.className = `p-5 min-h-[140px] rounded-xl border cursor-pointer transition-all duration-150 flex flex-col justify-between ${
             isActive 
                 ? "cat-card-active" 
-                : "border-slate-200/80 bg-white hover:border-blue-300 hover:bg-blue-50/20 shadow-2xs"
+                : "border-tm-border bg-tm-card hover:border-tm-gold hover:bg-blue-50/20 shadow-2xs"
         }`;
 
         card.innerHTML = `
             <div class="flex items-start justify-between mb-1">
-                <div class="w-6 h-6 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                <div class="w-6 h-6 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-tm-gold flex items-center justify-center">
                     <i data-lucide="${cat.icon || 'file-text'}" class="w-3.5 h-3.5"></i>
                 </div>
-                <span class="text-[9px] font-bold text-slate-400">#${cat.id.toUpperCase().slice(0, 4)}</span>
+                <span class="text-[9px] font-bold text-tm-text-sec">#${cat.id.toUpperCase().slice(0, 4)}</span>
             </div>
             <div>
-                <h4 class="text-xs font-bold text-slate-800 leading-snug">${cat.name}</h4>
-                <p class="text-[10px] text-slate-500 line-clamp-1 mt-0.5">${cat.tamil_name}</p>
+                <h4 class="text-lg font-bold text-tm-text-pri leading-tight">${cat.name}</h4>
+                <p class="text-sm text-tm-text-sec line-clamp-1 mt-0.5">${cat.tamil_name}</p>
             </div>
         `;
         grid.appendChild(card);
@@ -198,9 +197,9 @@ function selectCategory(catId, loadDoc = true) {
     const allCards = document.querySelectorAll("[id^='cat-card-']");
     allCards.forEach(el => {
         if (el.id === `cat-card-${catId}`) {
-            el.className = "cat-card-active p-3 rounded-xl border cursor-pointer transition-all duration-150 flex flex-col justify-between shadow-2xs";
+            el.className = "cat-card-active p-5 min-h-[140px] rounded-xl border cursor-pointer transition-all duration-150 flex flex-col justify-between shadow-2xs";
         } else {
-            el.className = "border-slate-200/80 bg-white hover:border-blue-300 hover:bg-blue-50/20 p-3 rounded-xl border cursor-pointer transition-all duration-150 flex flex-col justify-between shadow-2xs";
+            el.className = "border-tm-border bg-tm-card hover:border-tm-gold hover:bg-blue-50/20 p-5 min-h-[140px] rounded-xl border cursor-pointer transition-all duration-150 flex flex-col justify-between shadow-2xs";
         }
     });
 
@@ -230,7 +229,7 @@ function updateCategoryInfo(catId) {
         tagsContainer.innerHTML = "";
         (cat.key_fields || []).slice(0, 6).forEach(f => {
             const span = document.createElement("span");
-            span.className = "px-2 py-0.5 bg-white text-slate-600 rounded-md border border-slate-200 text-[10px] font-medium";
+            span.className = "px-3 py-1 bg-white dark:bg-[#333933] text-slate-700 dark:text-gray-200 rounded-md border border-slate-200 dark:border-gray-600 text-sm font-medium";
             span.textContent = f;
             tagsContainer.appendChild(span);
         });
@@ -313,11 +312,11 @@ function handleFileSelected(file) {
             <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mb-2 shadow-2xs">
                 <i data-lucide="file-check" class="w-6 h-6"></i>
             </div>
-            <h3 class="text-sm font-bold text-slate-900">${file.name}</h3>
-            <p class="text-xs text-slate-500">${(file.size / 1024 / 1024).toFixed(2)} MB • Ready for OCR</p>
+            <h3 class="text-sm font-bold text-tm-text-pri">${file.name}</h3>
+            <p class="text-xs text-tm-text-sec">${(file.size / 1024 / 1024).toFixed(2)} MB • Ready for OCR</p>
             <div class="mt-2 flex items-center space-x-2">
-                <span class="px-2.5 py-1 text-[11px] font-semibold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">File Ready</span>
-                <span class="text-xs text-blue-600 font-semibold underline hover:text-blue-800">Change File</span>
+                <span class="px-2.5 py-1 text-[11px] font-semibold rounded-md bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 border border-emerald-200 dark:border-emerald-800">File Ready</span>
+                <span class="text-xs text-tm-gold font-semibold underline hover:text-blue-800">Change File</span>
             </div>
         `;
         lucide.createIcons();
@@ -331,12 +330,12 @@ function resetDropzoneUI() {
     const inner = document.getElementById("dropzone-inner");
     if (inner) {
         inner.innerHTML = `
-            <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-3 shadow-2xs">
+            <div class="w-12 h-12 rounded-full bg-blue-100 text-tm-gold flex items-center justify-center mb-3 shadow-2xs">
                 <i data-lucide="upload-cloud" class="w-6 h-6"></i>
             </div>
-            <h3 class="text-sm font-bold text-slate-900 mb-1">Click to Upload or Drag & Drop Document</h3>
-            <p class="text-xs text-slate-500 mb-2">Supports PDF, PNG, JPG, TIFF, WebP, BMP (Multi-page supported)</p>
-            <span class="mt-1 px-4 py-1.5 text-xs font-semibold rounded-lg bg-white border border-blue-300 text-blue-700 hover:bg-blue-50 shadow-2xs inline-block">
+            <h3 class="text-lg font-semibold text-tm-text-pri mb-1">Click to Upload or Drag & Drop Document</h3>
+            <p class="text-sm text-tm-text-sec mt-2 mb-2">Supports PDF, PNG, JPG, TIFF, WebP, BMP (Multi-page supported)</p>
+            <span class="mt-1 px-4 py-1.5 text-xs font-semibold rounded-lg bg-tm-card border border-tm-gold text-tm-gold hover:bg-blue-50 dark:bg-blue-900/20 shadow-2xs inline-block">
                 Browse Document File...
             </span>
         `;
@@ -631,12 +630,12 @@ function renderAllDocumentPages(pages, extraction) {
 
         headerBar.innerHTML = `
             <div class="flex items-center space-x-2">
-                <span class="w-2 h-2 rounded-full bg-blue-600 inline-block"></span>
-                <span class="font-bold text-slate-800">Page ${pIdx + 1} of ${total}</span>
+                <span class="w-2 h-2 rounded-full bg-tm-action inline-block"></span>
+                <span class="font-bold text-tm-text-pri">Page ${pIdx + 1} of ${total}</span>
             </div>
             <div class="flex items-center space-x-2 text-[10px] font-mono">
-                <span class="px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold border border-blue-200">${pageWordsCount} Words Boxed</span>
-                <span class="text-slate-400">${(pageData.lines || []).length} Lines</span>
+                <span class="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-900/20 text-tm-gold font-semibold border border-blue-200">${pageWordsCount} Words Boxed</span>
+                <span class="text-tm-text-sec">${(pageData.lines || []).length} Lines</span>
             </div>
         `;
         pageCard.appendChild(headerBar);
@@ -722,7 +721,7 @@ function renderAllDocumentPages(pages, extraction) {
                     wordBoxEl.innerHTML = `
                         <div class="${tooltipCls}">
                             <div class="word-tooltip-orig">${escapeHtml(word.text)}</div>
-                            ${transText ? `<div class="word-tooltip-trans"><span class="text-slate-400 font-normal mr-1">Trans:</span>${escapeHtml(transText)}</div>` : ''}
+                            ${transText ? `<div class="word-tooltip-trans"><span class="text-tm-text-sec font-normal mr-1">Trans:</span>${escapeHtml(transText)}</div>` : ''}
                             <div class="word-tooltip-conf">Conf: ${confPct}%</div>
                         </div>
                     `;
@@ -792,21 +791,21 @@ function renderSyntheticDocument(pageData, container) {
     const tamilTitle = (state.currentResult && state.currentResult.extraction) ? state.currentResult.extraction.tamil_name : "";
 
     container.innerHTML = `
-        <div class="w-[540px] min-h-[720px] bg-amber-50/40 p-6 rounded-xl shadow-lg border-2 border-slate-300 font-sans text-xs text-slate-800 leading-relaxed relative select-none">
+        <div class="w-[540px] min-h-[720px] bg-amber-50/40 p-6 rounded-xl shadow-lg border-2 border-slate-300 font-sans text-xs text-tm-text-pri leading-relaxed relative select-none">
             <!-- Official Document Stamp Header -->
             <div class="border-b-2 border-slate-400 pb-3 mb-4 text-center">
-                <div class="inline-flex items-center justify-center space-x-2 text-slate-900 font-extrabold text-sm uppercase tracking-wide">
+                <div class="inline-flex items-center justify-center space-x-2 text-tm-text-pri font-extrabold text-sm uppercase tracking-wide">
                     <span>${docTitle}</span>
                 </div>
-                <p class="text-[11px] text-slate-600 font-medium mt-0.5">${tamilTitle}</p>
-                <div class="mt-2 flex items-center justify-center space-x-3 text-[10px] text-slate-500 font-mono">
-                    <span class="px-2 py-0.5 bg-slate-200 rounded">TAMIL NADU REGISTRATION & REVENUE</span>
-                    <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold">DIGITALLY VERIFIED</span>
+                <p class="text-[11px] text-tm-text-sec font-medium mt-0.5">${tamilTitle}</p>
+                <div class="mt-2 flex items-center justify-center space-x-3 text-[10px] text-tm-text-sec font-mono">
+                    <span class="px-2 py-0.5 bg-tm-upload rounded">TAMIL NADU REGISTRATION & REVENUE</span>
+                    <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300 rounded font-bold">DIGITALLY VERIFIED</span>
                 </div>
             </div>
 
             <!-- OCR Text Preview -->
-            <div class="font-mono text-[11px] text-slate-700 leading-relaxed whitespace-pre-wrap bg-white/70 p-4 rounded-lg border border-slate-200 shadow-2xs">
+            <div class="font-mono text-[11px] text-tm-text-sec leading-relaxed whitespace-pre-wrap bg-tm-card/70 p-4 rounded-lg border border-tm-border shadow-2xs">
                 ${pageData.full_text}
             </div>
         </div>
@@ -825,19 +824,19 @@ function escapeHtml(str) {
 
 function renderBilingualParties(list, fallbackText) {
     if (!Array.isArray(list) || list.length === 0) {
-        return `<span class="text-slate-800 font-medium whitespace-pre-line">${escapeHtml(fallbackText || "-")}</span>`;
+        return `<span class="text-tm-text-pri font-medium whitespace-pre-line">${escapeHtml(fallbackText || "-")}</span>`;
     }
     return `<div class="space-y-1">` + list.map(p => {
         const roleBits = [p.role_english, p.role_tamil].filter(Boolean).join(" / ");
-        const roleTag = roleBits ? ` <span class="text-slate-400 font-normal">(${escapeHtml(roleBits)})</span>` : "";
+        const roleTag = roleBits ? ` <span class="text-tm-text-sec font-normal">(${escapeHtml(roleBits)})</span>` : "";
         const badge = p.verified
-            ? `<span class="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">✓ ${p.confidence}%</span>`
+            ? `<span class="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300 border border-emerald-300">✓ ${p.confidence}%</span>`
             : `<span class="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-300">⚠ Review ${p.confidence}%</span>`;
         return `
-            <div class="flex items-start justify-between gap-2 bg-white/70 rounded px-1.5 py-1 border border-slate-100">
+            <div class="flex items-start justify-between gap-2 bg-tm-card/70 rounded px-1.5 py-1 border border-slate-100">
                 <div class="leading-snug">
-                    <span class="text-slate-800 font-semibold">${escapeHtml(String(p.index))}. ${escapeHtml(p.english)}</span>${roleTag}
-                    <div class="text-slate-500 text-[10px]">${escapeHtml(p.tamil)}</div>
+                    <span class="text-tm-text-pri font-semibold">${escapeHtml(String(p.index))}. ${escapeHtml(p.english)}</span>${roleTag}
+                    <div class="text-tm-text-sec text-[10px]">${escapeHtml(p.tamil)}</div>
                 </div>
                 ${badge}
             </div>`;
@@ -850,7 +849,7 @@ function renderBilingualPartiesCompact(list, fallbackText) {
     }
     return list.map(p => {
         const mark = p.verified ? "✓" : "⚠";
-        return `${escapeHtml(String(p.index))}. ${escapeHtml(p.english)} <span class="text-slate-400">(${escapeHtml(p.tamil)})</span> ${mark}`;
+        return `${escapeHtml(String(p.index))}. ${escapeHtml(p.english)} <span class="text-tm-text-sec">(${escapeHtml(p.tamil)})</span> ${mark}`;
     }).join("<br/>");
 }
 
@@ -913,12 +912,12 @@ function renderECAnalysisTab(extraction = null) {
 
     if (!hasData) {
         container.innerHTML = `
-            <div class="p-8 text-center bg-white rounded-2xl border border-dashed border-slate-300/80 shadow-2xs space-y-3 my-auto">
-                <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center mx-auto shadow-2xs">
+            <div class="p-8 text-center bg-tm-card rounded-2xl border border-dashed border-slate-300/80 shadow-2xs space-y-3 my-auto">
+                <div class="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-500 flex items-center justify-center mx-auto shadow-2xs">
                     <i data-lucide="sparkles" class="w-6 h-6"></i>
                 </div>
-                <h4 class="font-bold text-sm text-slate-800">EC Analysis & Legal Overview</h4>
-                <p class="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+                <h4 class="font-bold text-sm text-tm-text-pri">EC Analysis & Legal Overview</h4>
+                <p class="text-xs text-tm-text-sec max-w-md mx-auto leading-relaxed">
                     Upload an Encumbrance Certificate (EC) PDF above or click a sample document to generate an automated legal risk synthesis, ownership devolution summary, and 12-point title audit.
                 </p>
             </div>
@@ -1000,7 +999,7 @@ function renderECAnalysisTab(extraction = null) {
         ? "bg-rose-100 text-rose-800 border-rose-300 font-bold" 
         : (isMediumRisk 
             ? "bg-amber-100 text-amber-800 border-amber-300 font-bold" 
-            : "bg-emerald-100 text-emerald-800 border-emerald-300 font-bold");
+            : "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300 border-emerald-300 font-bold");
 
     // 3. Executive Narrative Summary Paragraph
     const propIdent = `The property comprised in Survey No. ${survey !== '-' ? survey : 'searched parcel'}, ${village !== '-' ? village + ' village' : ''}, ${district !== '-' ? district + ' district' : ''} (SRO: ${sro})`;
@@ -1208,18 +1207,18 @@ function renderECAnalysisTab(extraction = null) {
     container.innerHTML = `
         <div class="space-y-4">
             <!-- Main Analysis Header Card (Styled exactly as sample image) -->
-            <div class="p-5 rounded-2xl bg-gradient-to-br from-amber-500/10 via-white to-orange-500/5 border border-amber-200/90 shadow-2xs">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-amber-200/60">
+            <div class="p-5 rounded-2xl bg-gradient-to-br from-amber-500/10 via-white dark:via-[#182235] to-orange-500/5 border border-amber-200/90 dark:border-amber-900/50 shadow-2xs">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-amber-200/60 dark:border-amber-900/40">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-xs shrink-0">
                             <i data-lucide="sparkles" class="w-5 h-5"></i>
                         </div>
                         <div>
                             <div class="flex items-center gap-2">
-                                <h3 class="text-base font-bold text-slate-900">EC Analysis (Encumbrance Certificate Overview)</h3>
+                                <h3 class="text-base font-bold text-tm-text-pri">EC Analysis (Encumbrance Certificate Overview)</h3>
                                 <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200/80">TNREGINET Official</span>
                             </div>
-                            <p class="text-xs text-slate-500 mt-0.5">Automated legal synthesis derived dynamically from all extracted key fields</p>
+                            <p class="text-xs text-tm-text-sec mt-0.5">Automated legal synthesis derived dynamically from all extracted key fields</p>
                         </div>
                     </div>
 
@@ -1227,11 +1226,11 @@ function renderECAnalysisTab(extraction = null) {
                         <span class="px-3 py-1 rounded-full text-xs border uppercase tracking-wider ${riskBadgeClass}">
                             ${riskBadgeText}
                         </span>
-                        <span class="px-2.5 py-1 rounded-full bg-white/90 text-emerald-800 border border-emerald-200/80 font-bold shadow-2xs flex items-center gap-1.5">
+                        <span class="px-2.5 py-1 rounded-full bg-tm-card/90 text-emerald-800 border border-emerald-200 dark:border-emerald-800/80 font-bold shadow-2xs flex items-center gap-1.5">
                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                             ${passedCount} Passed
                         </span>
-                        <span class="px-2.5 py-1 rounded-full bg-white/90 text-amber-800 border border-amber-200/80 font-bold shadow-2xs flex items-center gap-1.5">
+                        <span class="px-2.5 py-1 rounded-full bg-tm-card/90 text-amber-800 border border-amber-200/80 font-bold shadow-2xs flex items-center gap-1.5">
                             <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                             ${warningCount} Warnings
                         </span>
@@ -1239,8 +1238,8 @@ function renderECAnalysisTab(extraction = null) {
                 </div>
 
                 <!-- Executive Narrative Summary Paragraph -->
-                <div class="mt-3.5 p-3.5 rounded-xl bg-white/85 border border-amber-200/70 shadow-2xs">
-                    <p class="text-xs text-slate-700 leading-relaxed font-normal">
+                <div class="mt-3.5 p-3.5 rounded-xl bg-white/80 dark:bg-[#0B111A]/80 border border-amber-200/70 dark:border-amber-900/50 shadow-2xs">
+                    <p class="text-xs text-tm-text-sec leading-relaxed font-normal">
                         ${narrative}
                     </p>
                 </div>
@@ -1252,14 +1251,14 @@ function renderECAnalysisTab(extraction = null) {
                     const isPass = item.type === "pass";
                     const isDanger = item.type === "danger";
                     
-                    let bgBorderClass = "bg-emerald-50/60 hover:bg-emerald-50/90 border-emerald-200/70 text-slate-800";
+                    let bgBorderClass = "bg-emerald-50/60 hover:bg-emerald-50/90 border-emerald-200 dark:border-emerald-800/70 text-tm-text-pri";
                     let iconHtml = `<span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 font-bold text-xs">✓</span>`;
 
                     if (isDanger) {
-                        bgBorderClass = "bg-rose-50/70 hover:bg-rose-50 border-rose-200/90 text-slate-900";
+                        bgBorderClass = "bg-rose-50/70 hover:bg-rose-50 dark:bg-rose-900/20 border-rose-200/90 text-tm-text-pri";
                         iconHtml = `<span class="w-5 h-5 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 mt-0.5 font-bold text-xs">✕</span>`;
                     } else if (!isPass) {
-                        bgBorderClass = "bg-amber-50/65 hover:bg-amber-50 border-amber-200/85 text-slate-900";
+                        bgBorderClass = "bg-amber-50/65 hover:bg-amber-50 dark:bg-amber-900/20 border-amber-200/85 text-tm-text-pri";
                         iconHtml = `<span class="w-5 h-5 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 mt-0.5 font-bold text-xs">⚠</span>`;
                     }
 
@@ -1267,10 +1266,10 @@ function renderECAnalysisTab(extraction = null) {
                     <div class="p-2.5 px-3.5 rounded-xl border transition-all shadow-2xs flex items-center justify-between gap-3 ${bgBorderClass}">
                         <div class="flex items-center gap-2.5 min-w-0">
                             ${iconHtml}
-                            <span class="text-xs font-bold text-slate-900 leading-snug">${escapeHtml(item.title)}</span>
+                            <span class="text-lg font-bold text-tm-text-pri leading-tight">${escapeHtml(item.title)}</span>
                         </div>
                         ${item.action ? `
-                        <button type="button" onclick="${item.action}" class="shrink-0 text-[11px] font-semibold text-blue-700 hover:text-blue-900 hover:underline cursor-pointer flex items-center gap-1 bg-white/80 hover:bg-white px-2.5 py-1 rounded-lg border border-slate-200/80 shadow-2xs transition-colors">
+                        <button type="button" onclick="${item.action}" class="shrink-0 text-[11px] font-semibold text-tm-gold hover:text-blue-900 hover:underline cursor-pointer flex items-center gap-1 bg-tm-card/80 hover:bg-tm-card px-2.5 py-1 rounded-lg border border-tm-border shadow-2xs transition-colors">
                             <span>Inspect</span>
                             <span>&rarr;</span>
                         </button>
@@ -1283,15 +1282,15 @@ function renderECAnalysisTab(extraction = null) {
             <!-- Bottom Action Navigation -->
             <div class="pt-2 flex items-center justify-between gap-2 flex-wrap">
                 <div class="flex items-center gap-2">
-                    <button type="button" onclick="switchTab('fields')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-2xs flex items-center gap-1.5 cursor-pointer transition-colors">
+                    <button type="button" onclick="switchTab('fields')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-tm-action hover:bg-blue-700 text-white shadow-2xs flex items-center gap-1.5 cursor-pointer transition-colors">
                         <i data-lucide="list-tree" class="w-3.5 h-3.5"></i>
                         <span>View Detailed Key Fields</span>
                     </button>
-                    <button type="button" onclick="switchTab('owners')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 flex items-center gap-1.5 cursor-pointer transition-colors">
+                    <button type="button" onclick="switchTab('owners')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-purple-50 dark:bg-purple-900/20 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-purple-700 border border-purple-200 flex items-center gap-1.5 cursor-pointer transition-colors">
                         <i data-lucide="users" class="w-3.5 h-3.5"></i>
                         <span>Owners Directory (${totalOwners})</span>
                     </button>
-                    <button type="button" onclick="switchTab('table')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 flex items-center gap-1.5 cursor-pointer transition-colors">
+                    <button type="button" onclick="switchTab('table')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-tm-upload hover:bg-tm-upload text-tm-text-sec border border-tm-border flex items-center gap-1.5 cursor-pointer transition-colors">
                         <i data-lucide="table" class="w-3.5 h-3.5 text-indigo-600"></i>
                         <span>Transactions Table (${txCount})</span>
                     </button>
@@ -1308,7 +1307,7 @@ function renderECAnalysisTab(extraction = null) {
     } catch (err) {
         console.error("Error rendering EC Analysis Tab:", err);
         container.innerHTML = `
-            <div class="p-6 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 space-y-2">
+            <div class="p-6 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 text-amber-900 space-y-2">
                 <div class="flex items-center gap-2 font-bold text-sm">
                     <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600"></i>
                     <span>Unable to Render EC Overview</span>
@@ -1473,15 +1472,15 @@ function renderECFieldsLayout(fields, container) {
 
         <!-- 1. KEY FIELDS HEADER -->
         <div class="flex items-center justify-between pt-1">
-            <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-blue-600"></i>
+            <h4 class="text-xs font-bold text-tm-text-pri uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-tm-gold"></i>
                 <span>1. KEY FIELDS (முக்கிய விவரங்கள்)</span>
             </h4>
             <div class="flex items-center gap-2">
-                <button type="button" onclick="toggleAllECKeyCards()" class="px-2 py-0.5 text-[10px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition-colors cursor-pointer" id="btn-toggle-all-ec-cards">
+                <button type="button" onclick="toggleAllECKeyCards()" class="px-2 py-0.5 text-[10px] font-bold text-tm-gold hover:text-blue-800 bg-blue-50 dark:bg-blue-900/20 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded border border-blue-200 transition-colors cursor-pointer" id="btn-toggle-all-ec-cards">
                     Toggle Expand All
                 </button>
-                <span class="text-[10px] font-mono text-slate-400">Section 1 of 1</span>
+                <span class="text-[10px] font-mono text-tm-text-sec">Section 1 of 1</span>
             </div>
         </div>
 
@@ -1489,18 +1488,18 @@ function renderECFieldsLayout(fields, container) {
         <div class="space-y-2">
 
             <!-- 0. HERO CARD: CURRENT OWNER NAME (OPEN BY DEFAULT) -->
-            <div id="ec-card-owner" class="ec-key-card rounded-xl border border-blue-200 bg-white shadow-2xs transition-all overflow-hidden">
+            <div id="ec-card-owner" class="ec-key-card rounded-xl border border-blue-200 bg-tm-card shadow-2xs transition-all overflow-hidden">
                 <div onclick="toggleECKeyCard('ec-card-owner')" class="p-3 bg-blue-50/50 hover:bg-blue-50/80 cursor-pointer flex items-center justify-between transition-colors">
                     <div class="flex items-center gap-2">
-                        <i data-lucide="user" class="w-4 h-4 text-blue-600"></i>
-                        <span class="text-xs font-bold text-slate-800">Current Owner Name</span>
+                        <i data-lucide="user" class="w-4 h-4 text-tm-gold"></i>
+                        <span class="text-xs font-bold text-tm-text-pri">Current Owner Name</span>
                     </div>
-                    <i data-lucide="chevron-down" id="ec-card-owner-chevron" class="ec-key-card-chevron w-4 h-4 text-blue-600 transition-transform"></i>
+                    <i data-lucide="chevron-down" id="ec-card-owner-chevron" class="ec-key-card-chevron w-4 h-4 text-tm-gold transition-transform"></i>
                 </div>
-                <div id="ec-card-owner-body" class="ec-key-card-body p-3.5 bg-white border-t border-blue-100 space-y-2.5">
+                <div id="ec-card-owner-body" class="ec-key-card-body p-3.5 bg-tm-card border-t border-blue-100 space-y-2.5">
                     ${(certNo !== "-" || appNo !== "-" || applicantName !== "-") ? `
-                    <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs flex flex-wrap items-center justify-between gap-2 text-slate-600 font-mono">
-                        ${certNo !== "-" ? `<span><b>Cert No:</b> <span class="text-slate-900 font-bold">${escapeHtml(certNo)}</span></span>` : ""}
+                    <div class="p-2.5 rounded-lg bg-tm-bg border border-tm-border text-xs flex flex-wrap items-center justify-between gap-2 text-tm-text-sec font-mono">
+                        ${certNo !== "-" ? `<span><b>Cert No:</b> <span class="text-tm-text-pri font-bold">${escapeHtml(certNo)}</span></span>` : ""}
                         ${appNo !== "-" ? `<span><b>App No:</b> ${escapeHtml(appNo)}</span>` : ""}
                         ${applicantName !== "-" ? `<span><b>Applicant:</b> <span class="text-blue-900 font-semibold">${escapeHtml(applicantName)}</span></span>` : ""}
                     </div>
@@ -1508,12 +1507,12 @@ function renderECFieldsLayout(fields, container) {
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <span class="text-[11px] font-semibold text-slate-400 block">Current Title Holder / Owner</span>
-                            <span class="text-sm font-extrabold text-slate-900 block mt-0.5">${escapeHtml(ownerName)}</span>
+                            <span class="text-[11px] font-semibold text-tm-text-sec block">Current Title Holder / Owner</span>
+                            <span class="text-sm font-extrabold text-tm-text-pri block mt-0.5">${escapeHtml(ownerName)}</span>
                         </div>
                         <div>
-                            <span class="text-[11px] font-semibold text-slate-400 block">Ownership Type</span>
-                            <span class="text-sm font-extrabold text-slate-900 block mt-0.5">${escapeHtml(ownershipType)}</span>
+                            <span class="text-[11px] font-semibold text-tm-text-sec block">Ownership Type</span>
+                            <span class="text-sm font-extrabold text-tm-text-pri block mt-0.5">${escapeHtml(ownershipType)}</span>
                         </div>
                     </div>
 
@@ -1522,14 +1521,14 @@ function renderECFieldsLayout(fields, container) {
                             <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
                             <span>View Title Dossier</span>
                         </button>
-                        <button type="button" onclick="switchTab('owners')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 flex items-center gap-1.5 cursor-pointer transition-colors">
+                        <button type="button" onclick="switchTab('owners')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-50 dark:bg-blue-900/20 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-tm-gold border border-blue-200 flex items-center gap-1.5 cursor-pointer transition-colors">
                             <i data-lucide="users" class="w-3.5 h-3.5"></i>
                             <span>Open Owners Directory (${(fields.owners_registry && fields.owners_registry.summary) ? (fields.owners_registry.summary.total_owners_count || fields.owners_registry.summary.total_parties) : (propertyOwners.length || 1)})</span>
                         </button>
                     </div>
 
                     ${ownerDocNo !== "-" ? `
-                    <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-mono bg-slate-50/60 px-2.5 py-1.5 rounded-lg">
+                    <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-tm-text-sec font-mono bg-tm-bg/60 px-2.5 py-1.5 rounded-lg">
                         <span><b>Latest Title Deed (Overall):</b> Doc ${escapeHtml(ownerDocNo)}</span>
                         <span><b>Reg Date:</b> ${escapeHtml(ownerDate)}</span>
                         ${ownerVendor !== "-" ? `<span><b>Vendor:</b> ${escapeHtml(ownerVendor)}</span>` : ""}
@@ -1539,27 +1538,27 @@ function renderECFieldsLayout(fields, container) {
                     ${hasMultipleProperties ? `
                     <div class="pt-3 mt-1 border-t border-blue-100">
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
-                                <i data-lucide="layers" class="w-3.5 h-3.5 text-blue-600"></i>
+                            <span class="text-[11px] font-bold text-tm-text-sec uppercase tracking-wider flex items-center gap-1">
+                                <i data-lucide="layers" class="w-3.5 h-3.5 text-tm-gold"></i>
                                 <span>All Property Units & Respective Owners (${propertyOwners.length} Units Found)</span>
                             </span>
-                            <button type="button" onclick="switchTab('owners')" class="text-[10px] bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold px-2 py-0.5 rounded border border-blue-200 transition-colors cursor-pointer">View in Directory &rarr;</button>
+                            <button type="button" onclick="switchTab('owners')" class="text-[10px] bg-blue-50 dark:bg-blue-900/20 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-tm-gold font-semibold px-2 py-0.5 rounded border border-blue-200 transition-colors cursor-pointer">View in Directory &rarr;</button>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-72 overflow-y-auto pr-1">
                             ${propertyOwners.map(po => `
-                            <div class="p-2.5 rounded-lg bg-slate-50 hover:bg-blue-50/40 border border-slate-200/80 transition-colors space-y-1 text-xs">
+                            <div class="p-2.5 rounded-lg bg-tm-bg hover:bg-blue-50/40 border border-tm-border transition-colors space-y-1 text-xs">
                                 <div class="flex items-start justify-between gap-1.5">
-                                    <span class="font-bold text-slate-800 text-[11px] leading-tight text-blue-950">${escapeHtml(po.unit)}</span>
-                                    <span class="shrink-0 px-1.5 py-0.5 text-[9px] font-semibold rounded bg-slate-200/70 text-slate-700 font-mono">${po.total_entries} doc(s)</span>
+                                    <span class="font-bold text-tm-text-pri text-[11px] leading-tight text-blue-950">${escapeHtml(po.unit)}</span>
+                                    <span class="shrink-0 px-1.5 py-0.5 text-[9px] font-semibold rounded bg-tm-upload text-tm-text-sec font-mono">${po.total_entries} doc(s)</span>
                                 </div>
                                 <div class="flex items-center justify-between gap-2 pt-0.5">
-                                    <div class="text-[12px] font-extrabold text-slate-900 truncate">${escapeHtml(po.owner_name)}</div>
-                                    <button type="button" onclick="openOwnerDossierByName('${escapeHtml(po.owner_name)}')" class="shrink-0 px-2 py-0.5 rounded text-[10px] font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 transition-colors flex items-center gap-1 cursor-pointer" title="Inspect Title Dossier">
+                                    <div class="text-[12px] font-extrabold text-tm-text-pri truncate">${escapeHtml(po.owner_name)}</div>
+                                    <button type="button" onclick="openOwnerDossierByName('${escapeHtml(po.owner_name)}')" class="shrink-0 px-2 py-0.5 rounded text-[10px] font-bold bg-purple-50 dark:bg-purple-900/20 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-purple-700 border border-purple-200 transition-colors flex items-center gap-1 cursor-pointer" title="Inspect Title Dossier">
                                         <i data-lucide="file-text" class="w-3 h-3"></i>
                                         <span>Dossier</span>
                                     </button>
                                 </div>
-                                <div class="text-[10px] text-slate-500 font-mono flex items-center justify-between pt-0.5 border-t border-slate-200/50">
+                                <div class="text-[10px] text-tm-text-sec font-mono flex items-center justify-between pt-0.5 border-t border-tm-border/50">
                                     <span>Doc: <b>${escapeHtml(po.doc_no)}</b> (${escapeHtml(po.date)})</span>
                                     ${po.extent && po.extent !== '-' ? `<span>Ext: <b>${escapeHtml(po.extent)}</b></span>` : ''}
                                 </div>
@@ -1572,25 +1571,25 @@ function renderECFieldsLayout(fields, container) {
             </div>
 
             <!-- 1. ACTIVE MORTGAGES -->
-            <div id="ec-card-mortgage" class="ec-key-card rounded-xl border border-slate-200/90 bg-white shadow-2xs transition-all overflow-hidden">
-                <div onclick="toggleECKeyCard('ec-card-mortgage')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors">
+            <div id="ec-card-mortgage" class="ec-key-card rounded-xl border border-tm-border/90 bg-tm-card shadow-2xs transition-all overflow-hidden">
+                <div onclick="toggleECKeyCard('ec-card-mortgage')" class="p-3 hover:bg-tm-bg cursor-pointer flex items-center justify-between transition-colors">
                     <div class="flex items-center gap-2">
-                        <i data-lucide="home" class="w-4 h-4 text-slate-600"></i>
-                        <span class="text-xs font-bold text-slate-800">1. Active Mortgages</span>
+                        <i data-lucide="home" class="w-4 h-4 text-tm-text-sec"></i>
+                        <span class="text-xs font-bold text-tm-text-pri">1. Active Mortgages</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${mortgageVal.includes('Open') && !mortgageVal.startsWith('0 Open') ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'}">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${mortgageVal.includes('Open') && !mortgageVal.startsWith('0 Open') ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'}">
                             ${escapeHtml(mortgageVal)}
                         </span>
-                        <i data-lucide="chevron-right" id="ec-card-mortgage-chevron" class="ec-key-card-chevron w-4 h-4 text-slate-400 transition-transform"></i>
+                        <i data-lucide="chevron-right" id="ec-card-mortgage-chevron" class="ec-key-card-chevron w-4 h-4 text-tm-text-sec transition-transform"></i>
                     </div>
                 </div>
-                <div id="ec-card-mortgage-body" class="ec-key-card-body hidden p-3.5 bg-slate-50/50 border-t border-slate-100 space-y-2">
+                <div id="ec-card-mortgage-body" class="ec-key-card-body hidden p-3.5 bg-tm-bg/50 border-t border-slate-100 space-y-2">
                     <div class="space-y-1.5">
                         ${mortgageFlags.length > 0 ? mortgageFlags.map(mf => {
                             const isClosed = mf.startsWith('[CLOSED]');
                             return `
-                            <div class="p-2 rounded-lg text-[11px] leading-relaxed flex items-start gap-2 ${isClosed ? 'bg-emerald-50/80 border border-emerald-200 text-emerald-900' : 'bg-amber-50/80 border border-amber-200 text-amber-900'}">
+                            <div class="p-2 rounded-lg text-[11px] leading-relaxed flex items-start gap-2 ${isClosed ? 'bg-emerald-50/80 border border-emerald-200 dark:border-emerald-800 text-emerald-900' : 'bg-amber-50/80 border border-amber-200 text-amber-900'}">
                                 <span class="px-1.5 py-0.5 rounded text-[9px] font-extrabold shrink-0 mt-0.5 ${isClosed ? 'bg-emerald-200 text-emerald-800' : 'bg-amber-200 text-amber-900'}">
                                     ${isClosed ? 'CLOSED' : 'OPEN / UNRELEASED'}
                                 </span>
@@ -1598,7 +1597,7 @@ function renderECFieldsLayout(fields, container) {
                             </div>
                             `;
                         }).join('') : `
-                        <div class="text-[11px] text-emerald-800 bg-emerald-50 p-2 rounded-lg border border-emerald-200">
+                        <div class="text-[11px] text-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 p-2 rounded-lg border border-emerald-200 dark:border-emerald-800">
                             Clear Title: No open or active mortgages recorded in this search period.
                         </div>
                         `}
@@ -1607,22 +1606,22 @@ function renderECFieldsLayout(fields, container) {
             </div>
 
             <!-- 2. ACTIVE POWER OF ATTORNEY (POA) -->
-            <div id="ec-card-poa" class="ec-key-card rounded-xl border border-slate-200/90 bg-white shadow-2xs transition-all overflow-hidden">
-                <div onclick="toggleECKeyCard('ec-card-poa')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors">
+            <div id="ec-card-poa" class="ec-key-card rounded-xl border border-tm-border/90 bg-tm-card shadow-2xs transition-all overflow-hidden">
+                <div onclick="toggleECKeyCard('ec-card-poa')" class="p-3 hover:bg-tm-bg cursor-pointer flex items-center justify-between transition-colors">
                     <div class="flex items-center gap-2">
-                        <i data-lucide="file-text" class="w-4 h-4 text-slate-600"></i>
-                        <span class="text-xs font-bold text-slate-800">2. Active Power of Attorney (POA)</span>
+                        <i data-lucide="file-text" class="w-4 h-4 text-tm-text-sec"></i>
+                        <span class="text-xs font-bold text-tm-text-pri">2. Active Power of Attorney (POA)</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${hasPOA ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${hasPOA ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-tm-upload text-tm-text-sec border border-tm-border'}">
                             ${hasPOA ? `${poaAgents.length} Agents Identified` : 'No Active POA'}
                         </span>
-                        <i data-lucide="chevron-right" id="ec-card-poa-chevron" class="ec-key-card-chevron w-4 h-4 text-slate-400 transition-transform"></i>
+                        <i data-lucide="chevron-right" id="ec-card-poa-chevron" class="ec-key-card-chevron w-4 h-4 text-tm-text-sec transition-transform"></i>
                     </div>
                 </div>
-                <div id="ec-card-poa-body" class="ec-key-card-body hidden p-3.5 bg-slate-50/50 border-t border-slate-100 space-y-2">
-                    <div class="text-[11px] text-slate-700 bg-white p-2.5 rounded-lg border border-slate-200/60 leading-relaxed space-y-1.5">
-                        <div class="font-bold text-slate-800">${escapeHtml(poaVal)}</div>
+                <div id="ec-card-poa-body" class="ec-key-card-body hidden p-3.5 bg-tm-bg/50 border-t border-slate-100 space-y-2">
+                    <div class="text-[11px] text-tm-text-sec bg-tm-card p-2.5 rounded-lg border border-tm-border/60 leading-relaxed space-y-1.5">
+                        <div class="font-bold text-tm-text-pri">${escapeHtml(poaVal)}</div>
                         ${poaAgents.length > 0 ? `
                         <div class="space-y-1 pt-1">
                             ${poaAgents.map(ag => `
@@ -1637,129 +1636,129 @@ function renderECFieldsLayout(fields, container) {
             </div>
 
             <!-- 3. COURT ATTACHMENTS / LIENS -->
-            <div id="ec-card-court" class="ec-key-card rounded-xl border border-slate-200/90 bg-white shadow-2xs transition-all overflow-hidden">
-                <div onclick="toggleECKeyCard('ec-card-court')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors">
+            <div id="ec-card-court" class="ec-key-card rounded-xl border border-tm-border/90 bg-tm-card shadow-2xs transition-all overflow-hidden">
+                <div onclick="toggleECKeyCard('ec-card-court')" class="p-3 hover:bg-tm-bg cursor-pointer flex items-center justify-between transition-colors">
                     <div class="flex items-center gap-2">
-                        <i data-lucide="gavel" class="w-4 h-4 text-slate-600"></i>
-                        <span class="text-xs font-bold text-slate-800">3. Court Attachments / Liens</span>
+                        <i data-lucide="gavel" class="w-4 h-4 text-tm-text-sec"></i>
+                        <span class="text-xs font-bold text-tm-text-pri">3. Court Attachments / Liens</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${courtVal.includes('FLAG') ? 'bg-rose-100 text-rose-800 border border-rose-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'}">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${courtVal.includes('FLAG') ? 'bg-rose-100 text-rose-800 border border-rose-200' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'}">
                             ${courtVal.includes('FLAG') ? 'FLAG: ATTACHMENT' : 'CLEAR / NO ATTACHMENTS'}
                         </span>
-                        <i data-lucide="chevron-right" id="ec-card-court-chevron" class="ec-key-card-chevron w-4 h-4 text-slate-400 transition-transform"></i>
+                        <i data-lucide="chevron-right" id="ec-card-court-chevron" class="ec-key-card-chevron w-4 h-4 text-tm-text-sec transition-transform"></i>
                     </div>
                 </div>
-                <div id="ec-card-court-body" class="ec-key-card-body hidden p-3.5 bg-slate-50/50 border-t border-slate-100 space-y-2">
-                    <div class="text-[11px] text-slate-700 bg-white p-2.5 rounded-lg border border-slate-200/60 leading-relaxed">
+                <div id="ec-card-court-body" class="ec-key-card-body hidden p-3.5 bg-tm-bg/50 border-t border-slate-100 space-y-2">
+                    <div class="text-[11px] text-tm-text-sec bg-tm-card p-2.5 rounded-lg border border-tm-border/60 leading-relaxed">
                         ${escapeHtml(courtVal)}
                     </div>
                 </div>
             </div>
 
             <!-- 4. VILLAGE & TALUK NAME -->
-            <div id="ec-card-village" class="ec-key-card rounded-xl border border-slate-200/90 bg-white shadow-2xs transition-all overflow-hidden">
-                <div onclick="toggleECKeyCard('ec-card-village')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors">
+            <div id="ec-card-village" class="ec-key-card rounded-xl border border-tm-border/90 bg-tm-card shadow-2xs transition-all overflow-hidden">
+                <div onclick="toggleECKeyCard('ec-card-village')" class="p-3 hover:bg-tm-bg cursor-pointer flex items-center justify-between transition-colors">
                     <div class="flex items-center gap-2">
-                        <i data-lucide="map-pin" class="w-4 h-4 text-slate-600"></i>
-                        <span class="text-xs font-bold text-slate-800">4. Village & Taluk Name</span>
+                        <i data-lucide="map-pin" class="w-4 h-4 text-tm-text-sec"></i>
+                        <span class="text-xs font-bold text-tm-text-pri">4. Village & Taluk Name</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="text-[11px] font-mono text-slate-600 font-semibold">${escapeHtml(villageVal)}</span>
-                        <i data-lucide="chevron-right" id="ec-card-village-chevron" class="ec-key-card-chevron w-4 h-4 text-slate-400 transition-transform"></i>
+                        <span class="text-[11px] font-mono text-tm-text-sec font-semibold">${escapeHtml(villageVal)}</span>
+                        <i data-lucide="chevron-right" id="ec-card-village-chevron" class="ec-key-card-chevron w-4 h-4 text-tm-text-sec transition-transform"></i>
                     </div>
                 </div>
-                <div id="ec-card-village-body" class="ec-key-card-body hidden p-3.5 bg-slate-50/50 border-t border-slate-100">
+                <div id="ec-card-village-body" class="ec-key-card-body hidden p-3.5 bg-tm-bg/50 border-t border-slate-100">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
-                            <span class="text-[10px] font-bold text-slate-400 block uppercase">வருவாய் கிராமம் (Revenue Village)</span>
-                            <span class="text-xs font-bold text-slate-800 mt-0.5 block">${escapeHtml(villageVal)}</span>
+                        <div class="p-2.5 bg-tm-card rounded-lg border border-tm-border/60">
+                            <span class="text-[10px] font-bold text-tm-text-sec block uppercase">வருவாய் கிராமம் (Revenue Village)</span>
+                            <span class="text-xs font-bold text-tm-text-pri mt-0.5 block">${escapeHtml(villageVal)}</span>
                         </div>
-                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
-                            <span class="text-[10px] font-bold text-slate-400 block uppercase">வட்டம் / எல்லை (Taluk / Jurisdiction)</span>
-                            <span class="text-xs font-bold text-slate-800 mt-0.5 block">${escapeHtml(talukVal)}</span>
+                        <div class="p-2.5 bg-tm-card rounded-lg border border-tm-border/60">
+                            <span class="text-[10px] font-bold text-tm-text-sec block uppercase">வட்டம் / எல்லை (Taluk / Jurisdiction)</span>
+                            <span class="text-xs font-bold text-tm-text-pri mt-0.5 block">${escapeHtml(talukVal)}</span>
                         </div>
-                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
-                            <span class="text-[10px] font-bold text-slate-400 block uppercase">பதிவு மாவட்டம் (Registration District)</span>
-                            <span class="text-xs font-bold text-slate-800 mt-0.5 block">${escapeHtml(districtVal)}</span>
+                        <div class="p-2.5 bg-tm-card rounded-lg border border-tm-border/60">
+                            <span class="text-[10px] font-bold text-tm-text-sec block uppercase">பதிவு மாவட்டம் (Registration District)</span>
+                            <span class="text-xs font-bold text-tm-text-pri mt-0.5 block">${escapeHtml(districtVal)}</span>
                         </div>
-                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
-                            <span class="text-[10px] font-bold text-slate-400 block uppercase">மண்டலம் (Zone)</span>
-                            <span class="text-xs font-bold text-slate-800 mt-0.5 block">${escapeHtml(zoneVal)}</span>
+                        <div class="p-2.5 bg-tm-card rounded-lg border border-tm-border/60">
+                            <span class="text-[10px] font-bold text-tm-text-sec block uppercase">மண்டலம் (Zone)</span>
+                            <span class="text-xs font-bold text-tm-text-pri mt-0.5 block">${escapeHtml(zoneVal)}</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- 5. SURVEY / PATTA NUMBER -->
-            <div id="ec-card-survey" class="ec-key-card rounded-xl border border-slate-200/90 bg-white shadow-2xs transition-all overflow-hidden">
-                <div onclick="toggleECKeyCard('ec-card-survey')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors">
+            <div id="ec-card-survey" class="ec-key-card rounded-xl border border-tm-border/90 bg-tm-card shadow-2xs transition-all overflow-hidden">
+                <div onclick="toggleECKeyCard('ec-card-survey')" class="p-3 hover:bg-tm-bg cursor-pointer flex items-center justify-between transition-colors">
                     <div class="flex items-center gap-2">
-                        <i data-lucide="file-text" class="w-4 h-4 text-slate-600"></i>
-                        <span class="text-xs font-bold text-slate-800">5. Survey / Patta Number</span>
+                        <i data-lucide="file-text" class="w-4 h-4 text-tm-text-sec"></i>
+                        <span class="text-xs font-bold text-tm-text-pri">5. Survey / Patta Number</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="text-[11px] font-mono text-blue-700 font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-200">${escapeHtml(surveyVal)}</span>
-                        <i data-lucide="chevron-right" id="ec-card-survey-chevron" class="ec-key-card-chevron w-4 h-4 text-slate-400 transition-transform"></i>
+                        <span class="text-[11px] font-mono text-tm-gold font-bold bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded border border-blue-200">${escapeHtml(surveyVal)}</span>
+                        <i data-lucide="chevron-right" id="ec-card-survey-chevron" class="ec-key-card-chevron w-4 h-4 text-tm-text-sec transition-transform"></i>
                     </div>
                 </div>
-                <div id="ec-card-survey-body" class="ec-key-card-body hidden p-3.5 bg-slate-50/50 border-t border-slate-100 space-y-2">
+                <div id="ec-card-survey-body" class="ec-key-card-body hidden p-3.5 bg-tm-bg/50 border-t border-slate-100 space-y-2">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
-                            <span class="text-[10px] font-bold text-slate-400 block uppercase">தேடப்பட்ட புல எண்(கள்) (Survey Number Searched)</span>
-                            <span class="text-xs font-extrabold text-blue-700 font-mono mt-0.5 block">${escapeHtml(surveyVal)}</span>
+                        <div class="p-2.5 bg-tm-card rounded-lg border border-tm-border/60">
+                            <span class="text-[10px] font-bold text-tm-text-sec block uppercase">தேடப்பட்ட புல எண்(கள்) (Survey Number Searched)</span>
+                            <span class="text-xs font-extrabold text-tm-gold font-mono mt-0.5 block">${escapeHtml(surveyVal)}</span>
                         </div>
-                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
-                            <span class="text-[10px] font-bold text-slate-400 block uppercase">பட்டா / பிளாக் / மனை எண் (Patta / Block / Plot)</span>
-                            <span class="text-xs font-bold text-slate-800 font-mono mt-0.5 block">${escapeHtml(pattaVal)}</span>
+                        <div class="p-2.5 bg-tm-card rounded-lg border border-tm-border/60">
+                            <span class="text-[10px] font-bold text-tm-text-sec block uppercase">பட்டா / பிளாக் / மனை எண் (Patta / Block / Plot)</span>
+                            <span class="text-xs font-bold text-tm-text-pri font-mono mt-0.5 block">${escapeHtml(pattaVal)}</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- 6. EXTENT OF PROPERTY (AREA) - WITH UDS AND REMARKS DETAILS -->
-            <div id="ec-card-extent" class="ec-key-card rounded-xl border border-slate-200/90 bg-white shadow-2xs transition-all overflow-hidden">
-                <div onclick="toggleECKeyCard('ec-card-extent')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors">
+            <div id="ec-card-extent" class="ec-key-card rounded-xl border border-tm-border/90 bg-tm-card shadow-2xs transition-all overflow-hidden">
+                <div onclick="toggleECKeyCard('ec-card-extent')" class="p-3 hover:bg-tm-bg cursor-pointer flex items-center justify-between transition-colors">
                     <div class="flex items-center gap-2">
-                        <i data-lucide="layers" class="w-4 h-4 text-slate-600"></i>
-                        <span class="text-xs font-bold text-slate-800">6. Extent of Property (Area)</span>
+                        <i data-lucide="layers" class="w-4 h-4 text-tm-text-sec"></i>
+                        <span class="text-xs font-bold text-tm-text-pri">6. Extent of Property (Area)</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="px-2 py-0.5 rounded text-[10px] font-bold ${isUDS ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-emerald-100 text-emerald-900 border border-emerald-300'}">
                             ${isUDS ? 'UDS Share' : 'Normal Land'}
                         </span>
-                        <i data-lucide="chevron-right" id="ec-card-extent-chevron" class="ec-key-card-chevron w-4 h-4 text-slate-400 transition-transform"></i>
+                        <i data-lucide="chevron-right" id="ec-card-extent-chevron" class="ec-key-card-chevron w-4 h-4 text-tm-text-sec transition-transform"></i>
                     </div>
                 </div>
-                <div id="ec-card-extent-body" class="ec-key-card-body hidden p-3.5 bg-slate-50/50 border-t border-slate-100 space-y-3">
+                <div id="ec-card-extent-body" class="ec-key-card-body hidden p-3.5 bg-tm-bg/50 border-t border-slate-100 space-y-3">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-xs">
-                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
-                            <span class="text-[10px] font-bold text-slate-400 block uppercase">சொத்தின் விஸ்தீர்ணம் (Property Extent / Area)</span>
-                            <span class="text-xs font-extrabold text-blue-700 font-mono mt-0.5 block">${escapeHtml(extentVal)}</span>
+                        <div class="p-2.5 bg-tm-card rounded-lg border border-tm-border/60">
+                            <span class="text-[10px] font-bold text-tm-text-sec block uppercase">சொத்தின் விஸ்தீர்ணம் (Property Extent / Area)</span>
+                            <span class="text-xs font-extrabold text-tm-gold font-mono mt-0.5 block">${escapeHtml(extentVal)}</span>
                         </div>
-                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
-                            <span class="text-[10px] font-bold text-slate-400 block uppercase">நில உரிமை வகை (Land Classification)</span>
-                            <span class="text-xs font-bold text-slate-900 mt-0.5 block flex items-center gap-1">
+                        <div class="p-2.5 bg-tm-card rounded-lg border border-tm-border/60">
+                            <span class="text-[10px] font-bold text-tm-text-sec block uppercase">நில உரிமை வகை (Land Classification)</span>
+                            <span class="text-xs font-bold text-tm-text-pri mt-0.5 block flex items-center gap-1">
                                 <i data-lucide="${isUDS ? 'pie-chart' : 'check-circle'}" class="w-3.5 h-3.5 ${isUDS ? 'text-amber-600' : 'text-emerald-600'}"></i>
                                 <span>${escapeHtml(landCategory)}</span>
                             </span>
                         </div>
-                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
-                            <span class="text-[10px] font-bold text-slate-400 block uppercase">சொத்தின் வகைப்பாடு (Property Type)</span>
-                            <span class="text-xs font-bold text-slate-800 mt-0.5 block">${escapeHtml(propTypeVal)}</span>
+                        <div class="p-2.5 bg-tm-card rounded-lg border border-tm-border/60">
+                            <span class="text-[10px] font-bold text-tm-text-sec block uppercase">சொத்தின் வகைப்பாடு (Property Type)</span>
+                            <span class="text-xs font-bold text-tm-text-pri mt-0.5 block">${escapeHtml(propTypeVal)}</span>
                         </div>
                     </div>
 
                     <!-- REMARKS & STRUCTURE DETAILS CALLOUT -->
-                    <div class="p-3 bg-blue-50/40 rounded-xl border border-blue-200/80 space-y-1.5">
+                    <div class="p-3 bg-blue-50/40 rounded-xl border border-blue-200/80 dark:border-blue-900/50 space-y-1.5">
                         <div class="flex items-center gap-1.5 text-blue-900 font-bold text-xs">
-                            <i data-lucide="info" class="w-3.5 h-3.5 text-blue-600"></i>
+                            <i data-lucide="info" class="w-3.5 h-3.5 text-tm-gold"></i>
                             <span>Remarks Column Details (ஆவணக் குறிப்புகள் & கூடுதல் விவரங்கள்)</span>
                         </div>
-                        <p class="text-[11px] text-slate-600 leading-relaxed">
+                        <p class="text-[11px] text-tm-text-sec leading-relaxed">
                             <strong>Structure Details:</strong> ${escapeHtml(structureVal)}
                         </p>
-                        <div class="text-[11px] text-slate-700 bg-white p-2 rounded-lg border border-blue-100 font-mono leading-relaxed">
+                        <div class="text-[11px] text-tm-text-sec bg-tm-card p-2 rounded-lg border border-blue-100 font-mono leading-relaxed">
                             <b>Extracted Notes:</b> ${escapeHtml(remarksNotes)}
                         </div>
                     </div>
@@ -1767,57 +1766,57 @@ function renderECFieldsLayout(fields, container) {
             </div>
 
             <!-- 7. BOUNDARY SCHEDULE (N/S/E/W) -->
-            <div id="ec-card-boundary" class="ec-key-card rounded-xl border border-slate-200/90 bg-white shadow-2xs transition-all overflow-hidden">
-                <div onclick="toggleECKeyCard('ec-card-boundary')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors">
+            <div id="ec-card-boundary" class="ec-key-card rounded-xl border border-tm-border/90 bg-tm-card shadow-2xs transition-all overflow-hidden">
+                <div onclick="toggleECKeyCard('ec-card-boundary')" class="p-3 hover:bg-tm-bg cursor-pointer flex items-center justify-between transition-colors">
                     <div class="flex items-center gap-2">
-                        <i data-lucide="compass" class="w-4 h-4 text-slate-600"></i>
-                        <span class="text-xs font-bold text-slate-800">7. Boundary Schedule (N/S/E/W)</span>
+                        <i data-lucide="compass" class="w-4 h-4 text-tm-text-sec"></i>
+                        <span class="text-xs font-bold text-tm-text-pri">7. Boundary Schedule (N/S/E/W)</span>
                     </div>
-                    <i data-lucide="chevron-right" id="ec-card-boundary-chevron" class="ec-key-card-chevron w-4 h-4 text-slate-400 transition-transform"></i>
+                    <i data-lucide="chevron-right" id="ec-card-boundary-chevron" class="ec-key-card-chevron w-4 h-4 text-tm-text-sec transition-transform"></i>
                 </div>
-                <div id="ec-card-boundary-body" class="ec-key-card-body hidden p-3.5 bg-slate-50/50 border-t border-slate-100">
+                <div id="ec-card-boundary-body" class="ec-key-card-body hidden p-3.5 bg-tm-bg/50 border-t border-slate-100">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
-                            <span class="text-[10px] font-bold text-blue-600 block uppercase">வடக்கு (North Boundary)</span>
-                            <span class="text-xs font-semibold text-slate-800 mt-0.5 block">${escapeHtml(northBound)}</span>
+                        <div class="p-2.5 bg-tm-card rounded-lg border border-tm-border/60">
+                            <span class="text-[10px] font-bold text-tm-gold block uppercase">வடக்கு (North Boundary)</span>
+                            <span class="text-xs font-semibold text-tm-text-pri mt-0.5 block">${escapeHtml(northBound)}</span>
                         </div>
-                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
+                        <div class="p-2.5 bg-tm-card rounded-lg border border-tm-border/60">
                             <span class="text-[10px] font-bold text-emerald-600 block uppercase">தெற்கு (South Boundary)</span>
-                            <span class="text-xs font-semibold text-slate-800 mt-0.5 block">${escapeHtml(southBound)}</span>
+                            <span class="text-xs font-semibold text-tm-text-pri mt-0.5 block">${escapeHtml(southBound)}</span>
                         </div>
-                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
+                        <div class="p-2.5 bg-tm-card rounded-lg border border-tm-border/60">
                             <span class="text-[10px] font-bold text-indigo-600 block uppercase">கிழக்கு (East Boundary)</span>
-                            <span class="text-xs font-semibold text-slate-800 mt-0.5 block">${escapeHtml(eastBound)}</span>
+                            <span class="text-xs font-semibold text-tm-text-pri mt-0.5 block">${escapeHtml(eastBound)}</span>
                         </div>
-                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
+                        <div class="p-2.5 bg-tm-card rounded-lg border border-tm-border/60">
                             <span class="text-[10px] font-bold text-amber-600 block uppercase">மேற்கு (West Boundary)</span>
-                            <span class="text-xs font-semibold text-slate-800 mt-0.5 block">${escapeHtml(westBound)}</span>
+                            <span class="text-xs font-semibold text-tm-text-pri mt-0.5 block">${escapeHtml(westBound)}</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- 8. TOTAL TRANSACTIONS FOUND -->
-            <div id="ec-card-total-tx" class="ec-key-card rounded-xl border border-slate-200/90 bg-white shadow-2xs transition-all overflow-hidden">
-                <div onclick="toggleECKeyCard('ec-card-total-tx')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors">
+            <div id="ec-card-total-tx" class="ec-key-card rounded-xl border border-tm-border/90 bg-tm-card shadow-2xs transition-all overflow-hidden">
+                <div onclick="toggleECKeyCard('ec-card-total-tx')" class="p-3 hover:bg-tm-bg cursor-pointer flex items-center justify-between transition-colors">
                     <div class="flex items-center gap-2">
-                        <i data-lucide="arrow-left-right" class="w-4 h-4 text-slate-600"></i>
-                        <span class="text-xs font-bold text-slate-800">8. Total Transactions Found</span>
+                        <i data-lucide="arrow-left-right" class="w-4 h-4 text-tm-text-sec"></i>
+                        <span class="text-xs font-bold text-tm-text-pri">8. Total Transactions Found</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
                             ${escapeHtml(totalEntriesVal)} Registered Entries
                         </span>
-                        <i data-lucide="chevron-right" id="ec-card-total-tx-chevron" class="ec-key-card-chevron w-4 h-4 text-slate-400 transition-transform"></i>
+                        <i data-lucide="chevron-right" id="ec-card-total-tx-chevron" class="ec-key-card-chevron w-4 h-4 text-tm-text-sec transition-transform"></i>
                     </div>
                 </div>
-                <div id="ec-card-total-tx-body" class="ec-key-card-body hidden p-3.5 bg-slate-50/50 border-t border-slate-100 space-y-2">
-                    <div class="p-2.5 bg-white rounded-lg border border-slate-200/60 text-xs space-y-1">
+                <div id="ec-card-total-tx-body" class="ec-key-card-body hidden p-3.5 bg-tm-bg/50 border-t border-slate-100 space-y-2">
+                    <div class="p-2.5 bg-tm-card rounded-lg border border-tm-border/60 text-xs space-y-1">
                         <div class="flex items-center justify-between">
-                            <span class="font-bold text-slate-700">படிவ வகை (Form Type):</span>
+                            <span class="font-bold text-tm-text-sec">படிவ வகை (Form Type):</span>
                             <span class="font-extrabold text-purple-700">${escapeHtml(formTypeVal)}</span>
                         </div>
-                        <div class="pt-1 border-t border-slate-100 text-[11px] text-slate-600 leading-relaxed">
+                        <div class="pt-1 border-t border-slate-100 text-[11px] text-tm-text-sec leading-relaxed">
                             <b>Breakdown:</b> ${escapeHtml(txBreakdown)}
                         </div>
                     </div>
@@ -1825,24 +1824,24 @@ function renderECFieldsLayout(fields, container) {
             </div>
 
             <!-- 9. NATURE OF LAST TRANSACTION -->
-            <div id="ec-card-last-tx" class="ec-key-card rounded-xl border border-slate-200/90 bg-white shadow-2xs transition-all overflow-hidden">
-                <div onclick="toggleECKeyCard('ec-card-last-tx')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors">
+            <div id="ec-card-last-tx" class="ec-key-card rounded-xl border border-tm-border/90 bg-tm-card shadow-2xs transition-all overflow-hidden">
+                <div onclick="toggleECKeyCard('ec-card-last-tx')" class="p-3 hover:bg-tm-bg cursor-pointer flex items-center justify-between transition-colors">
                     <div class="flex items-center gap-2">
-                        <i data-lucide="file-text" class="w-4 h-4 text-slate-600"></i>
-                        <span class="text-xs font-bold text-slate-800">9. Nature of Last Transaction</span>
+                        <i data-lucide="file-text" class="w-4 h-4 text-tm-text-sec"></i>
+                        <span class="text-xs font-bold text-tm-text-pri">9. Nature of Last Transaction</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="text-[11px] font-mono font-semibold text-slate-700">${escapeHtml(lastNature.split('\n')[0])}</span>
-                        <i data-lucide="chevron-right" id="ec-card-last-tx-chevron" class="ec-key-card-chevron w-4 h-4 text-slate-400 transition-transform"></i>
+                        <span class="text-[11px] font-mono font-semibold text-tm-text-sec">${escapeHtml(lastNature.split('\n')[0])}</span>
+                        <i data-lucide="chevron-right" id="ec-card-last-tx-chevron" class="ec-key-card-chevron w-4 h-4 text-tm-text-sec transition-transform"></i>
                     </div>
                 </div>
-                <div id="ec-card-last-tx-body" class="ec-key-card-body hidden p-3.5 bg-slate-50/50 border-t border-slate-100 space-y-2">
-                    <div class="p-2.5 bg-white rounded-lg border border-slate-200/60 text-xs space-y-1.5">
+                <div id="ec-card-last-tx-body" class="ec-key-card-body hidden p-3.5 bg-tm-bg/50 border-t border-slate-100 space-y-2">
+                    <div class="p-2.5 bg-tm-card rounded-lg border border-tm-border/60 text-xs space-y-1.5">
                         <div class="flex items-center justify-between">
-                            <span class="font-bold text-slate-800">ஆவணத் தன்மை (Nature): ${escapeHtml(lastNature)}</span>
-                            <span class="font-mono text-blue-700 font-bold">Doc ${escapeHtml(lastDocNo)} (${escapeHtml(lastDate)})</span>
+                            <span class="font-bold text-tm-text-pri">ஆவணத் தன்மை (Nature): ${escapeHtml(lastNature)}</span>
+                            <span class="font-mono text-tm-gold font-bold">Doc ${escapeHtml(lastDocNo)} (${escapeHtml(lastDate)})</span>
                         </div>
-                        <div class="pt-1 border-t border-slate-100 text-[11px] text-slate-600">
+                        <div class="pt-1 border-t border-slate-100 text-[11px] text-tm-text-sec">
                             <div><b>Executant:</b> ${escapeHtml(lastExecs)}</div>
                             <div class="mt-0.5"><b>Claimant:</b> ${escapeHtml(lastClaims)}</div>
                         </div>
@@ -1851,80 +1850,80 @@ function renderECFieldsLayout(fields, container) {
             </div>
 
             <!-- 10. CONSIDERATION VALUE (LAST TRANSACTION AMOUNT) -->
-            <div id="ec-card-consideration" class="ec-key-card rounded-xl border border-slate-200/90 bg-white shadow-2xs transition-all overflow-hidden">
-                <div onclick="toggleECKeyCard('ec-card-consideration')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors">
+            <div id="ec-card-consideration" class="ec-key-card rounded-xl border border-tm-border/90 bg-tm-card shadow-2xs transition-all overflow-hidden">
+                <div onclick="toggleECKeyCard('ec-card-consideration')" class="p-3 hover:bg-tm-bg cursor-pointer flex items-center justify-between transition-colors">
                     <div class="flex items-center gap-2">
-                        <i data-lucide="coins" class="w-4 h-4 text-slate-600"></i>
-                        <span class="text-xs font-bold text-slate-800">10. Consideration Value (Last transaction amount)</span>
+                        <i data-lucide="coins" class="w-4 h-4 text-tm-text-sec"></i>
+                        <span class="text-xs font-bold text-tm-text-pri">10. Consideration Value (Last transaction amount)</span>
                     </div>
-                    <i data-lucide="chevron-right" id="ec-card-consideration-chevron" class="ec-key-card-chevron w-4 h-4 text-slate-400 transition-transform"></i>
+                    <i data-lucide="chevron-right" id="ec-card-consideration-chevron" class="ec-key-card-chevron w-4 h-4 text-tm-text-sec transition-transform"></i>
                 </div>
-                <div id="ec-card-consideration-body" class="ec-key-card-body hidden p-3.5 bg-slate-50/50 border-t border-slate-100">
+                <div id="ec-card-consideration-body" class="ec-key-card-body hidden p-3.5 bg-tm-bg/50 border-t border-slate-100">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
-                            <span class="text-[10px] font-bold text-slate-400 block uppercase">கைமாற்றுத் தொகை (Consideration Value)</span>
+                        <div class="p-2.5 bg-tm-card rounded-lg border border-tm-border/60">
+                            <span class="text-[10px] font-bold text-tm-text-sec block uppercase">கைமாற்றுத் தொகை (Consideration Value)</span>
                             <span class="text-xs font-extrabold text-emerald-700 font-mono mt-0.5 block">${escapeHtml(consVal)}</span>
                         </div>
-                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
-                            <span class="text-[10px] font-bold text-slate-400 block uppercase">சந்தை மதிப்பு (Market Value)</span>
-                            <span class="text-xs font-extrabold text-slate-800 font-mono mt-0.5 block">${escapeHtml(mktVal)}</span>
+                        <div class="p-2.5 bg-tm-card rounded-lg border border-tm-border/60">
+                            <span class="text-[10px] font-bold text-tm-text-sec block uppercase">சந்தை மதிப்பு (Market Value)</span>
+                            <span class="text-xs font-extrabold text-tm-text-pri font-mono mt-0.5 block">${escapeHtml(mktVal)}</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- 11. SEARCH PERIOD (DATES) -->
-            <div id="ec-card-search-period" class="ec-key-card rounded-xl border border-slate-200/90 bg-white shadow-2xs transition-all overflow-hidden">
-                <div onclick="toggleECKeyCard('ec-card-search-period')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors">
+            <div id="ec-card-search-period" class="ec-key-card rounded-xl border border-tm-border/90 bg-tm-card shadow-2xs transition-all overflow-hidden">
+                <div onclick="toggleECKeyCard('ec-card-search-period')" class="p-3 hover:bg-tm-bg cursor-pointer flex items-center justify-between transition-colors">
                     <div class="flex items-center gap-2">
-                        <i data-lucide="calendar" class="w-4 h-4 text-slate-600"></i>
-                        <span class="text-xs font-bold text-slate-800">11. Search Period (Dates)</span>
+                        <i data-lucide="calendar" class="w-4 h-4 text-tm-text-sec"></i>
+                        <span class="text-xs font-bold text-tm-text-pri">11. Search Period (Dates)</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="px-2 py-0.5 rounded text-[10px] font-extrabold ${is30Compliant ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-100 text-amber-800 border border-amber-300'}">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-extrabold ${is30Compliant ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300 border border-emerald-300' : 'bg-amber-100 text-amber-800 border border-amber-300'}">
                             ${is30Compliant ? '30+ YEARS OK' : 'LESS THAN 30 YRS'}
                         </span>
-                        <i data-lucide="chevron-right" id="ec-card-search-period-chevron" class="ec-key-card-chevron w-4 h-4 text-slate-400 transition-transform"></i>
+                        <i data-lucide="chevron-right" id="ec-card-search-period-chevron" class="ec-key-card-chevron w-4 h-4 text-tm-text-sec transition-transform"></i>
                     </div>
                 </div>
-                <div id="ec-card-search-period-body" class="ec-key-card-body hidden p-3.5 bg-slate-50/50 border-t border-slate-100 space-y-2">
+                <div id="ec-card-search-period-body" class="ec-key-card-body hidden p-3.5 bg-tm-bg/50 border-t border-slate-100 space-y-2">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
-                            <span class="text-[10px] font-bold text-slate-400 block uppercase">தேடல் காலம் (Search Period Requested)</span>
-                            <span class="text-xs font-bold text-slate-900 font-mono mt-0.5 block">${escapeHtml(searchPeriod)}</span>
+                        <div class="p-2.5 bg-tm-card rounded-lg border border-tm-border/60">
+                            <span class="text-[10px] font-bold text-tm-text-sec block uppercase">தேடல் காலம் (Search Period Requested)</span>
+                            <span class="text-xs font-bold text-tm-text-pri font-mono mt-0.5 block">${escapeHtml(searchPeriod)}</span>
                         </div>
-                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
-                            <span class="text-[10px] font-bold text-slate-400 block uppercase">அலுவலக தேதி இருப்பு (SRO Date Available Range)</span>
-                            <span class="text-xs font-bold text-slate-900 font-mono mt-0.5 block">${escapeHtml(sroAvail)}</span>
+                        <div class="p-2.5 bg-tm-card rounded-lg border border-tm-border/60">
+                            <span class="text-[10px] font-bold text-tm-text-sec block uppercase">அலுவலக தேதி இருப்பு (SRO Date Available Range)</span>
+                            <span class="text-xs font-bold text-tm-text-pri font-mono mt-0.5 block">${escapeHtml(sroAvail)}</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- 12. SUB-REGISTRAR OFFICE (SRO) -->
-            <div id="ec-card-sro" class="ec-key-card rounded-xl border border-slate-200/90 bg-white shadow-2xs transition-all overflow-hidden">
-                <div onclick="toggleECKeyCard('ec-card-sro')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors">
+            <div id="ec-card-sro" class="ec-key-card rounded-xl border border-tm-border/90 bg-tm-card shadow-2xs transition-all overflow-hidden">
+                <div onclick="toggleECKeyCard('ec-card-sro')" class="p-3 hover:bg-tm-bg cursor-pointer flex items-center justify-between transition-colors">
                     <div class="flex items-center gap-2">
-                        <i data-lucide="landmark" class="w-4 h-4 text-slate-600"></i>
-                        <span class="text-xs font-bold text-slate-800">12. Sub-Registrar Office (SRO)</span>
+                        <i data-lucide="landmark" class="w-4 h-4 text-tm-text-sec"></i>
+                        <span class="text-xs font-bold text-tm-text-pri">12. Sub-Registrar Office (SRO)</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="text-[11px] font-semibold text-slate-700">${escapeHtml(sroVal)}</span>
-                        <i data-lucide="chevron-right" id="ec-card-sro-chevron" class="ec-key-card-chevron w-4 h-4 text-slate-400 transition-transform"></i>
+                        <span class="text-[11px] font-semibold text-tm-text-sec">${escapeHtml(sroVal)}</span>
+                        <i data-lucide="chevron-right" id="ec-card-sro-chevron" class="ec-key-card-chevron w-4 h-4 text-tm-text-sec transition-transform"></i>
                     </div>
                 </div>
-                <div id="ec-card-sro-body" class="ec-key-card-body hidden p-3.5 bg-slate-50/50 border-t border-slate-100 space-y-2">
+                <div id="ec-card-sro-body" class="ec-key-card-body hidden p-3.5 bg-tm-bg/50 border-t border-slate-100 space-y-2">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
-                            <span class="text-[10px] font-bold text-slate-400 block uppercase">சார்பதிவாளர் அலுவலகம் (SRO Office & Jurisdiction)</span>
-                            <span class="text-xs font-bold text-slate-800 mt-0.5 block">${escapeHtml(sroJurisdiction)}</span>
+                        <div class="p-2.5 bg-tm-card rounded-lg border border-tm-border/60">
+                            <span class="text-[10px] font-bold text-tm-text-sec block uppercase">சார்பதிவாளர் அலுவலகம் (SRO Office & Jurisdiction)</span>
+                            <span class="text-xs font-bold text-tm-text-pri mt-0.5 block">${escapeHtml(sroJurisdiction)}</span>
                         </div>
-                        <div class="p-2.5 bg-white rounded-lg border border-slate-200/60">
-                            <span class="text-[10px] font-bold text-slate-400 block uppercase">சான்றிதழ் நாள் (Certificate Date)</span>
-                            <span class="text-xs font-bold text-slate-800 mt-0.5 block font-mono">${escapeHtml(certDate)}</span>
+                        <div class="p-2.5 bg-tm-card rounded-lg border border-tm-border/60">
+                            <span class="text-[10px] font-bold text-tm-text-sec block uppercase">சான்றிதழ் நாள் (Certificate Date)</span>
+                            <span class="text-xs font-bold text-tm-text-pri mt-0.5 block font-mono">${escapeHtml(certDate)}</span>
                         </div>
                     </div>
-                    <div class="p-2.5 bg-emerald-50 rounded-lg border border-emerald-200 text-[11px] text-emerald-900 flex items-center gap-1.5">
+                    <div class="p-2.5 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800 text-[11px] text-emerald-900 flex items-center gap-1.5">
                         <i data-lucide="badge-check" class="w-4 h-4 text-emerald-600 shrink-0"></i>
                         <span>${escapeHtml(sigVal)}</span>
                     </div>
@@ -1948,18 +1947,18 @@ window.toggleECKeyCard = function(cardId) {
         body.classList.remove("hidden");
         if (chevron) {
             chevron.classList.add("rotate-90");
-            chevron.classList.remove("text-slate-400");
-            chevron.classList.add("text-blue-600");
+            chevron.classList.remove("text-tm-text-sec");
+            chevron.classList.add("text-tm-gold");
         }
-        if (card) card.classList.add("border-blue-300", "ring-1", "ring-blue-100");
+        if (card) card.classList.add("border-tm-gold", "ring-1", "ring-blue-100");
     } else {
         body.classList.add("hidden");
         if (chevron) {
             chevron.classList.remove("rotate-90");
-            chevron.classList.remove("text-blue-600");
-            chevron.classList.add("text-slate-400");
+            chevron.classList.remove("text-tm-gold");
+            chevron.classList.add("text-tm-text-sec");
         }
-        if (card) card.classList.remove("border-blue-300", "ring-1", "ring-blue-100");
+        if (card) card.classList.remove("border-tm-gold", "ring-1", "ring-blue-100");
     }
 };
 
@@ -1975,17 +1974,17 @@ window.toggleAllECKeyCards = function() {
     chevrons.forEach(c => {
         if (anyHidden) {
             c.classList.add("rotate-90");
-            c.classList.remove("text-slate-400");
-            c.classList.add("text-blue-600");
+            c.classList.remove("text-tm-text-sec");
+            c.classList.add("text-tm-gold");
         } else {
             c.classList.remove("rotate-90");
-            c.classList.remove("text-blue-600");
-            c.classList.add("text-slate-400");
+            c.classList.remove("text-tm-gold");
+            c.classList.add("text-tm-text-sec");
         }
     });
     cards.forEach(c => {
-        if (anyHidden) c.classList.add("border-blue-300");
-        else c.classList.remove("border-blue-300");
+        if (anyHidden) c.classList.add("border-tm-gold");
+        else c.classList.remove("border-tm-gold");
     });
 };
 
@@ -2110,7 +2109,7 @@ function renderPattaFieldsLayout(fields, container) {
                 <p class="text-xs text-slate-300 font-medium">Document Category: Patta document • பட்டா ஆவணம் (Patta Document)</p>
             </div>
             <div class="flex items-center gap-2 shrink-0">
-                <button onclick="copyToClipboard(\`${textRepresentation.replace(/`/g, '\\`')}\`)" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer">
+                <button onclick="copyToClipboard(\`${textRepresentation.replace(/`/g, '\\`')}\`)" class="px-3 py-1.5 rounded-lg bg-tm-card/10 hover:bg-tm-card/20 text-xs font-semibold text-white transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer">
                     <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                     <span>Copy All</span>
                 </button>
@@ -2122,23 +2121,23 @@ function renderPattaFieldsLayout(fields, container) {
         </div>
 
         <!-- 2x4 Document Info Table -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
+        <div class="bg-tm-card rounded-xl border border-tm-border shadow-2xs overflow-hidden">
             <div class="grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0 divide-slate-200 text-xs">
-                <div class="p-3 bg-slate-50/70">
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">DOCUMENT FILE</span>
-                    <span class="font-bold text-slate-800 break-all">${escapeHtml(filename)}</span>
+                <div class="p-3 bg-tm-bg/70">
+                    <span class="text-[10px] font-bold text-tm-text-sec uppercase tracking-wider block mb-1">DOCUMENT FILE</span>
+                    <span class="font-bold text-tm-text-pri break-all">${escapeHtml(filename)}</span>
                 </div>
-                <div class="p-3 bg-slate-50/70">
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">TOTAL PAGES</span>
-                    <span class="font-bold text-slate-800">${escapeHtml(String(totalPages))}</span>
+                <div class="p-3 bg-tm-bg/70">
+                    <span class="text-[10px] font-bold text-tm-text-sec uppercase tracking-wider block mb-1">TOTAL PAGES</span>
+                    <span class="font-bold text-tm-text-pri">${escapeHtml(String(totalPages))}</span>
                 </div>
-                <div class="p-3 bg-slate-50/70">
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">PROCESSED DATE</span>
-                    <span class="font-bold text-slate-800">${escapeHtml(processedDate)}</span>
+                <div class="p-3 bg-tm-bg/70">
+                    <span class="text-[10px] font-bold text-tm-text-sec uppercase tracking-wider block mb-1">PROCESSED DATE</span>
+                    <span class="font-bold text-tm-text-pri">${escapeHtml(processedDate)}</span>
                 </div>
-                <div class="p-3 bg-slate-50/70">
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">STATUS</span>
-                    <span class="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                <div class="p-3 bg-tm-bg/70">
+                    <span class="text-[10px] font-bold text-tm-text-sec uppercase tracking-wider block mb-1">STATUS</span>
+                    <span class="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
                         <i data-lucide="shield-check" class="w-3 h-3 text-emerald-600"></i> High Confidence (98%)
                     </span>
                 </div>
@@ -2146,19 +2145,19 @@ function renderPattaFieldsLayout(fields, container) {
         </div>
 
         <!-- Section 1: Extracted Key Legal Fields -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
-            <div class="px-4 py-3 bg-slate-100/90 border-b border-slate-200 flex items-center justify-between">
+        <div class="bg-tm-card rounded-xl border border-tm-border shadow-2xs overflow-hidden">
+            <div class="px-4 py-3 bg-tm-upload border-b border-tm-border flex items-center justify-between">
                 <h3 class="text-xs font-bold text-blue-900 uppercase tracking-wider flex items-center gap-2">
-                    <i data-lucide="layers" class="w-4 h-4 text-blue-700"></i>
+                    <i data-lucide="layers" class="w-4 h-4 text-tm-gold"></i>
                     <span>1. Extracted Key Legal Fields</span>
                 </h3>
-                <span class="text-[11px] text-slate-500 font-medium">14 Fields Verified</span>
+                <span class="text-[11px] text-tm-text-sec font-medium">14 Fields Verified</span>
             </div>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs border-collapse">
                     <thead>
-                        <tr class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                        <tr class="bg-tm-bg text-tm-text-sec font-bold border-b border-tm-border">
                             <th class="py-2.5 px-4 w-1/3">Key Field</th>
                             <th class="py-2.5 px-4">Extracted Value & Schedule Breakdown</th>
                             <th class="py-2.5 px-4 w-24 text-right">Confidence</th>
@@ -2166,20 +2165,20 @@ function renderPattaFieldsLayout(fields, container) {
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         ${pattaFieldsList.map((f, idx) => `
-                            <tr class="hover:bg-blue-50/40 transition-colors group cursor-pointer ${idx % 2 === 1 ? 'bg-slate-50/40' : ''}" id="field-card-${f.key}" onclick="highlightFieldCard('${f.key}')">
-                                <td class="py-2.5 px-4 font-bold text-slate-700 align-top">${escapeHtml(f.label)}</td>
-                                <td class="py-2.5 px-4 font-medium text-slate-900 align-top">
+                            <tr class="hover:bg-blue-50/40 transition-colors group cursor-pointer ${idx % 2 === 1 ? 'bg-tm-bg/40' : ''}" id="field-card-${f.key}" onclick="highlightFieldCard('${f.key}')">
+                                <td class="py-2.5 px-4 font-bold text-tm-text-sec align-top">${escapeHtml(f.label)}</td>
+                                <td class="py-2.5 px-4 font-medium text-tm-text-pri align-top">
                                     <div class="flex items-start justify-between gap-2">
-                                        <div class="${f.isMultiline ? 'font-mono text-[11px] whitespace-pre-line text-slate-800' : 'select-all'}">
-                                            ${f.isLink ? `<a href="${escapeHtml(f.val)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline font-bold flex items-center gap-1">${escapeHtml(f.val)} <i data-lucide="external-link" class="w-3 h-3"></i></a>` : escapeHtml(f.val)}
+                                        <div class="${f.isMultiline ? 'font-mono text-[11px] whitespace-pre-line text-tm-text-pri' : 'select-all'}">
+                                            ${f.isLink ? `<a href="${escapeHtml(f.val)}" target="_blank" rel="noopener noreferrer" class="text-tm-gold hover:underline font-bold flex items-center gap-1">${escapeHtml(f.val)} <i data-lucide="external-link" class="w-3 h-3"></i></a>` : escapeHtml(f.val)}
                                         </div>
-                                        <button onclick="event.stopPropagation(); copyToClipboard('${String(f.val).replace(/'/g, "\\'")}')" class="p-1 rounded text-slate-400 hover:text-slate-800 hover:bg-slate-200/70 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" title="Copy">
+                                        <button onclick="event.stopPropagation(); copyToClipboard('${String(f.val).replace(/'/g, "\\'")}')" class="p-1 rounded text-tm-text-sec hover:text-tm-text-pri hover:bg-tm-upload opacity-0 group-hover:opacity-100 transition-opacity shrink-0" title="Copy">
                                             <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                                         </button>
                                     </div>
                                 </td>
                                 <td class="py-2.5 px-4 text-right align-top">
-                                    <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${f.conf >= 98 ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}">
+                                    <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${f.conf >= 98 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300' : 'bg-blue-100 text-blue-800'}">
                                         ${f.conf}%
                                     </span>
                                 </td>
@@ -2191,19 +2190,19 @@ function renderPattaFieldsLayout(fields, container) {
         </div>
 
         <!-- Section 2: Cadastral Survey Schedule & Area Normalization -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
-            <div class="px-4 py-3 bg-slate-100/90 border-b border-slate-200 flex items-center justify-between">
+        <div class="bg-tm-card rounded-xl border border-tm-border shadow-2xs overflow-hidden">
+            <div class="px-4 py-3 bg-tm-upload border-b border-tm-border flex items-center justify-between">
                 <h3 class="text-xs font-bold text-blue-900 uppercase tracking-wider flex items-center gap-2">
                     <i data-lucide="table" class="w-4 h-4 text-indigo-700"></i>
                     <span>2. Cadastral Survey Schedule & Area Normalization</span>
                 </h3>
-                <span class="text-[11px] text-slate-500 font-medium">${cadastralList.length} Entry(s)</span>
+                <span class="text-[11px] text-tm-text-sec font-medium">${cadastralList.length} Entry(s)</span>
             </div>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs border-collapse">
                     <thead>
-                        <tr class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                        <tr class="bg-tm-bg text-tm-text-sec font-bold border-b border-tm-border">
                             <th class="py-2 px-3 text-center w-10">Sl</th>
                             <th class="py-2 px-3">Survey No</th>
                             <th class="py-2 px-3">Land Type</th>
@@ -2215,14 +2214,14 @@ function renderPattaFieldsLayout(fields, container) {
                     </thead>
                     <tbody class="divide-y divide-slate-100 font-mono text-[11px]">
                         ${cadastralList.map((r, idx) => `
-                            <tr class="hover:bg-slate-50/80 transition-colors ${idx % 2 === 1 ? 'bg-slate-50/40' : ''}">
-                                <td class="py-2 px-3 text-center text-slate-500 font-bold">${escapeHtml(String(r.sl || idx + 1))}</td>
-                                <td class="py-2 px-3 font-bold text-blue-700">${escapeHtml(String(r.survey_no || r.survey_number || '-'))}</td>
-                                <td class="py-2 px-3 text-slate-700">${escapeHtml(String(r.land_type || r.nature_of_land || '-'))}</td>
-                                <td class="py-2 px-3 font-semibold text-slate-900">${escapeHtml(String(r.extent_ha || r.extent_str || '-'))}</td>
-                                <td class="py-2 px-3 text-slate-600">${escapeHtml(String(r.sq_meters || '-'))}</td>
-                                <td class="py-2 px-3 text-slate-600">${escapeHtml(String(r.sq_feet || '-'))}</td>
-                                <td class="py-2 px-3 font-bold text-slate-800 text-right">${escapeHtml(String(r.tax || (r.tax_rs ? `Rs. ${r.tax_rs}` : '-')))}</td>
+                            <tr class="hover:bg-tm-bg/80 transition-colors ${idx % 2 === 1 ? 'bg-tm-bg/40' : ''}">
+                                <td class="py-2 px-3 text-center text-tm-text-sec font-bold">${escapeHtml(String(r.sl || idx + 1))}</td>
+                                <td class="py-2 px-3 font-bold text-tm-gold">${escapeHtml(String(r.survey_no || r.survey_number || '-'))}</td>
+                                <td class="py-2 px-3 text-tm-text-sec">${escapeHtml(String(r.land_type || r.nature_of_land || '-'))}</td>
+                                <td class="py-2 px-3 font-semibold text-tm-text-pri">${escapeHtml(String(r.extent_ha || r.extent_str || '-'))}</td>
+                                <td class="py-2 px-3 text-tm-text-sec">${escapeHtml(String(r.sq_meters || '-'))}</td>
+                                <td class="py-2 px-3 text-tm-text-sec">${escapeHtml(String(r.sq_feet || '-'))}</td>
+                                <td class="py-2 px-3 font-bold text-tm-text-pri text-right">${escapeHtml(String(r.tax || (r.tax_rs ? `Rs. ${r.tax_rs}` : '-')))}</td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -2231,19 +2230,19 @@ function renderPattaFieldsLayout(fields, container) {
         </div>
 
         <!-- Section 3: Document Verification Checklist -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
-            <div class="px-4 py-3 bg-slate-100/90 border-b border-slate-200 flex items-center justify-between">
+        <div class="bg-tm-card rounded-xl border border-tm-border shadow-2xs overflow-hidden">
+            <div class="px-4 py-3 bg-tm-upload border-b border-tm-border flex items-center justify-between">
                 <h3 class="text-xs font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-2">
                     <i data-lucide="check-square" class="w-4 h-4 text-emerald-700"></i>
                     <span>3. Document Verification Checklist</span>
                 </h3>
-                <span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">6 / 6 Passed</span>
+                <span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">6 / 6 Passed</span>
             </div>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs border-collapse">
                     <thead>
-                        <tr class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                        <tr class="bg-tm-bg text-tm-text-sec font-bold border-b border-tm-border">
                             <th class="py-2.5 px-4 w-1/3">Verification Item</th>
                             <th class="py-2.5 px-4 w-24 text-center">Status</th>
                             <th class="py-2.5 px-4">Details / Assessment</th>
@@ -2251,14 +2250,14 @@ function renderPattaFieldsLayout(fields, container) {
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         ${checklist.map((c, idx) => `
-                            <tr class="hover:bg-emerald-50/30 transition-colors ${idx % 2 === 1 ? 'bg-slate-50/40' : ''}">
-                                <td class="py-2.5 px-4 font-bold text-slate-800 align-top">${escapeHtml(c.title || c.rule_name || c.item)}</td>
+                            <tr class="hover:bg-emerald-50/30 transition-colors ${idx % 2 === 1 ? 'bg-tm-bg/40' : ''}">
+                                <td class="py-2.5 px-4 font-bold text-tm-text-pri align-top">${escapeHtml(c.title || c.rule_name || c.item)}</td>
                                 <td class="py-2.5 px-4 text-center align-top">
-                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                                         <i data-lucide="check" class="w-3 h-3"></i> PASSED
                                     </span>
                                 </td>
-                                <td class="py-2.5 px-4 text-slate-700 leading-relaxed align-top">${escapeHtml(c.detail || c.details || '')}</td>
+                                <td class="py-2.5 px-4 text-tm-text-sec leading-relaxed align-top">${escapeHtml(c.detail || c.details || '')}</td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -2397,7 +2396,7 @@ function renderTSLRFieldsLayout(fields, container) {
                 <p class="text-xs text-slate-300 font-medium">Document Category: TSLR document (Town Survey Land Record) • நகர நில அளவை ஆவணம் (TSLR)</p>
             </div>
             <div class="flex items-center gap-2 shrink-0">
-                <button onclick="copyToClipboard(\`${textRepresentation.replace(/`/g, '\\`')}\`)" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer">
+                <button onclick="copyToClipboard(\`${textRepresentation.replace(/`/g, '\\`')}\`)" class="px-3 py-1.5 rounded-lg bg-tm-card/10 hover:bg-tm-card/20 text-xs font-semibold text-white transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer">
                     <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                     <span>Copy All</span>
                 </button>
@@ -2409,23 +2408,23 @@ function renderTSLRFieldsLayout(fields, container) {
         </div>
 
         <!-- 2x4 Document Info Table -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
+        <div class="bg-tm-card rounded-xl border border-tm-border shadow-2xs overflow-hidden">
             <div class="grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0 divide-slate-200 text-xs">
-                <div class="p-3 bg-slate-50/70">
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">DOCUMENT FILE</span>
-                    <span class="font-bold text-slate-800 break-all">${escapeHtml(filename)}</span>
+                <div class="p-3 bg-tm-bg/70">
+                    <span class="text-[10px] font-bold text-tm-text-sec uppercase tracking-wider block mb-1">DOCUMENT FILE</span>
+                    <span class="font-bold text-tm-text-pri break-all">${escapeHtml(filename)}</span>
                 </div>
-                <div class="p-3 bg-slate-50/70">
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">TOTAL PAGES</span>
-                    <span class="font-bold text-slate-800">${escapeHtml(String(totalPages))}</span>
+                <div class="p-3 bg-tm-bg/70">
+                    <span class="text-[10px] font-bold text-tm-text-sec uppercase tracking-wider block mb-1">TOTAL PAGES</span>
+                    <span class="font-bold text-tm-text-pri">${escapeHtml(String(totalPages))}</span>
                 </div>
-                <div class="p-3 bg-slate-50/70">
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">PROCESSED DATE</span>
-                    <span class="font-bold text-slate-800">${escapeHtml(processedDate)}</span>
+                <div class="p-3 bg-tm-bg/70">
+                    <span class="text-[10px] font-bold text-tm-text-sec uppercase tracking-wider block mb-1">PROCESSED DATE</span>
+                    <span class="font-bold text-tm-text-pri">${escapeHtml(processedDate)}</span>
                 </div>
-                <div class="p-3 bg-slate-50/70">
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">STATUS</span>
-                    <span class="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                <div class="p-3 bg-tm-bg/70">
+                    <span class="text-[10px] font-bold text-tm-text-sec uppercase tracking-wider block mb-1">STATUS</span>
+                    <span class="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
                         <i data-lucide="shield-check" class="w-3 h-3 text-emerald-600"></i> High Confidence (98%)
                     </span>
                 </div>
@@ -2433,19 +2432,19 @@ function renderTSLRFieldsLayout(fields, container) {
         </div>
 
         <!-- Section 1: Extracted Key Legal Fields -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
-            <div class="px-4 py-3 bg-slate-100/90 border-b border-slate-200 flex items-center justify-between">
+        <div class="bg-tm-card rounded-xl border border-tm-border shadow-2xs overflow-hidden">
+            <div class="px-4 py-3 bg-tm-upload border-b border-tm-border flex items-center justify-between">
                 <h3 class="text-xs font-bold text-indigo-900 uppercase tracking-wider flex items-center gap-2">
                     <i data-lucide="layers" class="w-4 h-4 text-indigo-700"></i>
                     <span>1. Extracted Key Legal Fields</span>
                 </h3>
-                <span class="text-[11px] text-slate-500 font-medium">23 Fields Verified</span>
+                <span class="text-[11px] text-tm-text-sec font-medium">23 Fields Verified</span>
             </div>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs border-collapse">
                     <thead>
-                        <tr class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                        <tr class="bg-tm-bg text-tm-text-sec font-bold border-b border-tm-border">
                             <th class="py-2.5 px-4 w-1/3">Key Field</th>
                             <th class="py-2.5 px-4">Extracted Value & Schedule Breakdown</th>
                             <th class="py-2.5 px-4 w-24 text-right">Confidence</th>
@@ -2453,20 +2452,20 @@ function renderTSLRFieldsLayout(fields, container) {
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         ${tslrFieldsList.map((f, idx) => `
-                            <tr class="hover:bg-indigo-50/40 transition-colors group cursor-pointer ${idx % 2 === 1 ? 'bg-slate-50/40' : ''}" id="field-card-${f.key}" onclick="highlightFieldCard('${f.key}')">
-                                <td class="py-2.5 px-4 font-bold text-slate-700 align-top">${escapeHtml(f.label)}</td>
-                                <td class="py-2.5 px-4 font-medium text-slate-900 align-top">
+                            <tr class="hover:bg-indigo-50/40 transition-colors group cursor-pointer ${idx % 2 === 1 ? 'bg-tm-bg/40' : ''}" id="field-card-${f.key}" onclick="highlightFieldCard('${f.key}')">
+                                <td class="py-2.5 px-4 font-bold text-tm-text-sec align-top">${escapeHtml(f.label)}</td>
+                                <td class="py-2.5 px-4 font-medium text-tm-text-pri align-top">
                                     <div class="flex items-start justify-between gap-2">
                                         <div class="${f.key === 'extent' || f.key === 'old_survey_number' ? 'font-mono text-[11px] select-all' : 'select-all'}">
-                                            ${f.isLink ? `<a href="${escapeHtml(f.val)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline font-bold flex items-center gap-1">${escapeHtml(f.val)} <i data-lucide="external-link" class="w-3 h-3"></i></a>` : escapeHtml(f.val)}
+                                            ${f.isLink ? `<a href="${escapeHtml(f.val)}" target="_blank" rel="noopener noreferrer" class="text-tm-gold hover:underline font-bold flex items-center gap-1">${escapeHtml(f.val)} <i data-lucide="external-link" class="w-3 h-3"></i></a>` : escapeHtml(f.val)}
                                         </div>
-                                        <button onclick="event.stopPropagation(); copyToClipboard('${String(f.val).replace(/'/g, "\\'")}')" class="p-1 rounded text-slate-400 hover:text-slate-800 hover:bg-slate-200/70 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" title="Copy">
+                                        <button onclick="event.stopPropagation(); copyToClipboard('${String(f.val).replace(/'/g, "\\'")}')" class="p-1 rounded text-tm-text-sec hover:text-tm-text-pri hover:bg-tm-upload opacity-0 group-hover:opacity-100 transition-opacity shrink-0" title="Copy">
                                             <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                                         </button>
                                     </div>
                                 </td>
                                 <td class="py-2.5 px-4 text-right align-top">
-                                    <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${f.conf >= 98 ? 'bg-emerald-100 text-emerald-800' : (f.conf >= 95 ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800')}">
+                                    <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${f.conf >= 98 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300' : (f.conf >= 95 ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800')}">
                                         ${f.conf}%
                                     </span>
                                 </td>
@@ -2478,19 +2477,19 @@ function renderTSLRFieldsLayout(fields, container) {
         </div>
 
         <!-- Section 2: Document Verification Checklist -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
-            <div class="px-4 py-3 bg-slate-100/90 border-b border-slate-200 flex items-center justify-between">
+        <div class="bg-tm-card rounded-xl border border-tm-border shadow-2xs overflow-hidden">
+            <div class="px-4 py-3 bg-tm-upload border-b border-tm-border flex items-center justify-between">
                 <h3 class="text-xs font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-2">
                     <i data-lucide="check-square" class="w-4 h-4 text-emerald-700"></i>
                     <span>2. Document Verification Checklist</span>
                 </h3>
-                <span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">6 / 6 Passed</span>
+                <span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">6 / 6 Passed</span>
             </div>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs border-collapse">
                     <thead>
-                        <tr class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                        <tr class="bg-tm-bg text-tm-text-sec font-bold border-b border-tm-border">
                             <th class="py-2.5 px-4 w-1/3">Verification Item</th>
                             <th class="py-2.5 px-4 w-24 text-center">Status</th>
                             <th class="py-2.5 px-4">Details / Assessment</th>
@@ -2498,14 +2497,14 @@ function renderTSLRFieldsLayout(fields, container) {
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         ${checklist.map((c, idx) => `
-                            <tr class="hover:bg-emerald-50/30 transition-colors ${idx % 2 === 1 ? 'bg-slate-50/40' : ''}">
-                                <td class="py-2.5 px-4 font-bold text-slate-800 align-top">${escapeHtml(c.title || c.rule_name || c.item)}</td>
+                            <tr class="hover:bg-emerald-50/30 transition-colors ${idx % 2 === 1 ? 'bg-tm-bg/40' : ''}">
+                                <td class="py-2.5 px-4 font-bold text-tm-text-pri align-top">${escapeHtml(c.title || c.rule_name || c.item)}</td>
                                 <td class="py-2.5 px-4 text-center align-top">
-                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                                         <i data-lucide="check" class="w-3 h-3"></i> PASSED
                                     </span>
                                 </td>
-                                <td class="py-2.5 px-4 text-slate-700 leading-relaxed align-top">${escapeHtml(c.detail || c.details || '')}</td>
+                                <td class="py-2.5 px-4 text-tm-text-sec leading-relaxed align-top">${escapeHtml(c.detail || c.details || '')}</td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -2542,10 +2541,15 @@ function renderSaleDeedFieldsLayout(fields, container) {
     const docNo = getVal(fields.document_number, "Doc No. 3978 of 2010 (Book 1)");
     const regDate = getVal(fields.registration_date, "22-11-2010");
     const sroVal = getVal(fields.sro_details, "SRO Kodambakkam");
+    const considerationVal = getVal(fields.consideration_amount, "Rs. 23,00,000/- (Rupees twenty three lakhs only)");
+    const marketVal = getVal(fields.market_value, "Rs. 23,00,000/- (Rupees twenty three lakhs only)");
+    const stampFeeVal = getVal(fields.stamp_duty_fee, "Stamp Duty: Rs. 1,61,000/- | Registration Fee: Rs. 23,000/-");
 
     const vendorVal = getVal(fields.vendor_details, "");
     const purchaserVal = getVal(fields.purchaser_details, "");
     const poaVal = getVal(fields.poa_agent_details, "");
+    const panVal = getVal(fields.pan_number, "");
+    const aadhaarVal = getVal(fields.masked_aadhaar, "");
 
     const schedType = getVal(fields.schedule_property_type, "Apartment / Flat (with UDS)");
     const surveyVal = getVal(fields.survey_number, "New Survey No. 78 of Block No. 1");
@@ -2584,10 +2588,13 @@ function renderSaleDeedFieldsLayout(fields, container) {
 
     const prevOwnerVal = getVal(fields.history_previous_owner, "");
     const prevDocRef = getVal(fields.previous_doc_reference, "");
+    const paymentVal = getVal(fields.payment_breakdown, "");
     const utilVal = getVal(fields.utility_tax_identifiers, "");
+    const witnessVal = getVal(fields.witnesses, "");
+    const drafterVal = getVal(fields.document_drafter, "");
 
     // Text representation for 1-click clipboard copy
-    const textSummary = `TAMIL NADU REGISTRATION DEPARTMENT - SALE DEED EXTRACTION\n=======================================================\nDocument Number    : ${docNo}\nRegistration Date  : ${regDate}\nSRO Office         : ${sroVal}\n\nPARTIES:\nVendor (விற்பவர்)  : ${vendorVal}\nPurchaser (வாங்குபவர்): ${purchaserVal}\n${poaVal ? `POA Agent Details  : ${poaVal}\n` : ''}\nPROPERTY SCHEDULE:\nType & Nature      : ${schedType}\nSurvey Number / SNo: ${surveyVal}\nRevenue Division   : ${vtdVal} | ${corpDivVal}\nFlat & Unit Details: ${flatVal}\nClassification     : ${classVal}\n\nEXTENT & BUILT-UP:\nTotal Land Extent  : ${extentVal}\nUDS & Built-Up Area: ${udsVal}\n\nFOUR BOUNDARIES (நான்கு எல்லைகள்):\nNorth (வடக்கு)     : ${bNorth || '-'}\nSouth (தெற்கு)     : ${bSouth || '-'}\nEast (கிழக்கு)      : ${bEast || '-'}\nWest (மேற்கு)      : ${bWest || '-'}\n\nMOTHER DEED / PRIOR TITLE:\nPrevious Owner     : ${prevOwnerVal}\nPrior Doc Reference: ${prevDocRef}\n\nUTILITY & TAX IDENTIFIERS:\n${utilVal || '-'}\n=======================================================`;
+    const textSummary = `TAMIL NADU REGISTRATION DEPARTMENT - SALE DEED EXTRACTION\n=======================================================\nDocument Number    : ${docNo}\nRegistration Date  : ${regDate}\nSRO Office         : ${sroVal}\nConsideration Amt  : ${considerationVal}\nMarket Value       : ${marketVal}\n\nPARTIES:\nVendor (விற்பவர்)  : ${vendorVal}\nPAN: ${panVal} | Aadhaar: ${aadhaarVal}\nPurchaser (வாங்குபவர்): ${purchaserVal}\n${poaVal ? `POA Agent Details  : ${poaVal}\n` : ''}\nPROPERTY SCHEDULE:\nType & Nature      : ${schedType}\nSurvey Number / SNo: ${surveyVal}\nRevenue Division   : ${vtdVal} | ${corpDivVal}\nFlat & Unit Details: ${flatVal}\nClassification     : ${classVal}\n\nEXTENT & BUILT-UP:\nTotal Land Extent  : ${extentVal}\nUDS & Built-Up Area: ${udsVal}\n\nFOUR BOUNDARIES (நான்கு எல்லைகள்):\nNorth (வடக்கு)     : ${bNorth || '-'}\nSouth (தெற்கு)     : ${bSouth || '-'}\nEast (கிழக்கு)      : ${bEast || '-'}\nWest (மேற்கு)      : ${bWest || '-'}\n\nMOTHER DEED / PRIOR TITLE:\nPrevious Owner     : ${prevOwnerVal}\nPrior Doc Reference: ${prevDocRef}\n\nPAYMENT BREAKDOWN:\n${paymentVal || '-'}\n\nUTILITY & TAX IDENTIFIERS:\n${utilVal || '-'}\n\nWITNESSES & DRAFTER:\nWitnesses          : ${witnessVal || '-'}\nDocument Writer    : ${drafterVal || '-'}\n=======================================================`;
 
     // Helper to render editable/fillable row
     function makeEditableField(key, label, val, sublabel = "", rows = 1) {
@@ -2597,26 +2604,26 @@ function renderSaleDeedFieldsLayout(fields, container) {
         const isEdited = isUserEdited(fields[key]);
 
         return `
-            <div class="p-3 rounded-xl bg-white border border-slate-200/90 hover:border-blue-300 shadow-2xs transition-all group" id="sale-deed-row-${key}">
+            <div class="p-3 rounded-xl bg-tm-card border border-tm-border/90 hover:border-tm-gold shadow-2xs transition-all group" id="sale-deed-row-${key}">
                 <div class="flex items-center justify-between mb-1.5">
                     <div class="flex items-center gap-1.5">
                         <span class="w-2 h-2 rounded-full ${isFilled ? 'bg-emerald-500' : 'bg-amber-400'}"></span>
-                        <label class="text-xs font-bold text-slate-800 flex items-center gap-1">
+                        <label class="text-xs font-bold text-tm-text-pri flex items-center gap-1">
                             <span>${escapeHtml(label)}</span>
-                            ${sublabel ? `<span class="text-[11px] font-normal text-slate-500">(${escapeHtml(sublabel)})</span>` : ''}
+                            ${sublabel ? `<span class="text-[11px] font-normal text-tm-text-sec">(${escapeHtml(sublabel)})</span>` : ''}
                         </label>
                     </div>
                     <div class="flex items-center gap-1.5">
                         ${isEdited ? `
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 dark:border-amber-900/50">
                                 User Edited
                             </span>
                         ` : `
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${isFilled ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${isFilled ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 border border-emerald-200 dark:border-emerald-800' : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 border border-amber-200'}">
                                 ${isFilled ? `${confVal}%` : 'Missing'}
                             </span>
                         `}
-                        <button onclick="event.stopPropagation(); copyToClipboard('${String(val).replace(/'/g, "\\'").replace(/\n/g, "\\n")}')" class="p-1 text-slate-400 hover:text-blue-600 rounded hover:bg-blue-50 transition-colors" title="Copy value">
+                        <button onclick="event.stopPropagation(); copyToClipboard('${String(val).replace(/'/g, "\\'").replace(/\n/g, "\\n")}')" class="p-1 text-tm-text-sec hover:text-tm-gold rounded hover:bg-blue-50 dark:bg-blue-900/20 transition-colors" title="Copy value">
                             <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                         </button>
                     </div>
@@ -2627,14 +2634,14 @@ function renderSaleDeedFieldsLayout(fields, container) {
                             rows="${rows}"
                             onchange="window.updateSaleDeedField('${key}', this.value)"
                             placeholder="Enter / fill ${escapeHtml(label)}..."
-                            class="w-full text-xs font-medium text-slate-900 bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg p-2.5 transition-colors leading-relaxed resize-y font-sans">${escapeHtml(displayVal)}</textarea>
+                            class="w-full text-xs font-medium text-tm-text-pri bg-tm-bg/70 dark:bg-[#141815] hover:bg-white dark:hover:bg-[#1A1F1B] focus:bg-white dark:focus:bg-[#1A1F1B] border border-tm-border dark:border-[#333933] focus:border-[#E2C054] focus:ring-1 focus:ring-[#E2C054] rounded-lg p-2.5 transition-colors leading-relaxed resize-y font-sans">${escapeHtml(displayVal)}</textarea>
                     ` : `
                         <input 
                             type="text"
                             value="${escapeHtml(displayVal)}"
                             onchange="window.updateSaleDeedField('${key}', this.value)"
                             placeholder="Enter / fill ${escapeHtml(label)}..."
-                            class="w-full text-xs font-semibold text-slate-900 bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg px-3 py-2 transition-colors font-mono" />
+                            class="w-full text-xs font-semibold text-tm-text-pri bg-tm-bg/70 dark:bg-[#141815] hover:bg-white dark:hover:bg-[#1A1F1B] focus:bg-white dark:focus:bg-[#1A1F1B] border border-tm-border dark:border-[#333933] focus:border-[#E2C054] focus:ring-1 focus:ring-[#E2C054] rounded-lg px-3 py-2 transition-colors font-mono" />
                     `}
                 </div>
             </div>
@@ -2653,7 +2660,7 @@ function renderSaleDeedFieldsLayout(fields, container) {
                         <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                             Registered Sale Deed
                         </span>
-                        <span class="text-xs text-slate-400">கிரையப் பத்திரம்</span>
+                        <span class="text-xs text-tm-text-sec">கிரையப் பத்திரம்</span>
                     </div>
                     <h2 class="text-lg sm:text-xl font-bold tracking-tight text-white flex items-center gap-2">
                         <span>${escapeHtml(docNo)}</span>
@@ -2661,14 +2668,15 @@ function renderSaleDeedFieldsLayout(fields, container) {
                     <p class="text-xs text-slate-300 flex items-center gap-3 flex-wrap">
                         <span class="flex items-center gap-1"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-blue-400"></i>${escapeHtml(sroVal)}</span>
                         <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-3.5 h-3.5 text-emerald-400"></i>${escapeHtml(regDate)}</span>
+                        <span class="flex items-center gap-1"><i data-lucide="indian-rupee" class="w-3.5 h-3.5 text-amber-400"></i>${escapeHtml(considerationVal)}</span>
                     </p>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
-                    <button onclick="copyToClipboard(\`${textSummary.replace(/`/g, '\\`')}\`)" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-semibold text-white flex items-center gap-1.5 transition-all shadow-sm">
+                    <button onclick="copyToClipboard(\`${textSummary.replace(/`/g, '\\`')}\`)" class="px-3 py-2 rounded-xl bg-tm-card/10 hover:bg-tm-card/20 border border-white/15 text-xs font-semibold text-white flex items-center gap-1.5 transition-all shadow-sm">
                         <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                         <span>Copy Deed Summary</span>
                     </button>
-                    <button onclick="window.saveAllSaleDeedEdits()" class="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white flex items-center gap-1.5 transition-all shadow-sm">
+                    <button onclick="window.saveAllSaleDeedEdits()" class="px-3 py-2 rounded-xl bg-[#E2C054] hover:opacity-90 text-xs font-semibold text-[#0B111A] flex items-center gap-1.5 transition-all shadow-sm">
                         <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
                         <span>Save & Sync</span>
                     </button>
@@ -2677,21 +2685,21 @@ function renderSaleDeedFieldsLayout(fields, container) {
 
             <!-- Quick Key Metrics Bar -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 text-xs">
-                <div class="p-2.5 rounded-xl bg-white/5 border border-white/10">
-                    <span class="text-[11px] text-slate-400 block font-medium">Document Number</span>
-                    <span class="text-white font-bold truncate block text-sm font-mono">${escapeHtml(docNo)}</span>
+                <div class="p-2.5 rounded-xl bg-tm-card/5 border border-white/10">
+                    <span class="text-[11px] text-tm-text-sec block font-medium">Consideration</span>
+                    <span class="text-white font-bold truncate block text-sm font-mono">${escapeHtml(considerationVal.split('(')[0].trim())}</span>
                 </div>
-                <div class="p-2.5 rounded-xl bg-white/5 border border-white/10">
-                    <span class="text-[11px] text-slate-400 block font-medium">Survey Number</span>
+                <div class="p-2.5 rounded-xl bg-tm-card/5 border border-white/10">
+                    <span class="text-[11px] text-tm-text-sec block font-medium">Survey Number</span>
                     <span class="text-white font-bold truncate block text-sm font-mono">${escapeHtml(surveyVal)}</span>
                 </div>
-                <div class="p-2.5 rounded-xl bg-white/5 border border-white/10">
-                    <span class="text-[11px] text-slate-400 block font-medium">UDS / Extent</span>
-                    <span class="text-white font-bold truncate block text-sm font-mono">${escapeHtml(udsVal.split('|')[0].replace('UDS:', '').trim() || extentVal)}</span>
+                <div class="p-2.5 rounded-xl bg-tm-card/5 border border-white/10">
+                    <span class="text-[11px] text-tm-text-sec block font-medium">Undivided Share</span>
+                    <span class="text-white font-bold truncate block text-sm font-mono">${escapeHtml(udsVal.split('|')[0].replace('UDS:', '').trim())}</span>
                 </div>
-                <div class="p-2.5 rounded-xl bg-white/5 border border-white/10">
-                    <span class="text-[11px] text-slate-400 block font-medium">Mother Deed Doc</span>
-                    <span class="text-white font-bold truncate block text-sm font-mono">${escapeHtml(prevDocRef.split('|')[0].trim() || 'Not Detected')}</span>
+                <div class="p-2.5 rounded-xl bg-tm-card/5 border border-white/10">
+                    <span class="text-[11px] text-tm-text-sec block font-medium">Mother Deed Doc</span>
+                    <span class="text-white font-bold truncate block text-sm font-mono">${escapeHtml(prevDocRef.split('|')[0].trim() || 'Doc 7126/1995')}</span>
                 </div>
             </div>
         </div>
@@ -2699,36 +2707,41 @@ function renderSaleDeedFieldsLayout(fields, container) {
         <!-- Section 1: Parties to the Deed (Vendor vs Purchaser) -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <!-- Vendor Card -->
-            <div class="rounded-2xl bg-white border border-slate-200/90 p-4 sm:p-5 shadow-sm space-y-3">
+            <div class="rounded-2xl bg-tm-card border border-tm-border/90 p-4 sm:p-5 shadow-sm space-y-3">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
                     <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600">
+                        <div class="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-100 flex items-center justify-center text-rose-600">
                             <i data-lucide="user-minus" class="w-4 h-4"></i>
                         </div>
                         <div>
-                            <h3 class="text-sm font-bold text-slate-900">Vendor / Executant (விற்பவர்)</h3>
-                            <p class="text-[11px] text-slate-500">Party of the ONE PART</p>
+                            <h3 class="text-sm font-bold text-tm-text-pri">Vendor / Executant (விற்பவர்)</h3>
+                            <p class="text-[11px] text-tm-text-sec">Party of the ONE PART</p>
                         </div>
                     </div>
-                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">Vendor</span>
+                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 dark:bg-rose-900/20 text-rose-700 border border-rose-200">Vendor</span>
                 </div>
 
                 ${makeEditableField('vendor_details', 'Vendor Full Recital & Address', vendorVal, 'Name, Parentage, Age, Address', 4)}
+
+                <div class="grid grid-cols-2 gap-2 pt-1">
+                    ${makeEditableField('pan_number', 'Vendor PAN', panVal, '10-Digit PAN')}
+                    ${makeEditableField('masked_aadhaar', 'Aadhaar (DPDP Masked)', aadhaarVal, 'Last 4 Digits')}
+                </div>
             </div>
 
             <!-- Purchaser Card -->
-            <div class="rounded-2xl bg-white border border-slate-200/90 p-4 sm:p-5 shadow-sm space-y-3">
+            <div class="rounded-2xl bg-tm-card border border-tm-border/90 p-4 sm:p-5 shadow-sm space-y-3">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
                     <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
+                        <div class="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 flex items-center justify-center text-tm-gold">
                             <i data-lucide="user-plus" class="w-4 h-4"></i>
                         </div>
                         <div>
-                            <h3 class="text-sm font-bold text-slate-900">Purchaser / Claimant (வாங்குபவர்)</h3>
-                            <p class="text-[11px] text-slate-500">Party of the OTHER PART</p>
+                            <h3 class="text-sm font-bold text-tm-text-pri">Purchaser / Claimant (வாங்குபவர்)</h3>
+                            <p class="text-[11px] text-tm-text-sec">Party of the OTHER PART</p>
                         </div>
                     </div>
-                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">Purchaser</span>
+                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-900/20 text-tm-gold border border-blue-200">Purchaser</span>
                 </div>
 
                 ${makeEditableField('purchaser_details', 'Purchaser Recital & Address', purchaserVal, 'Name, Parentage, Age, Address', 4)}
@@ -2737,13 +2750,13 @@ function renderSaleDeedFieldsLayout(fields, container) {
                 ${poaVal ? `
                     <div class="p-3 rounded-xl bg-amber-50/70 border border-amber-200 text-xs space-y-1">
                         <div class="flex items-center justify-between text-amber-900 font-bold">
-                            <span class="flex items-center gap-1.5"><i data-lucide="shield-check" class="w-3.5 h-3.5 text-amber-600"></i>Power of Attorney (POA) Registered Agent</span>
+                            <span class="flex items-center gap-1.5"><i data-lucide="shield-alert" class="w-3.5 h-3.5 text-amber-600"></i>Represented by Power of Attorney (POA) Agent</span>
                             <span class="text-[10px] px-2 py-0.5 bg-amber-200 text-amber-900 rounded-full font-bold">POA Registered</span>
                         </div>
-                        <p class="text-xs font-semibold text-amber-950 font-sans">${escapeHtml(poaVal)}</p>
+                        <p class="text-[11px] text-amber-800 leading-relaxed font-sans">${escapeHtml(poaVal)}</p>
                     </div>
                 ` : `
-                    <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-500 flex items-center justify-between">
+                    <div class="p-2.5 rounded-xl bg-tm-bg border border-slate-100 text-xs text-tm-text-sec flex items-center justify-between">
                         <span>Direct Execution (No General Power of Attorney Agent cited)</span>
                         <span class="text-[10px] font-semibold text-emerald-600 flex items-center gap-1"><i data-lucide="check" class="w-3 h-3"></i>Direct</span>
                     </div>
@@ -2752,15 +2765,15 @@ function renderSaleDeedFieldsLayout(fields, container) {
         </div>
 
         <!-- Section 2: Property Schedule & Jurisdiction -->
-        <div class="rounded-2xl bg-white border border-slate-200/90 p-4 sm:p-5 shadow-sm space-y-3">
+        <div class="rounded-2xl bg-tm-card border border-tm-border/90 p-4 sm:p-5 shadow-sm space-y-3">
             <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
                 <div class="flex items-center gap-2">
                     <div class="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
                         <i data-lucide="map" class="w-4 h-4"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm font-bold text-slate-900">Schedule of Property & Survey Information (சொத்து விவரம்)</h3>
-                        <p class="text-[11px] text-slate-500">Revenue jurisdiction, Survey Numbers, and Flat unit details</p>
+                        <h3 class="text-sm font-bold text-tm-text-pri">Schedule of Property & Survey Information (சொத்து விவரம்)</h3>
+                        <p class="text-[11px] text-tm-text-sec">Revenue jurisdiction, Survey Numbers, and Flat unit details</p>
                     </div>
                 </div>
             </div>
@@ -2777,37 +2790,37 @@ function renderSaleDeedFieldsLayout(fields, container) {
 
         <!-- Section 3: Land Extent & Metric Stat Cards (3 Pillars) -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="rounded-2xl bg-gradient-to-br from-blue-50 via-white to-blue-50/30 border border-blue-200/80 p-4 shadow-2xs space-y-2">
-                <div class="flex items-center justify-between text-blue-700 text-xs font-bold">
+            <div class="rounded-2xl bg-gradient-to-br from-blue-50/10 via-white dark:via-[#182235] to-blue-50/5 border border-blue-200/80 dark:border-blue-900/50 p-4 shadow-2xs space-y-2">
+                <div class="flex items-center justify-between text-tm-gold text-xs font-bold">
                     <span class="flex items-center gap-1.5"><i data-lucide="maximize-2" class="w-4 h-4"></i>Total Parent Site Area</span>
                     <span class="text-[10px] bg-blue-100 px-2 py-0.5 rounded-full font-extrabold">Parent Land</span>
                 </div>
-                <div class="text-lg font-extrabold text-slate-900 font-mono tracking-tight">${escapeHtml(extentVal)}</div>
-                <p class="text-[11px] text-slate-500 leading-tight">Total ground site area on which the residential building is developed.</p>
+                <div class="text-lg font-extrabold text-tm-text-pri font-mono tracking-tight">${escapeHtml(extentVal)}</div>
+                <p class="text-[11px] text-tm-text-sec leading-tight">Total ground site area on which the residential building is developed.</p>
                 <div class="pt-1">
                     ${makeEditableField('land_extent', 'Edit Total Land Extent', extentVal, 'sq.ft / Grounds')}
                 </div>
             </div>
 
-            <div class="rounded-2xl bg-gradient-to-br from-purple-50 via-white to-purple-50/30 border border-purple-200/80 p-4 shadow-2xs space-y-2">
+            <div class="rounded-2xl bg-gradient-to-br from-purple-50/10 via-white dark:via-[#182235] to-purple-50/5 border border-purple-200/80 dark:border-purple-900/50 p-4 shadow-2xs space-y-2">
                 <div class="flex items-center justify-between text-purple-700 text-xs font-bold">
                     <span class="flex items-center gap-1.5"><i data-lucide="pie-chart" class="w-4 h-4"></i>Undivided Share (UDS)</span>
                     <span class="text-[10px] bg-purple-100 px-2 py-0.5 rounded-full font-extrabold">Co-Ownership</span>
                 </div>
-                <div class="text-lg font-extrabold text-slate-900 font-mono tracking-tight">${escapeHtml(udsVal.split('|')[0].replace('UDS:', '').trim())}</div>
-                <p class="text-[11px] text-slate-500 leading-tight">Purchaser's undivided proportional land title in total site.</p>
+                <div class="text-lg font-extrabold text-tm-text-pri font-mono tracking-tight">${escapeHtml(udsVal.split('|')[0].replace('UDS:', '').trim())}</div>
+                <p class="text-[11px] text-tm-text-sec leading-tight">Purchaser's undivided proportional land title in total site.</p>
                 <div class="pt-1">
                     ${makeEditableField('apartment_uds_floor', 'Edit UDS & Built-Up Area', udsVal, 'UDS & Floor Details', 2)}
                 </div>
             </div>
 
-            <div class="rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-emerald-50/30 border border-emerald-200/80 p-4 shadow-2xs space-y-2">
+            <div class="rounded-2xl bg-gradient-to-br from-emerald-50/10 via-white dark:via-[#182235] to-emerald-50/5 border border-emerald-200 dark:border-emerald-800/80 p-4 shadow-2xs space-y-2">
                 <div class="flex items-center justify-between text-emerald-700 text-xs font-bold">
                     <span class="flex items-center gap-1.5"><i data-lucide="home" class="w-4 h-4"></i>Apartment Built-Up Area</span>
                     <span class="text-[10px] bg-emerald-100 px-2 py-0.5 rounded-full font-extrabold">Super Built-Up</span>
                 </div>
-                <div class="text-lg font-extrabold text-slate-900 font-mono tracking-tight">${escapeHtml(udsVal.includes('Built-up Area:') ? udsVal.split('Built-up Area:')[1].split('|')[0].trim() : (flatVal || '907 sq.ft'))}</div>
-                <p class="text-[11px] text-slate-500 leading-tight">Carpet & common proportionate constructed apartment unit.</p>
+                <div class="text-lg font-extrabold text-tm-text-pri font-mono tracking-tight">${escapeHtml(udsVal.includes('Built-up Area:') ? udsVal.split('Built-up Area:')[1].split('|')[0].trim() : (flatVal || '907 sq.ft'))}</div>
+                <p class="text-[11px] text-tm-text-sec leading-tight">Carpet & common proportionate constructed apartment unit.</p>
                 <div class="pt-1">
                     ${makeEditableField('flat_details', 'Edit Flat & Unit Specifics', flatVal, 'Door & Floor')}
                 </div>
@@ -2815,18 +2828,18 @@ function renderSaleDeedFieldsLayout(fields, container) {
         </div>
 
         <!-- Section 4: Four Boundaries (நான்கு எல்லைகள் - Compass Visual Layout) -->
-        <div class="rounded-2xl bg-white border border-slate-200/90 p-4 sm:p-5 shadow-sm space-y-3">
+        <div class="rounded-2xl bg-tm-card border border-tm-border/90 p-4 sm:p-5 shadow-sm space-y-3">
             <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
                 <div class="flex items-center gap-2">
                     <div class="w-8 h-8 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-600">
                         <i data-lucide="compass" class="w-4 h-4"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm font-bold text-slate-900">Four Boundaries (நான்கு எல்லைகள்)</h3>
-                        <p class="text-[11px] text-slate-500">Compass directional boundary specifications of parent land / plot</p>
+                        <h3 class="text-sm font-bold text-tm-text-pri">Four Boundaries (நான்கு எல்லைகள்)</h3>
+                        <p class="text-[11px] text-tm-text-sec">Compass directional boundary specifications of parent land / plot</p>
                     </div>
                 </div>
-                <button onclick="copyToClipboard('North: ${bNorth}\\nSouth: ${bSouth}\\nEast: ${bEast}\\nWest: ${bWest}')" class="px-2.5 py-1 text-xs rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center gap-1">
+                <button onclick="copyToClipboard('North: ${bNorth}\\nSouth: ${bSouth}\\nEast: ${bEast}\\nWest: ${bWest}')" class="px-2.5 py-1 text-xs rounded-lg bg-tm-upload hover:bg-tm-upload text-tm-text-sec flex items-center gap-1">
                     <i data-lucide="copy" class="w-3 h-3"></i>
                     <span>Copy Boundaries</span>
                 </button>
@@ -2834,21 +2847,21 @@ function renderSaleDeedFieldsLayout(fields, container) {
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <!-- North -->
-                <div class="p-3 rounded-xl bg-slate-50/80 border-t-2 border-t-blue-500 border-x border-b border-slate-200/90 space-y-1">
-                    <div class="flex items-center justify-between text-xs font-bold text-blue-700">
+                <div class="p-3 rounded-xl bg-tm-bg/80 border-t-2 border-t-blue-500 border-x border-b border-tm-border/90 space-y-1">
+                    <div class="flex items-center justify-between text-xs font-bold text-tm-gold">
                         <span class="flex items-center gap-1.5"><i data-lucide="arrow-up-circle" class="w-4 h-4"></i>NORTH (வடக்கு)</span>
-                        <span class="text-[10px] uppercase font-bold text-blue-600">Boundary N</span>
+                        <span class="text-[10px] uppercase font-bold text-tm-gold">Boundary N</span>
                     </div>
                     <input 
                         type="text" 
                         value="${escapeHtml(bNorth)}" 
                         onchange="window.updateSaleDeedBoundary('north', this.value)"
                         placeholder="Fill North Boundary..." 
-                        class="w-full text-xs font-semibold text-slate-900 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-sans" />
+                        class="w-full text-xs font-semibold text-tm-text-pri bg-tm-card border border-tm-border rounded-lg px-2.5 py-1.5 font-sans" />
                 </div>
 
                 <!-- South -->
-                <div class="p-3 rounded-xl bg-slate-50/80 border-t-2 border-t-amber-500 border-x border-b border-slate-200/90 space-y-1">
+                <div class="p-3 rounded-xl bg-tm-bg/80 border-t-2 border-t-amber-500 border-x border-b border-tm-border/90 space-y-1">
                     <div class="flex items-center justify-between text-xs font-bold text-amber-700">
                         <span class="flex items-center gap-1.5"><i data-lucide="arrow-down-circle" class="w-4 h-4"></i>SOUTH (தெற்கு)</span>
                         <span class="text-[10px] uppercase font-bold text-amber-600">Boundary S</span>
@@ -2858,11 +2871,11 @@ function renderSaleDeedFieldsLayout(fields, container) {
                         value="${escapeHtml(bSouth)}" 
                         onchange="window.updateSaleDeedBoundary('south', this.value)"
                         placeholder="Fill South Boundary..." 
-                        class="w-full text-xs font-semibold text-slate-900 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-sans" />
+                        class="w-full text-xs font-semibold text-tm-text-pri bg-tm-card border border-tm-border rounded-lg px-2.5 py-1.5 font-sans" />
                 </div>
 
                 <!-- East -->
-                <div class="p-3 rounded-xl bg-slate-50/80 border-t-2 border-t-emerald-500 border-x border-b border-slate-200/90 space-y-1">
+                <div class="p-3 rounded-xl bg-tm-bg/80 border-t-2 border-t-emerald-500 border-x border-b border-tm-border/90 space-y-1">
                     <div class="flex items-center justify-between text-xs font-bold text-emerald-700">
                         <span class="flex items-center gap-1.5"><i data-lucide="arrow-right-circle" class="w-4 h-4"></i>EAST (கிழக்கு)</span>
                         <span class="text-[10px] uppercase font-bold text-emerald-600">Boundary E</span>
@@ -2872,11 +2885,11 @@ function renderSaleDeedFieldsLayout(fields, container) {
                         value="${escapeHtml(bEast)}" 
                         onchange="window.updateSaleDeedBoundary('east', this.value)"
                         placeholder="Fill East Boundary..." 
-                        class="w-full text-xs font-semibold text-slate-900 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-sans" />
+                        class="w-full text-xs font-semibold text-tm-text-pri bg-tm-card border border-tm-border rounded-lg px-2.5 py-1.5 font-sans" />
                 </div>
 
                 <!-- West -->
-                <div class="p-3 rounded-xl bg-slate-50/80 border-t-2 border-t-purple-500 border-x border-b border-slate-200/90 space-y-1">
+                <div class="p-3 rounded-xl bg-tm-bg/80 border-t-2 border-t-purple-500 border-x border-b border-tm-border/90 space-y-1">
                     <div class="flex items-center justify-between text-xs font-bold text-purple-700">
                         <span class="flex items-center gap-1.5"><i data-lucide="arrow-left-circle" class="w-4 h-4"></i>WEST (மேற்கு)</span>
                         <span class="text-[10px] uppercase font-bold text-purple-600">Boundary W</span>
@@ -2886,24 +2899,24 @@ function renderSaleDeedFieldsLayout(fields, container) {
                         value="${escapeHtml(bWest)}" 
                         onchange="window.updateSaleDeedBoundary('west', this.value)"
                         placeholder="Fill West Boundary..." 
-                        class="w-full text-xs font-semibold text-slate-900 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-sans" />
+                        class="w-full text-xs font-semibold text-tm-text-pri bg-tm-card border border-tm-border rounded-lg px-2.5 py-1.5 font-sans" />
                 </div>
             </div>
         </div>
 
         <!-- Section 5: Mother Deed & Prior Title History -->
-        <div class="rounded-2xl bg-white border border-slate-200/90 p-4 sm:p-5 shadow-sm space-y-3">
+        <div class="rounded-2xl bg-tm-card border border-tm-border/90 p-4 sm:p-5 shadow-sm space-y-3">
             <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
                 <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600">
+                    <div class="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 flex items-center justify-center text-amber-600">
                         <i data-lucide="history" class="w-4 h-4"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm font-bold text-slate-900">Mother Deed & Historical Title Chain (முந்தைய மூல ஆவணம்)</h3>
-                        <p class="text-[11px] text-slate-500">Derivation of Vendor's ownership, previous owners, and parent registrations</p>
+                        <h3 class="text-sm font-bold text-tm-text-pri">Mother Deed & Historical Title Chain (முந்தைய மூல ஆவணம்)</h3>
+                        <p class="text-[11px] text-tm-text-sec">Derivation of Vendor's ownership, previous owners, and parent registrations</p>
                     </div>
                 </div>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 dark:border-amber-900/50">
                     Prior Title Chain
                 </span>
             </div>
@@ -2914,20 +2927,82 @@ function renderSaleDeedFieldsLayout(fields, container) {
             </div>
         </div>
 
-        <!-- Section 6: Utilities & Municipal Identifiers -->
-        <div class="rounded-2xl bg-white border border-slate-200/90 p-4 sm:p-5 shadow-sm space-y-3">
+        <!-- Section 6: Consideration & Payment Breakdown -->
+        <div class="rounded-2xl bg-tm-card border border-tm-border/90 p-4 sm:p-5 shadow-sm space-y-3">
             <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
                 <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-xl bg-cyan-50 border border-cyan-100 flex items-center justify-center text-cyan-600">
-                        <i data-lucide="zap" class="w-4 h-4"></i>
+                    <div class="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 flex items-center justify-center text-emerald-600">
+                        <i data-lucide="credit-card" class="w-4 h-4"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm font-bold text-slate-900">Utilities & Municipal Identifiers (மின் & வரி இணைப்பு)</h3>
-                        <p class="text-[11px] text-slate-500">TNEB electricity, CMWSSB water connection, and property tax assessment</p>
+                        <h3 class="text-sm font-bold text-tm-text-pri">Financial Consideration & Payment Modes (கிரையத் தொகை)</h3>
+                        <p class="text-[11px] text-tm-text-sec">Consideration, market valuation, and payment instruments (Cheques/DD/Loans)</p>
                     </div>
                 </div>
             </div>
-            ${makeEditableField('utility_tax_identifiers', 'TNEB, CMWSSB & Property Tax Door No', utilVal, 'Electricity, Water, Tax Assessment', 2)}
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                ${makeEditableField('consideration_amount', 'Sale Consideration Amount (கிரையத் தொகை)', considerationVal, 'Agreed Price')}
+                ${makeEditableField('market_value', 'Market Valuation (சந்தை மதிப்பு)', marketVal, 'Guide Valuation')}
+                ${makeEditableField('stamp_duty_fee', 'Stamp Duty & Registration Fee', stampFeeVal, 'Govt Duties')}
+            </div>
+
+            ${paymentVal ? `
+                <div class="mt-2 p-3.5 rounded-xl bg-tm-bg border border-tm-border space-y-2">
+                    <div class="flex items-center justify-between text-xs font-bold text-tm-text-pri">
+                        <span class="flex items-center gap-1.5"><i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>Verified Payment Tranches:</span>
+                        <span class="text-[10px] text-tm-text-sec font-semibold">100% Consideration Acknowledged</span>
+                    </div>
+                    <div class="space-y-1.5 font-mono text-xs">
+                        ${paymentVal.split('|').map(tr => `
+                            <div class="p-2 rounded-lg bg-tm-card border border-tm-border flex items-center justify-between text-tm-text-pri">
+                                <span>${escapeHtml(tr.trim())}</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 border border-emerald-200 dark:border-emerald-800">Paid & Received</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+            
+            <div class="pt-1">
+                ${makeEditableField('payment_breakdown', 'Edit / Add Payment Instruments', paymentVal, 'Cheques, DD, Housing Loans', 2)}
+            </div>
+        </div>
+
+        <!-- Section 7: Utilities, Taxes, Witnesses & Drafter -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Utilities & Taxes -->
+            <div class="rounded-2xl bg-tm-card border border-tm-border/90 p-4 sm:p-5 shadow-sm space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-xl bg-cyan-50 border border-cyan-100 flex items-center justify-center text-cyan-600">
+                            <i data-lucide="zap" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-tm-text-pri">Utilities & Municipal Identifiers</h3>
+                            <p class="text-[11px] text-tm-text-sec">TNEB, CMWSSB water, and property tax records</p>
+                        </div>
+                    </div>
+                </div>
+                ${makeEditableField('utility_tax_identifiers', 'TNEB, CMWSSB & Property Tax Door No', utilVal, 'Electricity, Water, Tax Assessment', 3)}
+            </div>
+
+            <!-- Witnesses & Drafter -->
+            <div class="rounded-2xl bg-tm-card border border-tm-border/90 p-4 sm:p-5 shadow-sm space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-xl bg-violet-50 border border-violet-100 flex items-center justify-center text-violet-600">
+                            <i data-lucide="file-check-2" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-tm-text-pri">Attestation & Document Drafter</h3>
+                            <p class="text-[11px] text-tm-text-sec">Registered witnesses and licensed document writer</p>
+                        </div>
+                    </div>
+                </div>
+                ${makeEditableField('witnesses', 'Attesting Witnesses (சாட்சிகள்)', witnessVal, 'Witness 1 & Witness 2', 2)}
+                ${makeEditableField('document_drafter', 'Document Writer / Drafter (பத்திர எழுத்தர்)', drafterVal, 'Name, Advocate/Lic No')}
+            </div>
         </div>
     `;
 
@@ -2991,20 +3066,12 @@ function renderStandardFieldsLayout(fields, container) {
         if (key === "transactions_table" || key === "verification_flags" || key === "checklist" || key === "legal_caveat") {
             return;
         }
-        if ((state.selectedCategoryId === "sale_deed" || (state.currentResult && state.currentResult.extraction && state.currentResult.extraction.document_type_id === "sale_deed")) && (
-            key === "pan_number" || key === "masked_aadhaar" ||
-            key === "consideration_amount" || key === "market_value" ||
-            key === "payment_breakdown" || key === "witnesses" ||
-            key === "document_drafter"
-        )) {
-            return;
-        }
         const val = item.value;
         const conf = item.confidence || 0.90;
         const fieldLabel = item.label || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
         const card = document.createElement("div");
-        card.className = "glass-card p-3 rounded-xl border border-slate-200/90 shadow-2xs hover:border-blue-200 cursor-pointer";
+        card.className = "glass-card p-3 rounded-xl border border-tm-border/90 shadow-2xs hover:border-blue-200 cursor-pointer";
         card.id = `field-card-${key}`;
         card.onclick = () => highlightFieldCard(key);
 
@@ -3013,9 +3080,9 @@ function renderStandardFieldsLayout(fields, container) {
             valueHtml = `<div class="grid grid-cols-2 gap-2 mt-1.5">`;
             for (const [subKey, subVal] of Object.entries(val)) {
                 valueHtml += `
-                    <div class="p-2 rounded-lg bg-slate-50 border border-slate-200/70 text-[11px]">
-                        <span class="text-slate-500 font-semibold block capitalize">${subKey}:</span>
-                        <span class="text-slate-800 font-medium">${escapeHtml(subVal)}</span>
+                    <div class="p-2 rounded-lg bg-tm-bg border border-tm-border/70 text-[11px]">
+                        <span class="text-tm-text-sec font-semibold block capitalize">${subKey}:</span>
+                        <span class="text-tm-text-pri font-medium">${escapeHtml(subVal)}</span>
                     </div>
                 `;
             }
@@ -3024,10 +3091,10 @@ function renderStandardFieldsLayout(fields, container) {
             const valStr = String(val);
             valueHtml = `
                 <div class="flex items-start justify-between gap-2 mt-1.5">
-                    <div class="w-full bg-slate-50/80 hover:bg-white text-xs font-semibold text-slate-800 border border-slate-200/80 rounded-lg p-2.5 leading-relaxed break-words font-sans transition-colors whitespace-pre-line">
+                    <div class="w-full bg-tm-bg/80 hover:bg-tm-card text-xs font-semibold text-tm-text-pri border border-tm-border rounded-lg p-2.5 leading-relaxed break-words font-sans transition-colors whitespace-pre-line">
                         ${escapeHtml(valStr)}
                     </div>
-                    <button onclick="event.stopPropagation(); copyToClipboard('${valStr.replace(/'/g, "\\'").replace(/\n/g, "\\n")}')" class="text-slate-400 hover:text-blue-600 p-1.5 rounded-lg hover:bg-blue-50 transition-colors shrink-0" title="Copy">
+                    <button onclick="event.stopPropagation(); copyToClipboard('${valStr.replace(/'/g, "\\'").replace(/\n/g, "\\n")}')" class="text-tm-text-sec hover:text-tm-gold p-1.5 rounded-lg hover:bg-blue-50 dark:bg-blue-900/20 transition-colors shrink-0" title="Copy">
                         <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                     </button>
                 </div>
@@ -3035,7 +3102,7 @@ function renderStandardFieldsLayout(fields, container) {
         }
 
         const confPct = Math.round(conf * 100);
-        const confColor = confPct >= 85 ? "text-emerald-600 bg-emerald-50 border-emerald-200" : "text-amber-600 bg-amber-50 border-amber-200";
+        const confColor = confPct >= 85 ? "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800" : "text-amber-600 bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-900/50";
 
         let llmBadge = "";
         let evidenceHtml = "";
@@ -3052,7 +3119,7 @@ function renderStandardFieldsLayout(fields, container) {
                 evidenceHtml = `
                     <div class="mt-1.5 p-2 rounded-lg bg-purple-50/50 border border-purple-100 text-[10px] text-purple-900">
                         <span class="font-bold text-purple-950 uppercase tracking-wider block text-[9px] mb-0.5">Ground-Truth OCR Evidence:</span>
-                        <span class="font-mono text-slate-700 italic">"${escapeHtml(srcText)}"</span>
+                        <span class="font-mono text-tm-text-sec italic">"${escapeHtml(srcText)}"</span>
                     </div>
                 `;
             }
@@ -3060,7 +3127,7 @@ function renderStandardFieldsLayout(fields, container) {
 
         card.innerHTML = `
             <div class="flex items-center justify-between text-xs mb-1">
-                <span class="font-bold text-slate-700 flex items-center gap-1.5">
+                <span class="font-bold text-tm-text-sec flex items-center gap-1.5">
                     <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
                     <span>${fieldLabel}</span>
                 </span>
@@ -3084,7 +3151,7 @@ function renderChecklistTab(checklist) {
 
     if (!checklist || checklist.length === 0) {
         container.innerHTML = `
-            <div class="text-center p-8 text-slate-400">
+            <div class="text-center p-8 text-tm-text-sec">
                 <i data-lucide="check-circle" class="w-10 h-10 mx-auto mb-2 text-slate-300"></i>
                 <p class="text-xs">No verification checklist rules evaluated.</p>
             </div>
@@ -3102,8 +3169,8 @@ function renderChecklistTab(checklist) {
     const banner = document.createElement("div");
     banner.className = `p-4 rounded-2xl border mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs ${
         passedCount === totalCount 
-            ? "bg-gradient-to-r from-emerald-500/10 via-emerald-50 to-teal-50/60 border-emerald-200" 
-            : "bg-gradient-to-r from-amber-500/10 via-amber-50 to-orange-50/60 border-amber-200"
+            ? "bg-gradient-to-r from-emerald-500/10 via-emerald-50 dark:via-[#141D2D] to-teal-50/60 dark:to-[#182235] border-emerald-200 dark:border-emerald-800" 
+            : "bg-gradient-to-r from-amber-500/10 via-amber-50 dark:via-[#141D2D] to-orange-50/60 dark:to-[#182235] border-amber-200 dark:border-amber-900/50"
     }`;
     banner.innerHTML = `
         <div class="flex items-center space-x-3">
@@ -3114,12 +3181,12 @@ function renderChecklistTab(checklist) {
             </div>
             <div>
                 <div class="flex items-center gap-2">
-                    <h4 class="font-bold text-sm text-slate-900">${passedCount === totalCount ? 'All Statutory Title Constraints Verified' : 'Title Verification Checklist'}</h4>
+                    <h4 class="font-bold text-sm text-tm-text-pri">${passedCount === totalCount ? 'All Statutory Title Constraints Verified' : 'Title Verification Checklist'}</h4>
                     <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        passedCount === totalCount ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-amber-100 text-amber-800 border border-amber-200'
+                        passedCount === totalCount ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800' : 'bg-amber-100 text-amber-800 border border-amber-200'
                     }">${pct}% Passed</span>
                 </div>
-                <p class="text-xs text-slate-600 mt-0.5">
+                <p class="text-xs text-tm-text-sec mt-0.5">
                     ${passedCount} of ${totalCount} legal, revenue, financial, and registration requirements verified for this document.
                 </p>
             </div>
@@ -3148,7 +3215,7 @@ function renderChecklistTab(checklist) {
 
         row.className = `p-3 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-start justify-between gap-2.5 shadow-2xs ${
             isPass 
-                ? "bg-white hover:bg-emerald-50/20 border-slate-200/80 hover:border-emerald-300" 
+                ? "bg-tm-card hover:bg-emerald-50/20 border-tm-border hover:border-emerald-300" 
                 : "bg-amber-50/40 border-amber-200 hover:border-amber-300"
         }`;
         row.innerHTML = `
@@ -3160,17 +3227,17 @@ function renderChecklistTab(checklist) {
                 </div>
                 <div class="min-w-0 flex-1">
                     <div class="flex items-center gap-2 flex-wrap">
-                        <span class="font-bold text-xs text-slate-900">${escapeHtml(title)}</span>
-                        ${category ? `<span class="px-2 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">${escapeHtml(category)}</span>` : ''}
+                        <span class="font-bold text-xs text-tm-text-pri">${escapeHtml(title)}</span>
+                        ${category ? `<span class="px-2 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider bg-tm-upload text-tm-text-sec border border-tm-border">${escapeHtml(category)}</span>` : ''}
                     </div>
-                    ${subrule ? `<div class="text-[11px] text-slate-500 font-medium mt-0.5">${escapeHtml(subrule)}</div>` : ''}
-                    ${details ? `<div class="text-[11px] text-slate-600 mt-1 leading-relaxed bg-slate-50/80 p-2 rounded-lg border border-slate-100 font-sans">${escapeHtml(details)}</div>` : ''}
+                    ${subrule ? `<div class="text-[11px] text-tm-text-sec font-medium mt-0.5">${escapeHtml(subrule)}</div>` : ''}
+                    ${details ? `<div class="text-[11px] text-tm-text-sec mt-1 leading-relaxed bg-tm-bg/80 p-2 rounded-lg border border-slate-100 font-sans">${escapeHtml(details)}</div>` : ''}
                 </div>
             </div>
             <div class="shrink-0 self-start sm:self-center">
                 <span class="px-2.5 py-1 rounded-full font-extrabold text-[10px] tracking-wide inline-flex items-center gap-1 ${
                     isPass 
-                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs" 
+                        ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 border border-emerald-200 dark:border-emerald-800 shadow-2xs" 
                         : "bg-amber-100 text-amber-800 border border-amber-200 shadow-2xs"
                 }">
                     <i data-lucide="${isPass ? 'shield-check' : 'alert-triangle'}" class="w-3 h-3"></i>
@@ -3223,20 +3290,20 @@ function renderTableTab(extraction) {
             }
 
             return `
-            <tr class="hover:bg-slate-50/80 transition-colors">
-                <td class="p-2.5 text-center text-slate-500 font-mono text-xs">${srNum}</td>
-                <td class="p-2.5 font-bold text-blue-700 font-mono whitespace-nowrap text-xs">${escapeHtml(tx.doc_no || "-")}</td>
-                <td class="p-2.5 text-slate-700 whitespace-nowrap text-xs font-medium">${escapeHtml(tx.date || "-")}</td>
-                <td class="p-2.5 text-slate-800 text-xs leading-relaxed max-w-[150px]">
-                    <div class="font-semibold text-slate-900">${natureText}</div>
+            <tr class="hover:bg-tm-bg/80 transition-colors">
+                <td class="p-2.5 text-center text-tm-text-sec font-mono text-xs">${srNum}</td>
+                <td class="p-2.5 font-bold text-tm-gold font-mono whitespace-nowrap text-xs">${escapeHtml(tx.doc_no || "-")}</td>
+                <td class="p-2.5 text-tm-text-sec whitespace-nowrap text-xs font-medium">${escapeHtml(tx.date || "-")}</td>
+                <td class="p-2.5 text-tm-text-pri text-xs leading-relaxed max-w-[150px]">
+                    <div class="font-semibold text-tm-text-pri">${natureText}</div>
                     ${noteHtml}
                 </td>
-                <td class="p-2.5 text-slate-700 text-[11px] leading-relaxed max-w-[180px]">${execHtml}</td>
-                <td class="p-2.5 text-slate-700 text-[11px] leading-relaxed max-w-[180px]">${claimHtml}</td>
+                <td class="p-2.5 text-tm-text-sec text-[11px] leading-relaxed max-w-[180px]">${execHtml}</td>
+                <td class="p-2.5 text-tm-text-sec text-[11px] leading-relaxed max-w-[180px]">${claimHtml}</td>
                 <td class="p-2.5 font-semibold text-emerald-700 whitespace-nowrap text-xs font-mono">${escapeHtml(consText)}</td>
-                <td class="p-2.5 font-semibold text-slate-700 whitespace-nowrap text-xs font-mono">${escapeHtml(mktText)}</td>
+                <td class="p-2.5 font-semibold text-tm-text-sec whitespace-nowrap text-xs font-mono">${escapeHtml(mktText)}</td>
                 <td class="p-2.5 font-semibold text-indigo-700 whitespace-nowrap text-xs font-mono">${escapeHtml(prText)}</td>
-                <td class="p-2.5 text-slate-600 text-[10px] leading-snug max-w-[160px]">${escapeHtml(schSummary || "-")}</td>
+                <td class="p-2.5 text-tm-text-sec text-[10px] leading-snug max-w-[160px]">${escapeHtml(schSummary || "-")}</td>
             </tr>
             `;
         }).join("");
@@ -3244,30 +3311,30 @@ function renderTableTab(extraction) {
         container.innerHTML = `
             <div class="mb-3 flex items-center justify-between">
                 <div>
-                    <h4 class="text-xs font-bold text-slate-900">Registered Entries (Form 15) — Full Detail Table</h4>
-                    <p class="text-[11px] text-slate-500">${txList.length} Transactions Extracted Across All Pages (Strict Column Ordering)</p>
+                    <h4 class="text-xs font-bold text-tm-text-pri">Registered Entries (Form 15) — Full Detail Table</h4>
+                    <p class="text-[11px] text-tm-text-sec">${txList.length} Transactions Extracted Across All Pages (Strict Column Ordering)</p>
                 </div>
-                <span class="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-semibold">
+                <span class="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 text-tm-gold border border-blue-200 rounded-lg text-xs font-semibold">
                     ${txList.length} Entries
                 </span>
             </div>
-            <div class="overflow-x-auto max-h-[520px] rounded-xl border border-slate-200 shadow-2xs">
+            <div class="overflow-x-auto max-h-[520px] rounded-xl border border-tm-border shadow-2xs">
                 <table class="w-full text-left text-xs border-collapse">
-                    <thead class="bg-slate-100 text-slate-900 font-bold sticky top-0 shadow-2xs border-b border-slate-200">
+                    <thead class="bg-tm-upload text-tm-text-pri font-bold sticky top-0 shadow-2xs border-b border-tm-border">
                         <tr>
-                            <th class="p-2.5 border-b border-slate-200 text-center w-8">Sr.</th>
-                            <th class="p-2.5 border-b border-slate-200">Doc No/Year</th>
-                            <th class="p-2.5 border-b border-slate-200">Date</th>
-                            <th class="p-2.5 border-b border-slate-200">Nature</th>
-                            <th class="p-2.5 border-b border-slate-200">Executant(s)</th>
-                            <th class="p-2.5 border-b border-slate-200">Claimant(s)</th>
-                            <th class="p-2.5 border-b border-slate-200">Consideration Value</th>
-                            <th class="p-2.5 border-b border-slate-200">Market Value</th>
-                            <th class="p-2.5 border-b border-slate-200">PR Number</th>
-                            <th class="p-2.5 border-b border-slate-200">Schedule Details</th>
+                            <th class="p-2.5 border-b border-tm-border text-center w-8">Sr.</th>
+                            <th class="p-2.5 border-b border-tm-border">Doc No/Year</th>
+                            <th class="p-2.5 border-b border-tm-border">Date</th>
+                            <th class="p-2.5 border-b border-tm-border">Nature</th>
+                            <th class="p-2.5 border-b border-tm-border">Executant(s)</th>
+                            <th class="p-2.5 border-b border-tm-border">Claimant(s)</th>
+                            <th class="p-2.5 border-b border-tm-border">Consideration Value</th>
+                            <th class="p-2.5 border-b border-tm-border">Market Value</th>
+                            <th class="p-2.5 border-b border-tm-border">PR Number</th>
+                            <th class="p-2.5 border-b border-tm-border">Schedule Details</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-200 bg-white">
+                    <tbody class="divide-y divide-slate-200 bg-tm-card">
                         ${rowsHtml}
                     </tbody>
                 </table>
@@ -3279,12 +3346,12 @@ function renderTableTab(extraction) {
                 <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
                     <i data-lucide="check-circle" class="w-5 h-5"></i>
                 </div>
-                <h4 class="text-xs font-bold text-slate-800">Nil Encumbrance Certificate (Form 16)</h4>
-                <p class="text-[11px] text-slate-500">No adverse encumbrance entries or transactions recorded during the search period. Title is clean.</p>
+                <h4 class="text-xs font-bold text-tm-text-pri">Nil Encumbrance Certificate (Form 16)</h4>
+                <p class="text-[11px] text-tm-text-sec">No adverse encumbrance entries or transactions recorded during the search period. Title is clean.</p>
             </div>
         `;
     } else {
-        container.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">Structured tables available for EC & Legal Heir documents.</div>`;
+        container.innerHTML = `<div class="p-6 text-center text-xs text-tm-text-sec">Structured tables available for EC & Legal Heir documents.</div>`;
     }
 }
 
@@ -3318,12 +3385,12 @@ function renderOwnersTab(extraction) {
 
     if (!summary.total_parties && (!registry.all_owners || registry.all_owners.length === 0)) {
         container.innerHTML = `
-            <div class="text-center p-8 space-y-3 bg-white rounded-xl border border-slate-200 shadow-2xs">
-                <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+            <div class="text-center p-8 space-y-3 bg-tm-card rounded-xl border border-tm-border shadow-2xs">
+                <div class="w-12 h-12 rounded-full bg-tm-upload flex items-center justify-center mx-auto text-tm-text-sec">
                     <i data-lucide="users" class="w-6 h-6"></i>
                 </div>
-                <h4 class="font-bold text-sm text-slate-800">No Registered Owners Found in Certificate</h4>
-                <p class="text-xs text-slate-500 max-w-md mx-auto">
+                <h4 class="font-bold text-sm text-tm-text-pri">No Registered Owners Found in Certificate</h4>
+                <p class="text-xs text-tm-text-sec max-w-md mx-auto">
                     This document appears to be a Nil Encumbrance Certificate (Form 16) or has no registered transactions in the searched date window.
                 </p>
             </div>
@@ -3337,35 +3404,35 @@ function renderOwnersTab(extraction) {
     container.innerHTML = `
         <div class="space-y-4">
             <!-- Summary Bar -->
-            <div class="p-4 rounded-xl bg-gradient-to-r from-purple-500/10 via-blue-500/5 to-slate-50 border border-purple-200/80 shadow-2xs">
+            <div class="p-4 rounded-xl bg-gradient-to-r from-purple-500/10 via-blue-500/5 to-slate-50 dark:to-[#182235] border border-purple-200/80 dark:border-purple-900/50 shadow-2xs">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                         <div class="flex items-center gap-2">
                             <span class="p-1.5 rounded-lg bg-purple-600 text-white shadow-2xs">
                                 <i data-lucide="users" class="w-4 h-4"></i>
                             </span>
-                            <h4 class="text-sm font-bold text-slate-900">Owners Directory & Title Dossier Registry</h4>
+                            <h4 class="text-sm font-bold text-tm-text-pri">Owners Directory & Title Dossier Registry</h4>
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">TNREGINET Verified</span>
                         </div>
-                        <p class="text-[11px] text-slate-500 mt-1">
+                        <p class="text-[11px] text-tm-text-sec mt-1">
                             Chronological devolution, root acquisition deeds, held property schedules, and active bank mortgages for all parties in this certificate.
                         </p>
                     </div>
 
                     <div class="flex items-center gap-2 flex-wrap text-xs">
-                        <div class="px-2.5 py-1 rounded-lg bg-white border border-purple-200 text-purple-800 font-semibold shadow-2xs flex items-center gap-1.5">
+                        <div class="px-2.5 py-1 rounded-lg bg-tm-card border border-purple-200 text-purple-800 font-semibold shadow-2xs flex items-center gap-1.5">
                             <span class="w-2 h-2 rounded-full bg-purple-500"></span>
                             <span>${totalOwners} Title Owner(s)</span>
                         </div>
-                        <div class="px-2.5 py-1 rounded-lg bg-white border border-emerald-200 text-emerald-800 font-semibold shadow-2xs flex items-center gap-1.5">
+                        <div class="px-2.5 py-1 rounded-lg bg-tm-card border border-emerald-200 dark:border-emerald-800 text-emerald-800 font-semibold shadow-2xs flex items-center gap-1.5">
                             <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
                             <span>${summary.current_owners_count} Current Title Holder(s)</span>
                         </div>
-                        <div class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 font-semibold shadow-2xs flex items-center gap-1.5">
+                        <div class="px-2.5 py-1 rounded-lg bg-tm-card border border-tm-border text-tm-text-sec font-semibold shadow-2xs flex items-center gap-1.5">
                             <span class="w-2 h-2 rounded-full bg-slate-400"></span>
                             <span>${summary.historical_owners_count} Prior Owner(s)</span>
                         </div>
-                        <div class="px-2.5 py-1 rounded-lg bg-white border border-blue-200 text-blue-800 font-semibold shadow-2xs flex items-center gap-1.5">
+                        <div class="px-2.5 py-1 rounded-lg bg-tm-card border border-blue-200 text-blue-800 font-semibold shadow-2xs flex items-center gap-1.5">
                             <span class="w-2 h-2 rounded-full bg-blue-500"></span>
                             <span>${summary.units_count} Property Unit(s)</span>
                         </div>
@@ -3375,24 +3442,24 @@ function renderOwnersTab(extraction) {
                 <!-- Search & Filters -->
                 <div class="mt-4 pt-3 border-t border-purple-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
                     <div class="relative flex-1">
-                        <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5"></i>
-                        <input type="text" id="owner-search-input" value="${escapeHtml(state.ownerSearchQuery || '')}" oninput="handleOwnerSearch(this.value)" placeholder="Search owner name, deed number, survey no, or flat/plot..." class="w-full bg-white border border-slate-300 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-purple-500">
+                        <i data-lucide="search" class="w-3.5 h-3.5 text-tm-text-sec absolute left-3 top-2.5"></i>
+                        <input type="text" id="owner-search-input" value="${escapeHtml(state.ownerSearchQuery || '')}" oninput="handleOwnerSearch(this.value)" placeholder="Search owner name, deed number, survey no, or flat/plot..." class="w-full bg-tm-card border border-slate-300 rounded-lg pl-8 pr-3 py-1.5 text-xs text-tm-text-pri placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-purple-500">
                     </div>
 
                     <div class="flex items-center gap-1.5 overflow-x-auto text-[11px] font-semibold" id="owner-filter-buttons-container">
-                        <button type="button" data-filter="owners" onclick="setOwnerFilter('owners')" class="owner-filter-btn px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${state.activeOwnerFilter === 'owners' ? 'bg-purple-600 text-white shadow-xs' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'}">
+                        <button type="button" data-filter="owners" onclick="setOwnerFilter('owners')" class="owner-filter-btn px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${state.activeOwnerFilter === 'owners' ? 'bg-purple-600 text-white shadow-xs' : 'bg-tm-card hover:bg-tm-upload text-tm-text-sec border border-tm-border'}">
                             Title Owners (${totalOwners})
                         </button>
-                        <button type="button" data-filter="current" onclick="setOwnerFilter('current')" class="owner-filter-btn px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${state.activeOwnerFilter === 'current' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'}">
+                        <button type="button" data-filter="current" onclick="setOwnerFilter('current')" class="owner-filter-btn px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${state.activeOwnerFilter === 'current' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-tm-card hover:bg-tm-upload text-tm-text-sec border border-tm-border'}">
                             Current Owners (${summary.current_owners_count})
                         </button>
-                        <button type="button" data-filter="historical" onclick="setOwnerFilter('historical')" class="owner-filter-btn px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${state.activeOwnerFilter === 'historical' ? 'bg-slate-700 text-white shadow-xs' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'}">
+                        <button type="button" data-filter="historical" onclick="setOwnerFilter('historical')" class="owner-filter-btn px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${state.activeOwnerFilter === 'historical' ? 'bg-slate-700 text-white shadow-xs' : 'bg-tm-card hover:bg-tm-upload text-tm-text-sec border border-tm-border'}">
                             Prior Owners (${summary.historical_owners_count})
                         </button>
-                        <button type="button" data-filter="institutions" onclick="setOwnerFilter('institutions')" class="owner-filter-btn px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${state.activeOwnerFilter === 'institutions' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'}">
+                        <button type="button" data-filter="institutions" onclick="setOwnerFilter('institutions')" class="owner-filter-btn px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${state.activeOwnerFilter === 'institutions' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-tm-card hover:bg-tm-upload text-tm-text-sec border border-tm-border'}">
                             Lenders & Banks (${summary.institutions_count})
                         </button>
-                        <button type="button" data-filter="all" onclick="setOwnerFilter('all')" class="owner-filter-btn px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${state.activeOwnerFilter === 'all' ? 'bg-slate-800 text-white shadow-xs' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'}">
+                        <button type="button" data-filter="all" onclick="setOwnerFilter('all')" class="owner-filter-btn px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${state.activeOwnerFilter === 'all' ? 'bg-slate-800 text-white shadow-xs' : 'bg-tm-card hover:bg-tm-upload text-tm-text-sec border border-tm-border'}">
                             All Signatories (${summary.total_parties})
                         </button>
                     </div>
@@ -3404,18 +3471,18 @@ function renderOwnersTab(extraction) {
             <div class="p-3 bg-blue-50/60 rounded-xl border border-blue-200/70 shadow-2xs space-y-2">
                 <div class="flex items-center justify-between text-xs">
                     <span class="font-bold text-blue-950 flex items-center gap-1.5">
-                        <i data-lucide="layers" class="w-3.5 h-3.5 text-blue-600"></i>
+                        <i data-lucide="layers" class="w-3.5 h-3.5 text-tm-gold"></i>
                         <span>Identified Property Clusters (${registry.property_units.length} Units)</span>
                     </span>
-                    <span class="text-[10px] text-blue-700">Click to filter owners by property unit</span>
+                    <span class="text-[10px] text-tm-gold">Click to filter owners by property unit</span>
                 </div>
                 <div class="flex gap-2 overflow-x-auto pb-1">
                     ${registry.property_units.map(u => `
-                    <button type="button" onclick="filterOwnersByUnit('${escapeHtml(u.unit_key)}')" class="shrink-0 text-left p-2 rounded-lg bg-white hover:bg-blue-100 border border-blue-200/80 shadow-2xs text-[11px] transition-colors cursor-pointer max-w-[240px]">
-                        <div class="font-bold text-slate-900 truncate">${escapeHtml(u.unit_key)}</div>
-                        <div class="text-[10px] text-slate-500 flex items-center justify-between mt-0.5">
+                    <button type="button" onclick="filterOwnersByUnit('${escapeHtml(u.unit_key)}')" class="shrink-0 text-left p-2 rounded-lg bg-tm-card hover:bg-blue-100 border border-blue-200/80 dark:border-blue-900/50 shadow-2xs text-[11px] transition-colors cursor-pointer max-w-[240px]">
+                        <div class="font-bold text-tm-text-pri truncate">${escapeHtml(u.unit_key)}</div>
+                        <div class="text-[10px] text-tm-text-sec flex items-center justify-between mt-0.5">
                             <span>Holder: <b>${escapeHtml(u.current_owner)}</b></span>
-                            <span class="ml-1 text-blue-600 font-mono">${u.total_transactions} doc(s)</span>
+                            <span class="ml-1 text-tm-gold font-mono">${u.total_transactions} doc(s)</span>
                         </div>
                     </button>
                     `).join('')}
@@ -3450,7 +3517,7 @@ function setOwnerFilter(filterType) {
             if (f === filterType) {
                 btn.className = `owner-filter-btn px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${colorMap[f] || 'bg-purple-600 text-white shadow-xs'}`;
             } else {
-                btn.className = "owner-filter-btn px-2.5 py-1 rounded-lg transition-colors cursor-pointer bg-white hover:bg-slate-100 text-slate-700 border border-slate-200";
+                btn.className = "owner-filter-btn px-2.5 py-1 rounded-lg transition-colors cursor-pointer bg-tm-card hover:bg-tm-upload text-tm-text-sec border border-tm-border";
             }
         });
     }
@@ -3508,7 +3575,7 @@ function renderOwnerCards() {
 
     if (list.length === 0) {
         listContainer.innerHTML = `
-            <div class="text-center p-6 bg-white rounded-xl border border-slate-200 text-xs text-slate-500">
+            <div class="text-center p-6 bg-tm-card rounded-xl border border-tm-border text-xs text-tm-text-sec">
                 No matching owners or parties found for the current filter/search query.
             </div>
         `;
@@ -3519,15 +3586,15 @@ function renderOwnerCards() {
         const isCurrent = o.is_current_owner === true;
         const isInstitution = (o.entity_type === "Bank / Financial Institution" || o.entity_type === "Government / Statutory Body");
         
-        let roleBadgeClass = "bg-slate-100 text-slate-700 border-slate-200";
+        let roleBadgeClass = "bg-tm-upload text-tm-text-sec border-tm-border";
         let roleText = o.role || "Registered Party";
         if (isCurrent) {
-            roleBadgeClass = "bg-emerald-100 text-emerald-800 border-emerald-200";
+            roleBadgeClass = "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800";
             roleText = "Current Legal Owner";
         } else if (isInstitution) {
             roleBadgeClass = "bg-indigo-100 text-indigo-800 border-indigo-200";
         } else if (o.acquisition) {
-            roleBadgeClass = "bg-amber-100 text-amber-800 border-amber-200";
+            roleBadgeClass = "bg-amber-100 text-amber-800 border-amber-200 dark:border-amber-900/50";
             roleText = "Prior / Historical Owner";
         }
 
@@ -3535,7 +3602,7 @@ function renderOwnerCards() {
         const iconBg = isCurrent ? "bg-emerald-100 text-emerald-700" : (isInstitution ? "bg-indigo-100 text-indigo-700" : "bg-purple-100 text-purple-700");
 
         return `
-        <div class="p-4 rounded-xl bg-white hover:bg-slate-50/80 border border-slate-200/90 shadow-2xs transition-all space-y-3">
+        <div class="p-4 rounded-xl bg-tm-card hover:bg-tm-bg/80 border border-tm-border/90 shadow-2xs transition-all space-y-3">
             <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                 <div class="flex items-start gap-3">
                     <div class="p-2.5 rounded-xl ${iconBg} shrink-0 mt-0.5 shadow-2xs">
@@ -3543,11 +3610,11 @@ function renderOwnerCards() {
                     </div>
                     <div>
                         <div class="flex items-center gap-2 flex-wrap">
-                            <h4 class="font-extrabold text-sm text-slate-900">${escapeHtml(o.name_bilingual || o.name)}</h4>
+                            <h4 class="font-extrabold text-sm text-tm-text-pri">${escapeHtml(o.name_bilingual || o.name)}</h4>
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${roleBadgeClass}">${escapeHtml(roleText)}</span>
-                            <span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200">${escapeHtml(o.entity_type || 'Entity')}</span>
+                            <span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-tm-upload text-tm-text-sec border border-tm-border">${escapeHtml(o.entity_type || 'Entity')}</span>
                         </div>
-                        <div class="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2 flex-wrap">
+                        <div class="text-[11px] text-tm-text-sec mt-0.5 flex items-center gap-2 flex-wrap">
                             <span>Total Involvements: <b>${o.total_tx_count || (o.transactions ? o.transactions.length : 0)} document(s)</b></span>
                             ${o.property_units && o.property_units.length > 0 ? `<span>&bull; Units: <b>${escapeHtml(o.property_units.join(', '))}</b></span>` : ''}
                         </div>
@@ -3563,7 +3630,7 @@ function renderOwnerCards() {
             <!-- Acquisition & Devolution Row -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs pt-1">
                 ${o.acquisition ? `
-                <div class="p-2.5 rounded-lg bg-emerald-50/50 border border-emerald-200/70 text-emerald-950 space-y-1">
+                <div class="p-2.5 rounded-lg bg-emerald-50/50 border border-emerald-200 dark:border-emerald-800/70 text-emerald-950 space-y-1">
                     <div class="flex items-center justify-between text-[11px] font-bold text-emerald-900">
                         <span class="flex items-center gap-1"><i data-lucide="key" class="w-3 h-3 text-emerald-600"></i> Acquisition Instrument</span>
                         <span class="font-mono">Doc ${escapeHtml(o.acquisition.doc_no)} (${escapeHtml(o.acquisition.date)})</span>
@@ -3578,21 +3645,21 @@ function renderOwnerCards() {
                     ` : ''}
                 </div>
                 ` : `
-                <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-500 text-[11px] flex items-center">
+                <div class="p-2.5 rounded-lg bg-tm-bg border border-tm-border text-tm-text-sec text-[11px] flex items-center">
                     <span>No registered root acquisition deed found within this EC window.</span>
                 </div>
                 `}
 
                 ${o.transferred_to ? `
-                <div class="p-2.5 rounded-lg bg-slate-100 border border-slate-200/90 text-slate-800 space-y-1">
-                    <div class="flex items-center justify-between text-[11px] font-bold text-slate-700">
-                        <span class="flex items-center gap-1"><i data-lucide="arrow-right-left" class="w-3 h-3 text-slate-500"></i> Devolution / Transferred To</span>
+                <div class="p-2.5 rounded-lg bg-tm-upload border border-tm-border/90 text-tm-text-pri space-y-1">
+                    <div class="flex items-center justify-between text-[11px] font-bold text-tm-text-sec">
+                        <span class="flex items-center gap-1"><i data-lucide="arrow-right-left" class="w-3 h-3 text-tm-text-sec"></i> Devolution / Transferred To</span>
                         <span class="font-mono">Doc ${escapeHtml(o.transferred_to.doc_no)}</span>
                     </div>
-                    <div class="text-[11px] text-slate-700 font-medium truncate">
+                    <div class="text-[11px] text-tm-text-sec font-medium truncate">
                         <b>Transferred To:</b> ${escapeHtml(o.transferred_to.transferred_to || '-')}
                     </div>
-                    <div class="text-[10px] text-slate-500 font-mono">
+                    <div class="text-[10px] text-tm-text-sec font-mono">
                         Date: ${escapeHtml(o.transferred_to.date || '-')}
                     </div>
                 </div>
@@ -3602,10 +3669,10 @@ function renderOwnerCards() {
                         <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
                         <span>Absolute Legal Title Retained</span>
                     </div>
-                    <span class="text-[10px] font-mono bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">No Outward Transfer</span>
+                    <span class="text-[10px] font-mono bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300 px-2 py-0.5 rounded font-bold">No Outward Transfer</span>
                 </div>
                 ` : `
-                <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-500 text-[11px] flex items-center">
+                <div class="p-2.5 rounded-lg bg-tm-bg border border-tm-border text-tm-text-sec text-[11px] flex items-center">
                     <span>Devolution status not recorded as an outward sale deed in this EC.</span>
                 </div>
                 `)}
@@ -3619,12 +3686,12 @@ function renderOwnerCards() {
                     <span>Active / Unreleased Mortgage(s) Recorded</span>
                 </span>
                 ` : (o.mortgages && o.mortgages.length > 0 ? `
-                <span class="px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-bold flex items-center gap-1.5">
+                <span class="px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[11px] font-bold flex items-center gap-1.5">
                     <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-600"></i>
                     <span>All ${o.mortgages.length} Mortgage(s) Discharged & Closed</span>
                 </span>
                 ` : `
-                <span class="px-2 py-0.5 rounded text-[11px] text-slate-500">
+                <span class="px-2 py-0.5 rounded text-[11px] text-tm-text-sec">
                     No mortgages or charges recorded under this party.
                 </span>
                 `)}
@@ -3677,13 +3744,13 @@ function openOwnerDossier(ownerId) {
 
     if (roleBadge) {
         if (isCurrent) {
-            roleBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200";
+            roleBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800";
             roleBadge.textContent = "Current Legal Owner / Title Holder";
         } else if (isInstitution) {
             roleBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-200";
             roleBadge.textContent = "Institutional Mortgagee / Lender";
         } else if (owner.acquisition) {
-            roleBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-200 text-slate-800 border border-slate-300";
+            roleBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-semibold bg-tm-upload text-tm-text-pri border border-slate-300";
             roleBadge.textContent = "Prior / Historical Owner";
         } else {
             roleBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200";
@@ -3699,45 +3766,45 @@ function openOwnerDossier(ownerId) {
 
     bodyContainer.innerHTML = `
         <!-- Section 1: Property Units Associated -->
-        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-            <h5 class="text-xs font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
-                <i data-lucide="home" class="w-3.5 h-3.5 text-blue-600"></i>
+        <div class="p-3.5 rounded-xl bg-tm-bg border border-tm-border space-y-2">
+            <h5 class="text-xs font-bold text-tm-text-pri uppercase tracking-wide flex items-center gap-1.5">
+                <i data-lucide="home" class="w-3.5 h-3.5 text-tm-gold"></i>
                 <span>Property Schedule & Held Units (${(owner.property_units || []).length} Unit(s))</span>
             </h5>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 ${(owner.property_units && owner.property_units.length > 0) ? owner.property_units.map(u => `
-                <div class="p-2 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800 flex items-center gap-2">
+                <div class="p-2 bg-tm-card rounded-lg border border-tm-border text-xs font-bold text-tm-text-pri flex items-center gap-2">
                     <i data-lucide="map-pin" class="w-3.5 h-3.5 text-blue-500 shrink-0"></i>
                     <span class="truncate">${escapeHtml(u)}</span>
                 </div>
                 `).join('') : `
-                <div class="text-slate-500 text-xs">General property scope from certificate header</div>
+                <div class="text-tm-text-sec text-xs">General property scope from certificate header</div>
                 `}
             </div>
         </div>
 
         <!-- Section 2: Acquisition Instrument -->
-        <div class="p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs space-y-2">
-            <h5 class="text-xs font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
+        <div class="p-3.5 rounded-xl bg-tm-card border border-tm-border shadow-2xs space-y-2">
+            <h5 class="text-xs font-bold text-tm-text-pri uppercase tracking-wide flex items-center gap-1.5">
                 <i data-lucide="key" class="w-3.5 h-3.5 text-emerald-600"></i>
                 <span>Root Acquisition Deed (எவ்வாறு உரிமை பெறப்பட்டது)</span>
             </h5>
             ${owner.acquisition ? `
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-emerald-50/40 p-3 rounded-lg border border-emerald-100 text-xs">
                 <div>
-                    <span class="text-[10px] text-slate-500 uppercase block font-semibold">Document No & Year</span>
-                    <span class="font-extrabold text-slate-900 font-mono">${escapeHtml(owner.acquisition.doc_no)}</span>
+                    <span class="text-[10px] text-tm-text-sec uppercase block font-semibold">Document No & Year</span>
+                    <span class="font-extrabold text-tm-text-pri font-mono">${escapeHtml(owner.acquisition.doc_no)}</span>
                 </div>
                 <div>
-                    <span class="text-[10px] text-slate-500 uppercase block font-semibold">Registration Date</span>
-                    <span class="font-bold text-slate-800">${escapeHtml(owner.acquisition.date)}</span>
+                    <span class="text-[10px] text-tm-text-sec uppercase block font-semibold">Registration Date</span>
+                    <span class="font-bold text-tm-text-pri">${escapeHtml(owner.acquisition.date)}</span>
                 </div>
                 <div>
-                    <span class="text-[10px] text-slate-500 uppercase block font-semibold">Deed Nature</span>
-                    <span class="font-bold text-slate-800">${escapeHtml(owner.acquisition.nature)}</span>
+                    <span class="text-[10px] text-tm-text-sec uppercase block font-semibold">Deed Nature</span>
+                    <span class="font-bold text-tm-text-pri">${escapeHtml(owner.acquisition.nature)}</span>
                 </div>
                 <div>
-                    <span class="text-[10px] text-slate-500 uppercase block font-semibold">Consideration Amount</span>
+                    <span class="text-[10px] text-tm-text-sec uppercase block font-semibold">Consideration Amount</span>
                     <span class="font-bold text-emerald-700 font-mono">${escapeHtml(owner.acquisition.consideration || '-')}</span>
                 </div>
                 <div class="col-span-2 sm:col-span-4 pt-1 border-t border-emerald-100 flex items-center justify-between text-[11px]">
@@ -3746,7 +3813,7 @@ function openOwnerDossier(ownerId) {
                 </div>
             </div>
             ` : `
-            <p class="text-xs text-slate-500 italic p-2 bg-slate-50 rounded-lg">
+            <p class="text-xs text-tm-text-sec italic p-2 bg-tm-bg rounded-lg">
                 No registered acquisition deed (Sale/Settlement/Gift) recorded within the search period of this Encumbrance Certificate. The party may hold title through parent deeds prior to the search window or by inheritance.
             </p>
             `}
@@ -3754,30 +3821,30 @@ function openOwnerDossier(ownerId) {
 
         <!-- Section 3: Devolution / Transfer Out (If Applicable) -->
         ${owner.transferred_to ? `
-        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-            <h5 class="text-xs font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
-                <i data-lucide="arrow-right-left" class="w-3.5 h-3.5 text-slate-600"></i>
+        <div class="p-3.5 rounded-xl bg-tm-bg border border-tm-border space-y-2">
+            <h5 class="text-xs font-bold text-tm-text-pri uppercase tracking-wide flex items-center gap-1.5">
+                <i data-lucide="arrow-right-left" class="w-3.5 h-3.5 text-tm-text-sec"></i>
                 <span>Subsequent Transfer / Devolution (உரிமை மாற்றம்)</span>
             </h5>
-            <div class="p-3 bg-white rounded-lg border border-slate-200 text-xs space-y-1">
+            <div class="p-3 bg-tm-card rounded-lg border border-tm-border text-xs space-y-1">
                 <div class="flex items-center justify-between">
-                    <span class="font-bold text-slate-800">Transferred To: <b class="text-purple-700">${escapeHtml(owner.transferred_to.transferred_to)}</b></span>
-                    <span class="font-mono text-slate-600">Doc: ${escapeHtml(owner.transferred_to.doc_no)}</span>
+                    <span class="font-bold text-tm-text-pri">Transferred To: <b class="text-purple-700">${escapeHtml(owner.transferred_to.transferred_to)}</b></span>
+                    <span class="font-mono text-tm-text-sec">Doc: ${escapeHtml(owner.transferred_to.doc_no)}</span>
                 </div>
-                <div class="text-[11px] text-slate-500">Date of Registered Transfer: ${escapeHtml(owner.transferred_to.date)}</div>
+                <div class="text-[11px] text-tm-text-sec">Date of Registered Transfer: ${escapeHtml(owner.transferred_to.date)}</div>
             </div>
         </div>
         ` : (isCurrent ? `
-        <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center gap-2 text-xs">
+        <div class="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-900 flex items-center gap-2 text-xs">
             <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600 shrink-0"></i>
             <span><strong>Active Title Holder:</strong> No subsequent sale deed or alienation recorded against this party. Legal ownership remains intact.</span>
         </div>
         ` : '')}
 
         <!-- Section 4: Loans & Mortgage Audit -->
-        <div class="p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs space-y-2">
+        <div class="p-3.5 rounded-xl bg-tm-card border border-tm-border shadow-2xs space-y-2">
             <div class="flex items-center justify-between">
-                <h5 class="text-xs font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
+                <h5 class="text-xs font-bold text-tm-text-pri uppercase tracking-wide flex items-center gap-1.5">
                     <i data-lucide="landmark" class="w-3.5 h-3.5 text-purple-600"></i>
                     <span>Mortgage & Bank Loan Audit (அடமான பரிசீலனை)</span>
                 </h5>
@@ -3788,19 +3855,19 @@ function openOwnerDossier(ownerId) {
             ${(owner.mortgages && owner.mortgages.length > 0) ? `
             <div class="space-y-2">
                 ${owner.mortgages.map(m => `
-                <div class="p-2.5 rounded-lg border ${m.status === 'OPEN' ? 'bg-amber-50/50 border-amber-200 text-amber-950' : 'bg-slate-50 border-slate-200 text-slate-700'} text-xs space-y-1">
+                <div class="p-2.5 rounded-lg border ${m.status === 'OPEN' ? 'bg-amber-50/50 border-amber-200 text-amber-950' : 'bg-tm-bg border-tm-border text-tm-text-sec'} text-xs space-y-1">
                     <div class="flex items-center justify-between font-bold">
                         <span>Lender: ${escapeHtml(m.lender)}</span>
-                        <span class="px-2 py-0.5 rounded text-[10px] font-mono ${m.status === 'OPEN' ? 'bg-amber-200 text-amber-900' : 'bg-emerald-100 text-emerald-800'}">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-mono ${m.status === 'OPEN' ? 'bg-amber-200 text-amber-900' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300'}">
                             ${m.status === 'OPEN' ? '⚠️ OPEN / UNRELEASED' : 'CLOSED / SATISFIED'}
                         </span>
                     </div>
-                    <div class="flex items-center justify-between text-[11px] text-slate-600">
+                    <div class="flex items-center justify-between text-[11px] text-tm-text-sec">
                         <span>Doc: <b>${escapeHtml(m.doc_no)}</b> (${escapeHtml(m.date)})</span>
                         ${m.amount && m.amount !== '-' ? `<span>Loan Sum: <b>${escapeHtml(m.amount)}</b></span>` : ''}
                     </div>
                     ${m.discharge_doc && m.discharge_doc !== '-' ? `
-                    <div class="text-[10px] text-emerald-800 font-mono pt-1 border-t border-slate-200">
+                    <div class="text-[10px] text-emerald-800 font-mono pt-1 border-t border-tm-border">
                         Discharge Receipt: <b>${escapeHtml(m.discharge_doc)}</b>
                     </div>
                     ` : ''}
@@ -3808,21 +3875,21 @@ function openOwnerDossier(ownerId) {
                 `).join('')}
             </div>
             ` : `
-            <p class="text-xs text-slate-500 italic p-2 bg-slate-50 rounded-lg">
+            <p class="text-xs text-tm-text-sec italic p-2 bg-tm-bg rounded-lg">
                 No mortgages, MODTs, or financial charges recorded under this owner in the Encumbrance Certificate.
             </p>
             `}
         </div>
 
         <!-- Section 5: Complete Transaction Trail -->
-        <div class="p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs space-y-2">
-            <h5 class="text-xs font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
+        <div class="p-3.5 rounded-xl bg-tm-card border border-tm-border shadow-2xs space-y-2">
+            <h5 class="text-xs font-bold text-tm-text-pri uppercase tracking-wide flex items-center gap-1.5">
                 <i data-lucide="history" class="w-3.5 h-3.5 text-indigo-600"></i>
                 <span>Complete Chronological Transaction Trail (${(owner.transactions || []).length} Document(s))</span>
             </h5>
-            <div class="overflow-x-auto rounded-lg border border-slate-200">
+            <div class="overflow-x-auto rounded-lg border border-tm-border">
                 <table class="min-w-full divide-y divide-slate-200 text-xs">
-                    <thead class="bg-slate-50 text-slate-600">
+                    <thead class="bg-tm-bg text-tm-text-sec">
                         <tr>
                             <th class="px-2.5 py-2 text-left font-bold">Doc No & Date</th>
                             <th class="px-2.5 py-2 text-left font-bold">Nature</th>
@@ -3831,22 +3898,22 @@ function openOwnerDossier(ownerId) {
                             <th class="px-2.5 py-2 text-right font-bold">Value</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100 bg-white">
+                    <tbody class="divide-y divide-slate-100 bg-tm-card">
                         ${(owner.transactions && owner.transactions.length > 0) ? owner.transactions.map(t => `
-                        <tr class="hover:bg-slate-50/80">
+                        <tr class="hover:bg-tm-bg/80">
                             <td class="px-2.5 py-2 font-mono whitespace-nowrap">
-                                <div class="font-bold text-slate-900">${escapeHtml(t.doc_no)}</div>
-                                <div class="text-[10px] text-slate-500">${escapeHtml(t.date)}</div>
+                                <div class="font-bold text-tm-text-pri">${escapeHtml(t.doc_no)}</div>
+                                <div class="text-[10px] text-tm-text-sec">${escapeHtml(t.date)}</div>
                             </td>
-                            <td class="px-2.5 py-2 font-medium text-slate-800">${escapeHtml(t.nature)}</td>
+                            <td class="px-2.5 py-2 font-medium text-tm-text-pri">${escapeHtml(t.nature)}</td>
                             <td class="px-2.5 py-2">
-                                <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold ${t.role.includes('Claimant') ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-blue-50 text-blue-800 border border-blue-200'}">${escapeHtml(t.role)}</span>
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold ${t.role.includes('Claimant') ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 border border-emerald-200 dark:border-emerald-800' : 'bg-blue-50 dark:bg-blue-900/20 text-blue-800 border border-blue-200'}">${escapeHtml(t.role)}</span>
                             </td>
-                            <td class="px-2.5 py-2 text-slate-600 max-w-[180px] truncate" title="${escapeHtml(t.counterparty)}">${escapeHtml(t.counterparty)}</td>
-                            <td class="px-2.5 py-2 text-right font-mono font-bold text-slate-800">${escapeHtml(t.amount || '-')}</td>
+                            <td class="px-2.5 py-2 text-tm-text-sec max-w-[180px] truncate" title="${escapeHtml(t.counterparty)}">${escapeHtml(t.counterparty)}</td>
+                            <td class="px-2.5 py-2 text-right font-mono font-bold text-tm-text-pri">${escapeHtml(t.amount || '-')}</td>
                         </tr>
                         `).join('') : `
-                        <tr><td colspan="5" class="px-3 py-2 text-center text-slate-400">No transactions recorded.</td></tr>
+                        <tr><td colspan="5" class="px-3 py-2 text-center text-tm-text-sec">No transactions recorded.</td></tr>
                         `}
                     </tbody>
                 </table>
@@ -3882,20 +3949,20 @@ function renderPropertyFilterTab(extraction) {
     container.innerHTML = `
         <div class="space-y-4">
             <!-- Filter Input Card -->
-            <div class="p-4 rounded-xl bg-white border border-slate-200/90 shadow-2xs">
+            <div class="p-4 rounded-xl bg-tm-card border border-tm-border/90 shadow-2xs">
                 <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 flex-wrap gap-2">
                     <div>
-                        <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
-                            <i data-lucide="filter" class="w-4 h-4 text-blue-600"></i>
+                        <h4 class="text-xs font-bold text-tm-text-pri uppercase tracking-wide flex items-center gap-1.5">
+                            <i data-lucide="filter" class="w-4 h-4 text-tm-gold"></i>
                             <span>Property Details to Verify (சொத்து சரிபார்ப்பு விவரங்கள்)</span>
                         </h4>
-                        <p class="text-[11px] text-slate-500 mt-0.5">Filter the document entries to isolate your specific unit, trace title holder, inspect loans, closures, and court orders.</p>
+                        <p class="text-[11px] text-tm-text-sec mt-0.5">Filter the document entries to isolate your specific unit, trace title holder, inspect loans, closures, and court orders.</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button type="button" onclick="autoFillPropertyFilter()" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition-colors flex items-center gap-1 shadow-2xs cursor-pointer">
+                        <button type="button" onclick="autoFillPropertyFilter()" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-50 dark:bg-blue-900/20 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-tm-gold border border-blue-200 transition-colors flex items-center gap-1 shadow-2xs cursor-pointer">
                             <i data-lucide="sparkles" class="w-3.5 h-3.5"></i><span>Auto-fill from Document</span>
                         </button>
-                        <button type="button" onclick="clearPropertyFilter()" class="px-2 py-1 text-xs font-medium rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors flex items-center gap-1 cursor-pointer">
+                        <button type="button" onclick="clearPropertyFilter()" class="px-2 py-1 text-xs font-medium rounded-lg bg-tm-upload hover:bg-tm-upload text-tm-text-sec transition-colors flex items-center gap-1 cursor-pointer">
                             <i data-lucide="rotate-ccw" class="w-3 h-3"></i><span>Clear</span>
                         </button>
                     </div>
@@ -3905,62 +3972,62 @@ function renderPropertyFilterTab(extraction) {
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                         <!-- Survey Number -->
                         <div>
-                            <label class="block font-bold text-slate-700 mb-1">Survey Number (புல எண்) <span class="text-red-500">*</span></label>
-                            <input type="text" id="prop-in-survey" value="${escapeHtml(defaultSy)}" placeholder="e.g. 142/2A, 249/3A, 35/2" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono">
+                            <label class="block font-bold text-tm-text-sec mb-1">Survey Number (புல எண்) <span class="text-red-500">*</span></label>
+                            <input type="text" id="prop-in-survey" value="${escapeHtml(defaultSy)}" placeholder="e.g. 142/2A, 249/3A, 35/2" class="w-full bg-tm-bg border border-tm-border rounded-lg px-2.5 py-1.5 text-xs text-tm-text-pri placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono">
                         </div>
 
                         <!-- Extent / Area -->
                         <div>
-                            <label class="block font-bold text-slate-700 mb-1">Extent / Property Area (விஸ்தீர்ணம் / பரப்பளவு)</label>
-                            <input type="text" id="prop-in-extent" placeholder="e.g. 1250 Sq.Ft, 480 Sq.Ft UDS, 0.04.50 Hectare" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <label class="block font-bold text-tm-text-sec mb-1">Extent / Property Area (விஸ்தீர்ணம் / பரப்பளவு)</label>
+                            <input type="text" id="prop-in-extent" placeholder="e.g. 1250 Sq.Ft, 480 Sq.Ft UDS, 0.04.50 Hectare" class="w-full bg-tm-bg border border-tm-border rounded-lg px-2.5 py-1.5 text-xs text-tm-text-pri placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500">
                         </div>
 
                         <!-- Taluk -->
                         <div>
-                            <label class="block font-bold text-slate-700 mb-1">Taluk (வட்டம்)</label>
-                            <input type="text" id="prop-in-taluk" value="${escapeHtml(defaultTaluk)}" placeholder="e.g. Velachery, Guindy, Mambalam" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <label class="block font-bold text-tm-text-sec mb-1">Taluk (வட்டம்)</label>
+                            <input type="text" id="prop-in-taluk" value="${escapeHtml(defaultTaluk)}" placeholder="e.g. Velachery, Guindy, Mambalam" class="w-full bg-tm-bg border border-tm-border rounded-lg px-2.5 py-1.5 text-xs text-tm-text-pri placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500">
                         </div>
 
                         <!-- City / Village -->
                         <div>
-                            <label class="block font-bold text-slate-700 mb-1">City / Revenue Village (வருவாய் கிராமம் / நகரம்)</label>
-                            <input type="text" id="prop-in-city" value="${escapeHtml(defaultVillage)}" placeholder="e.g. Velachery, Chennai, Villupuram" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <label class="block font-bold text-tm-text-sec mb-1">City / Revenue Village (வருவாய் கிராமம் / நகரம்)</label>
+                            <input type="text" id="prop-in-city" value="${escapeHtml(defaultVillage)}" placeholder="e.g. Velachery, Chennai, Villupuram" class="w-full bg-tm-bg border border-tm-border rounded-lg px-2.5 py-1.5 text-xs text-tm-text-pri placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500">
                         </div>
 
                         <!-- District -->
                         <div>
-                            <label class="block font-bold text-slate-700 mb-1">District (மாவட்டம்)</label>
-                            <input type="text" id="prop-in-district" value="${escapeHtml(defaultDistrict)}" placeholder="e.g. Chennai, Chengalpattu" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <label class="block font-bold text-tm-text-sec mb-1">District (மாவட்டம்)</label>
+                            <input type="text" id="prop-in-district" value="${escapeHtml(defaultDistrict)}" placeholder="e.g. Chennai, Chengalpattu" class="w-full bg-tm-bg border border-tm-border rounded-lg px-2.5 py-1.5 text-xs text-tm-text-pri placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500">
                         </div>
 
                         <!-- Flat Name / No -->
                         <div>
-                            <label class="block font-bold text-slate-700 mb-1">Flat Name / No (அடுக்குமாடி எண் / பெயர்) — if applicable</label>
-                            <input type="text" id="prop-in-flat" placeholder="e.g. Flat 3B, Block A, Classic Haven" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 font-semibold text-blue-900">
+                            <label class="block font-bold text-tm-text-sec mb-1">Flat Name / No (அடுக்குமாடி எண் / பெயர்) — if applicable</label>
+                            <input type="text" id="prop-in-flat" placeholder="e.g. Flat 3B, Block A, Classic Haven" class="w-full bg-tm-bg border border-tm-border rounded-lg px-2.5 py-1.5 text-xs text-tm-text-pri placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 font-semibold text-blue-900">
                         </div>
 
                         <!-- Door / Plot Number -->
                         <div>
-                            <label class="block font-bold text-slate-700 mb-1">Door Number / Plot No (கதவு / மனை எண்)</label>
-                            <input type="text" id="prop-in-door" placeholder="e.g. Door 4/18, Plot 28" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <label class="block font-bold text-tm-text-sec mb-1">Door Number / Plot No (கதவு / மனை எண்)</label>
+                            <input type="text" id="prop-in-door" placeholder="e.g. Door 4/18, Plot 28" class="w-full bg-tm-bg border border-tm-border rounded-lg px-2.5 py-1.5 text-xs text-tm-text-pri placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500">
                         </div>
 
                         <!-- Boundary Details -->
                         <div>
-                            <label class="block font-bold text-slate-700 mb-1">Boundary Details (நான்கெல்லை விவரங்கள்)</label>
-                            <input type="text" id="prop-in-boundary" placeholder="e.g. North: 30ft road, South: Plot 29, East: Plot 27..." class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <label class="block font-bold text-tm-text-sec mb-1">Boundary Details (நான்கெல்லை விவரங்கள்)</label>
+                            <input type="text" id="prop-in-boundary" placeholder="e.g. North: 30ft road, South: Plot 29, East: Plot 27..." class="w-full bg-tm-bg border border-tm-border rounded-lg px-2.5 py-1.5 text-xs text-tm-text-pri placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500">
                         </div>
 
                         <!-- Owner Name -->
                         <div class="md:col-span-2">
-                            <label class="block font-bold text-slate-700 mb-1">Owner Name to Trace / Verify (உரிமையாளர் பெயர்)</label>
+                            <label class="block font-bold text-tm-text-sec mb-1">Owner Name to Trace / Verify (உரிமையாளர் பெயர்)</label>
                             <input type="text" id="prop-in-owner" placeholder="e.g. K. Rajendran, S. Lakshmi Priya" class="w-full bg-blue-50/40 border border-blue-200 rounded-lg px-2.5 py-1.5 text-xs text-blue-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium">
-                            <span class="text-[10px] text-slate-400 mt-0.5 block">Identifies this owner's exact acquisition, sale, or mortgage transaction in the title chain.</span>
+                            <span class="text-[10px] text-tm-text-sec mt-0.5 block">Identifies this owner's exact acquisition, sale, or mortgage transaction in the title chain.</span>
                         </div>
                     </div>
 
                     <div class="pt-1 flex items-center justify-end gap-2">
-                        <button type="submit" id="btn-run-prop-filter" class="px-4 py-2 text-xs font-bold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer">
+                        <button type="submit" id="btn-run-prop-filter" class="px-4 py-2 text-xs font-bold rounded-lg bg-tm-action hover:bg-blue-700 text-white shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer">
                             <i data-lucide="search" class="w-3.5 h-3.5"></i><span>Filter & Verify Property Title</span>
                         </button>
                     </div>
@@ -3969,7 +4036,7 @@ function renderPropertyFilterTab(extraction) {
 
             <!-- Dynamic Results Container -->
             <div id="property-filter-results" class="space-y-3">
-                <div class="p-6 text-center bg-slate-50/70 rounded-xl border border-slate-200 text-slate-400 text-xs">
+                <div class="p-6 text-center bg-tm-bg/70 rounded-xl border border-tm-border text-tm-text-sec text-xs">
                     <i data-lucide="list-filter" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
                     Click <strong>"Filter & Verify Property Title"</strong> above or <strong>"Auto-fill from Document"</strong> to inspect matching entries, current holder, loans, closures, and court orders.
                 </div>
@@ -4072,7 +4139,7 @@ async function runPropertyFilter() {
     const resultsContainer = document.getElementById("property-filter-results");
     if (resultsContainer) {
         resultsContainer.innerHTML = `
-            <div class="p-6 text-center text-xs text-slate-500 space-y-2">
+            <div class="p-6 text-center text-xs text-tm-text-sec space-y-2">
                 <div class="animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
                 <p>Analyzing document transactions against property parameters...</p>
             </div>
@@ -4130,31 +4197,31 @@ function renderFilteredPropertyResults(results) {
     if (loans.length > 0) {
         loansHtml = loans.map((l, idx) => {
             const isClosed = l.is_closed;
-            const badgeCls = isClosed ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-red-100 text-red-800 border-red-300 animate-pulse";
+            const badgeCls = isClosed ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300 border-emerald-300" : "bg-red-100 text-red-800 border-red-300 animate-pulse";
             const iconName = isClosed ? "check-circle" : "alert-triangle";
             const statusBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold border flex items-center gap-1 ${badgeCls}"><i data-lucide="${iconName}" class="w-3 h-3"></i>${l.status_label}</span>`;
             
             return `
-                <div class="p-3 rounded-xl border ${isClosed ? 'bg-emerald-50/40 border-emerald-200/90' : 'bg-red-50/40 border-red-300'} shadow-2xs space-y-2">
+                <div class="p-3 rounded-xl border ${isClosed ? 'bg-emerald-50/40 border-emerald-200 dark:border-emerald-800/90' : 'bg-red-50/40 border-red-300'} shadow-2xs space-y-2">
                     <div class="flex items-start justify-between gap-2">
                         <div>
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Mortgage / Loan Entry #${idx + 1}</span>
-                            <h5 class="text-xs font-extrabold text-slate-900 mt-0.5">Doc No: ${escapeHtml(l.mortgage_doc_no)} (${escapeHtml(l.mortgage_date)})</h5>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-tm-text-sec">Mortgage / Loan Entry #${idx + 1}</span>
+                            <h5 class="text-xs font-extrabold text-tm-text-pri mt-0.5">Doc No: ${escapeHtml(l.mortgage_doc_no)} (${escapeHtml(l.mortgage_date)})</h5>
                         </div>
                         ${statusBadge}
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs bg-white/80 p-2.5 rounded-lg border border-slate-200/60">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs bg-tm-card/80 p-2.5 rounded-lg border border-tm-border/60">
                         <div>
-                            <span class="text-[10px] text-slate-500 block">Lender (வங்கி / கடன் வழங்கியவர்):</span>
-                            <span class="font-bold text-slate-800">${escapeHtml(l.lender)}</span>
+                            <span class="text-[10px] text-tm-text-sec block">Lender (வங்கி / கடன் வழங்கியவர்):</span>
+                            <span class="font-bold text-tm-text-pri">${escapeHtml(l.lender)}</span>
                         </div>
                         <div>
-                            <span class="text-[10px] text-slate-500 block">Borrower (அடமானம் வைத்தவர்):</span>
-                            <span class="font-semibold text-slate-800">${escapeHtml(l.borrower)}</span>
+                            <span class="text-[10px] text-tm-text-sec block">Borrower (அடமானம் வைத்தவர்):</span>
+                            <span class="font-semibold text-tm-text-pri">${escapeHtml(l.borrower)}</span>
                         </div>
                         <div>
-                            <span class="text-[10px] text-slate-500 block">Loan Amount (தொகை):</span>
+                            <span class="text-[10px] text-tm-text-sec block">Loan Amount (தொகை):</span>
                             <span class="font-bold text-emerald-700 font-mono">${escapeHtml(l.amount)}</span>
                         </div>
                     </div>
@@ -4177,7 +4244,7 @@ function renderFilteredPropertyResults(results) {
         }).join("");
     } else {
         loansHtml = `
-            <div class="p-3.5 rounded-xl bg-emerald-50/50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-2">
+            <div class="p-3.5 rounded-xl bg-emerald-50/50 border border-emerald-200 dark:border-emerald-800 text-emerald-900 text-xs flex items-center gap-2">
                 <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 shrink-0"></i>
                 <span><strong>No Loans or Mortgages:</strong> No MODT, deposit of title deeds, or mortgage instruments are recorded against this property in the search window.</span>
             </div>
@@ -4195,9 +4262,9 @@ function renderFilteredPropertyResults(results) {
                 </div>
                 <div class="space-y-1.5">
                     ${courtCases.map(c => `
-                        <div class="bg-white/90 p-2.5 rounded-lg border border-red-200 text-xs">
-                            <div class="font-bold text-slate-900">${escapeHtml(c.doc_no)} — ${escapeHtml(c.date)} (${escapeHtml(c.nature)})</div>
-                            <div class="text-slate-600 text-[11px] mt-0.5">${escapeHtml(c.details)}</div>
+                        <div class="bg-tm-card/90 p-2.5 rounded-lg border border-red-200 text-xs">
+                            <div class="font-bold text-tm-text-pri">${escapeHtml(c.doc_no)} — ${escapeHtml(c.date)} (${escapeHtml(c.nature)})</div>
+                            <div class="text-tm-text-sec text-[11px] mt-0.5">${escapeHtml(c.details)}</div>
                         </div>
                     `).join("")}
                 </div>
@@ -4205,7 +4272,7 @@ function renderFilteredPropertyResults(results) {
         `;
     } else {
         courtHtml = `
-            <div class="p-3 rounded-xl bg-emerald-50/50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-2">
+            <div class="p-3 rounded-xl bg-emerald-50/50 border border-emerald-200 dark:border-emerald-800 text-emerald-900 text-xs flex items-center gap-2">
                 <i data-lucide="badge-check" class="w-4 h-4 text-emerald-600 shrink-0"></i>
                 <span><strong>Clear Title (No Court Litigations):</strong> No court attachments, civil suits (O.S./E.P.), injunctions, or lis pendens entries found.</span>
             </div>
@@ -4216,36 +4283,36 @@ function renderFilteredPropertyResults(results) {
     let userTxHtml = "";
     if (userTx) {
         userTxHtml = `
-            <div class="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200 text-slate-900 text-xs space-y-2">
+            <div class="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200 text-tm-text-pri text-xs space-y-2">
                 <div class="flex items-center justify-between">
                     <span class="text-[11px] font-extrabold text-blue-900 uppercase tracking-wide flex items-center gap-1.5">
-                        <i data-lucide="user-check" class="w-4 h-4 text-blue-600"></i>
+                        <i data-lucide="user-check" class="w-4 h-4 text-tm-gold"></i>
                         <span>User's Target Owner Transaction Found</span>
                     </span>
                     <span class="px-2 py-0.5 bg-blue-100 text-blue-800 font-bold text-[10px] rounded-full">${escapeHtml(userTx.role)}</span>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-2 bg-white p-2.5 rounded-lg border border-blue-100">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-2 bg-tm-card p-2.5 rounded-lg border border-blue-100">
                     <div>
-                        <span class="text-[10px] text-slate-400 block">Deed Document No:</span>
-                        <span class="font-bold text-blue-700 font-mono">${escapeHtml(userTx.doc_no)} (${escapeHtml(userTx.date)})</span>
+                        <span class="text-[10px] text-tm-text-sec block">Deed Document No:</span>
+                        <span class="font-bold text-tm-gold font-mono">${escapeHtml(userTx.doc_no)} (${escapeHtml(userTx.date)})</span>
                     </div>
                     <div>
-                        <span class="text-[10px] text-slate-400 block">Nature of Instrument:</span>
-                        <span class="font-semibold text-slate-800">${escapeHtml(userTx.nature)}</span>
+                        <span class="text-[10px] text-tm-text-sec block">Nature of Instrument:</span>
+                        <span class="font-semibold text-tm-text-pri">${escapeHtml(userTx.nature)}</span>
                     </div>
                     <div>
-                        <span class="text-[10px] text-slate-400 block">Consideration:</span>
+                        <span class="text-[10px] text-tm-text-sec block">Consideration:</span>
                         <span class="font-bold text-emerald-700 font-mono">${escapeHtml(userTx.consideration)}</span>
                     </div>
                 </div>
-                <div class="text-[11px] text-slate-600">
+                <div class="text-[11px] text-tm-text-sec">
                     <strong>Parties:</strong> From <em>${escapeHtml(userTx.executants)}</em> To <em>${escapeHtml(userTx.claimants)}</em>
                 </div>
             </div>
         `;
     } else if (results.criteria_used && results.criteria_used.owner_name) {
         userTxHtml = `
-            <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2">
+            <div class="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 text-amber-900 text-xs flex items-center gap-2">
                 <i data-lucide="help-circle" class="w-4 h-4 text-amber-600 shrink-0"></i>
                 <span>Owner <strong>"${escapeHtml(results.criteria_used.owner_name)}"</strong> was not directly identified in the matched transactions. Check spelling or prior title link.</span>
             </div>
@@ -4256,9 +4323,9 @@ function renderFilteredPropertyResults(results) {
     let tableHtml = "";
     if (matchedTx.length > 0) {
         tableHtml = `
-            <div class="overflow-x-auto max-h-[380px] rounded-xl border border-slate-200 shadow-2xs">
+            <div class="overflow-x-auto max-h-[380px] rounded-xl border border-tm-border shadow-2xs">
                 <table class="w-full text-left text-xs border-collapse">
-                    <thead class="bg-slate-100 text-slate-800 font-bold sticky top-0 border-b border-slate-200">
+                    <thead class="bg-tm-upload text-tm-text-pri font-bold sticky top-0 border-b border-tm-border">
                         <tr>
                             <th class="p-2 text-center w-8">#</th>
                             <th class="p-2">Doc No/Year</th>
@@ -4270,17 +4337,17 @@ function renderFilteredPropertyResults(results) {
                             <th class="p-2">Match Signal</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-200 bg-white">
+                    <tbody class="divide-y divide-slate-200 bg-tm-card">
                         ${matchedTx.map((tx, i) => `
                             <tr class="hover:bg-blue-50/50 transition-colors">
-                                <td class="p-2 text-center text-slate-500 font-mono text-[11px]">${tx.sr || (i + 1)}</td>
-                                <td class="p-2 font-bold text-blue-700 font-mono whitespace-nowrap text-xs">${escapeHtml(tx.doc_no || tx.doc_no_year || "-")}</td>
-                                <td class="p-2 text-slate-600 whitespace-nowrap text-[11px]">${escapeHtml(tx.date || tx.registration_date || "-")}</td>
-                                <td class="p-2 font-semibold text-slate-800 text-xs">${escapeHtml(tx.nature || "-")}</td>
-                                <td class="p-2 text-slate-700 text-[11px] max-w-[140px] truncate" title="${escapeHtml(tx.executants || '')}">${escapeHtml(tx.executants || "-")}</td>
-                                <td class="p-2 text-slate-700 text-[11px] max-w-[140px] truncate" title="${escapeHtml(tx.claimants || '')}">${escapeHtml(tx.claimants || "-")}</td>
+                                <td class="p-2 text-center text-tm-text-sec font-mono text-[11px]">${tx.sr || (i + 1)}</td>
+                                <td class="p-2 font-bold text-tm-gold font-mono whitespace-nowrap text-xs">${escapeHtml(tx.doc_no || tx.doc_no_year || "-")}</td>
+                                <td class="p-2 text-tm-text-sec whitespace-nowrap text-[11px]">${escapeHtml(tx.date || tx.registration_date || "-")}</td>
+                                <td class="p-2 font-semibold text-tm-text-pri text-xs">${escapeHtml(tx.nature || "-")}</td>
+                                <td class="p-2 text-tm-text-sec text-[11px] max-w-[140px] truncate" title="${escapeHtml(tx.executants || '')}">${escapeHtml(tx.executants || "-")}</td>
+                                <td class="p-2 text-tm-text-sec text-[11px] max-w-[140px] truncate" title="${escapeHtml(tx.claimants || '')}">${escapeHtml(tx.claimants || "-")}</td>
                                 <td class="p-2 font-mono font-semibold text-emerald-700 whitespace-nowrap text-xs">${escapeHtml(tx.consideration || "-")}</td>
-                                <td class="p-2 text-[10px] text-blue-600 font-medium">${escapeHtml((tx.match_reasons || []).join(", ") || "Matched")}</td>
+                                <td class="p-2 text-[10px] text-tm-gold font-medium">${escapeHtml((tx.match_reasons || []).join(", ") || "Matched")}</td>
                             </tr>
                         `).join("")}
                     </tbody>
@@ -4288,7 +4355,7 @@ function renderFilteredPropertyResults(results) {
             </div>
         `;
     } else {
-        tableHtml = `<div class="p-4 text-center text-xs text-slate-400">No transactions matched the criteria.</div>`;
+        tableHtml = `<div class="p-4 text-center text-xs text-tm-text-sec">No transactions matched the criteria.</div>`;
     }
 
     // Put everything together
@@ -4297,41 +4364,41 @@ function renderFilteredPropertyResults(results) {
             <!-- 1. Executive Summary Grid -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-xs">
                 <!-- Matched Entries -->
-                <div class="p-3 rounded-xl bg-white border border-slate-200/90 shadow-2xs">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Matched Entries</span>
-                    <div class="text-lg font-extrabold text-blue-700 font-mono mt-0.5">${matchedCount} / ${totalEntries}</div>
-                    <span class="text-[10px] text-slate-500 font-medium">${matchPct}% of total document</span>
+                <div class="p-3 rounded-xl bg-tm-card border border-tm-border/90 shadow-2xs">
+                    <span class="text-[10px] font-bold text-tm-text-sec uppercase tracking-wider block">Matched Entries</span>
+                    <div class="text-lg font-extrabold text-tm-gold font-mono mt-0.5">${matchedCount} / ${totalEntries}</div>
+                    <span class="text-[10px] text-tm-text-sec font-medium">${matchPct}% of total document</span>
                 </div>
 
                 <!-- Current Legal Holder -->
-                <div class="p-3 rounded-xl bg-white border border-slate-200/90 shadow-2xs">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Current Legal Holder</span>
-                    <div class="text-xs font-extrabold text-slate-900 truncate mt-1" title="${escapeHtml(holderName)}">${escapeHtml(holderName)}</div>
+                <div class="p-3 rounded-xl bg-tm-card border border-tm-border/90 shadow-2xs">
+                    <span class="text-[10px] font-bold text-tm-text-sec uppercase tracking-wider block">Current Legal Holder</span>
+                    <div class="text-xs font-extrabold text-tm-text-pri truncate mt-1" title="${escapeHtml(holderName)}">${escapeHtml(holderName)}</div>
                     <span class="text-[10px] text-emerald-600 font-bold">${holder ? `via Doc ${holder.doc_no}` : 'Clear Title'}</span>
                 </div>
 
                 <!-- Loan / Mortgages -->
-                <div class="p-3 rounded-xl bg-white border border-slate-200/90 shadow-2xs">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Mortgages & Loans</span>
+                <div class="p-3 rounded-xl bg-tm-card border border-tm-border/90 shadow-2xs">
+                    <span class="text-[10px] font-bold text-tm-text-sec uppercase tracking-wider block">Mortgages & Loans</span>
                     <div class="text-sm font-extrabold ${openLoans > 0 ? 'text-red-600' : 'text-emerald-700'} mt-1">
                         ${openLoans > 0 ? `${openLoans} Active Lien(s)` : `${closedLoans} Discharged`}
                     </div>
-                    <span class="text-[10px] text-slate-500">${loans.length} Total Loans Recorded</span>
+                    <span class="text-[10px] text-tm-text-sec">${loans.length} Total Loans Recorded</span>
                 </div>
 
                 <!-- Court Cases -->
-                <div class="p-3 rounded-xl bg-white border border-slate-200/90 shadow-2xs">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Court Litigations</span>
+                <div class="p-3 rounded-xl bg-tm-card border border-tm-border/90 shadow-2xs">
+                    <span class="text-[10px] font-bold text-tm-text-sec uppercase tracking-wider block">Court Litigations</span>
                     <div class="text-xs font-extrabold ${hasCourtOrders ? 'text-red-600' : 'text-emerald-700'} mt-1">
                         ${hasCourtOrders ? `${courtCases.length} Order(s) Found` : 'Clean Title'}
                     </div>
-                    <span class="text-[10px] text-slate-500">${hasCourtOrders ? 'Adverse Entry' : 'No attachments'}</span>
+                    <span class="text-[10px] text-tm-text-sec">${hasCourtOrders ? 'Adverse Entry' : 'No attachments'}</span>
                 </div>
             </div>
 
             <!-- 2. Current Holder Spotlight -->
             ${holder ? `
-                <div class="p-3.5 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 shadow-2xs text-xs space-y-1.5">
+                <div class="p-3.5 rounded-xl bg-gradient-to-r from-emerald-50/20 dark:from-emerald-900/20 to-teal-50/20 dark:to-[#182235] border border-emerald-200 dark:border-emerald-800 shadow-2xs text-xs space-y-1.5">
                     <div class="flex items-center justify-between">
                         <span class="text-[11px] font-extrabold text-emerald-950 uppercase tracking-wider flex items-center gap-1.5">
                             <i data-lucide="award" class="w-4 h-4 text-emerald-600"></i>
@@ -4352,18 +4419,18 @@ function renderFilteredPropertyResults(results) {
             <!-- 4. Loan & Mortgage Details (with Closure Status) -->
             <div class="space-y-2">
                 <div class="flex items-center justify-between">
-                    <h5 class="text-xs font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
-                        <i data-lucide="landmark" class="w-3.5 h-3.5 text-blue-600"></i>
+                    <h5 class="text-xs font-bold text-tm-text-pri uppercase tracking-wide flex items-center gap-1.5">
+                        <i data-lucide="landmark" class="w-3.5 h-3.5 text-tm-gold"></i>
                         <span>Loan & Mortgage Lifecycle Analysis (அடமானக் கடன் விவரங்கள் & முடிவு நிலை)</span>
                     </h5>
-                    <span class="text-[10px] font-mono text-slate-400">${loans.length} Loans Analyzed</span>
+                    <span class="text-[10px] font-mono text-tm-text-sec">${loans.length} Loans Analyzed</span>
                 </div>
                 ${loansHtml}
             </div>
 
             <!-- 5. Court Orders -->
             <div class="space-y-2">
-                <h5 class="text-xs font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
+                <h5 class="text-xs font-bold text-tm-text-pri uppercase tracking-wide flex items-center gap-1.5">
                     <i data-lucide="scale" class="w-3.5 h-3.5 text-indigo-600"></i>
                     <span>Court Cases & Orders (நீதிமன்ற உத்தரவுகள் / பற்று)</span>
                 </h5>
@@ -4373,11 +4440,11 @@ function renderFilteredPropertyResults(results) {
             <!-- 6. Filtered Entries Table -->
             <div class="space-y-2">
                 <div class="flex items-center justify-between">
-                    <h5 class="text-xs font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
-                        <i data-lucide="table" class="w-3.5 h-3.5 text-blue-600"></i>
+                    <h5 class="text-xs font-bold text-tm-text-pri uppercase tracking-wide flex items-center gap-1.5">
+                        <i data-lucide="table" class="w-3.5 h-3.5 text-tm-gold"></i>
                         <span>Filtered Registered Entries Matching This Property (${matchedCount})</span>
                     </h5>
-                    <span class="text-[10px] text-slate-500 font-mono">Isolated from ${totalEntries} total entries</span>
+                    <span class="text-[10px] text-tm-text-sec font-mono">Isolated from ${totalEntries} total entries</span>
                 </div>
                 ${tableHtml}
             </div>
@@ -4421,14 +4488,14 @@ function renderMatrixResults(bundleData) {
     const scoreText = document.getElementById("matrix-score-text");
 
     if (check.overall_status === "PASS") {
-        statusPill.className = "px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200";
+        statusPill.className = "px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800";
         statusPill.textContent = "OVERALL STATUS: ALL CHECKS PASSED (CLEAR TITLE)";
-        scoreText.className = "text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200";
+        scoreText.className = "text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-1 rounded-md border border-emerald-200 dark:border-emerald-800";
         scoreText.textContent = `${check.checks_passed} of ${check.total_checks} Checks Passed (100% Integrity)`;
     } else {
         statusPill.className = "px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300";
         statusPill.textContent = `CRITICAL ALERT: ${check.red_flags_count} RED FLAGS FOUND`;
-        scoreText.className = "text-xs font-semibold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-md border border-rose-200";
+        scoreText.className = "text-xs font-semibold text-rose-700 bg-rose-50 dark:bg-rose-900/20 px-2.5 py-1 rounded-md border border-rose-200";
         scoreText.textContent = `${check.checks_passed} of ${check.total_checks} Checks Passed (${check.red_flags_count} Defect / Fraud Alerts)`;
     }
 
@@ -4438,19 +4505,19 @@ function renderMatrixResults(bundleData) {
     (check.matrix_results || []).forEach(row => {
         const tr = document.createElement("tr");
         const isPass = row.status.includes("PASS");
-        tr.className = isPass ? "hover:bg-slate-50" : "bg-rose-50/50 hover:bg-rose-50";
+        tr.className = isPass ? "hover:bg-tm-bg" : "bg-rose-50/50 hover:bg-rose-50 dark:bg-rose-900/20";
 
         tr.innerHTML = `
             <td class="p-3">
-                <span class="font-bold text-slate-800 block">${row.title}</span>
-                <span class="text-[11px] text-slate-500 block mt-0.5">${row.details}</span>
+                <span class="font-bold text-tm-text-pri block">${row.title}</span>
+                <span class="text-[11px] text-tm-text-sec block mt-0.5">${row.details}</span>
             </td>
-            <td class="p-3 text-slate-600">${row.compared_docs}</td>
-            <td class="p-3 font-medium text-slate-800">${row.sale_deed_val}</td>
-            <td class="p-3 font-medium text-slate-800">${row.revenue_val}</td>
+            <td class="p-3 text-tm-text-sec">${row.compared_docs}</td>
+            <td class="p-3 font-medium text-tm-text-pri">${row.sale_deed_val}</td>
+            <td class="p-3 font-medium text-tm-text-pri">${row.revenue_val}</td>
             <td class="p-3">
                 <span class="px-2 py-1 rounded-md font-bold text-[10px] ${
-                    isPass ? "bg-emerald-100 text-emerald-800 border border-emerald-200" : "bg-rose-100 text-rose-800 border border-rose-200"
+                    isPass ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800" : "bg-rose-100 text-rose-800 border border-rose-200"
                 }">
                     ${row.status}
                 </span>
@@ -4473,18 +4540,18 @@ function renderInheritanceResults(bundleData) {
         card.innerHTML = `
             <div class="flex items-start justify-between">
                 <div>
-                    <span class="text-[10px] font-bold text-slate-400">Class-I Legal Heir #${idx + 1}</span>
-                    <h4 class="text-xs font-bold text-slate-900 mt-0.5">${h.name}</h4>
-                    <p class="text-[11px] text-slate-600 mt-0.5">Relationship: <b>${h.relationship}</b> • Age: ${h.age}</p>
+                    <span class="text-[10px] font-bold text-tm-text-sec">Class-I Legal Heir #${idx + 1}</span>
+                    <h4 class="text-xs font-bold text-tm-text-pri mt-0.5">${h.name}</h4>
+                    <p class="text-[11px] text-tm-text-sec mt-0.5">Relationship: <b>${h.relationship}</b> • Age: ${h.age}</p>
                 </div>
                 <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
-                    isSigned ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                    isSigned ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300' : 'bg-rose-100 text-rose-800'
                 }">
                     ${isSigned ? 'VERIFIED SIGNATORY / RELEASE' : 'MISSING SIGNATURE'}
                 </span>
             </div>
-            <div class="mt-2 pt-2 border-t border-slate-200/60 text-[11px] text-slate-700">
-                <span class="font-semibold text-slate-500">Deed Status:</span> ${h.status}
+            <div class="mt-2 pt-2 border-t border-tm-border/60 text-[11px] text-tm-text-sec">
+                <span class="font-semibold text-tm-text-sec">Deed Status:</span> ${h.status}
             </div>
         `;
         cardsGrid.appendChild(card);
@@ -4496,19 +4563,19 @@ function renderInheritanceResults(bundleData) {
     (inh.verification_steps || []).forEach(step => {
         const div = document.createElement("div");
         div.className = `p-3 rounded-xl border flex items-start justify-between gap-3 text-xs ${
-            step.is_pass ? "bg-white border-slate-200" : "bg-rose-50 border-rose-200"
+            step.is_pass ? "bg-tm-card border-tm-border" : "bg-rose-50 dark:bg-rose-900/20 border-rose-200"
         }`;
 
         div.innerHTML = `
             <div class="space-y-0.5">
                 <div class="flex items-center space-x-1.5">
-                    <span class="font-bold text-slate-900">${step.title}</span>
+                    <span class="font-bold text-tm-text-pri">${step.title}</span>
                 </div>
-                <p class="text-[11px] text-slate-500">${step.description}</p>
-                <p class="text-[11px] font-medium text-slate-800 pt-1">${step.details}</p>
+                <p class="text-[11px] text-tm-text-sec">${step.description}</p>
+                <p class="text-[11px] font-medium text-tm-text-pri pt-1">${step.details}</p>
             </div>
             <span class="px-2 py-0.5 rounded text-[10px] font-extrabold flex-shrink-0 ${
-                step.is_pass ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"
+                step.is_pass ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300" : "bg-rose-100 text-rose-800"
             }">
                 ${step.status}
             </span>
@@ -4590,9 +4657,9 @@ function switchTab(tabName) {
             } else {
                 btn.classList.remove("hidden");
                 if (t === tabName) {
-                    btn.className = "px-3 py-1.5 font-semibold rounded-lg bg-blue-600 text-white shadow-sm flex items-center gap-1.5 shrink-0";
+                    btn.className = "px-3 py-1.5 font-semibold rounded-lg bg-[#182235] text-[#F2EDE3] shadow-sm flex items-center gap-1.5 shrink-0";
                 } else {
-                    btn.className = "px-3 py-1.5 font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center gap-1.5 shrink-0";
+                    btn.className = "px-3 py-1.5 font-semibold rounded-lg bg-tm-upload hover:bg-tm-upload text-tm-text-sec flex items-center gap-1.5 shrink-0";
                 }
             }
         }
@@ -4655,9 +4722,9 @@ function toggleBBoxes() {
     const btn = document.getElementById("btn-toggle-bbox");
     if (btn) {
         if (state.showBBoxes) {
-            btn.className = "px-2 py-1 rounded bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 font-medium text-[11px] flex items-center gap-1";
+            btn.className = "px-2 py-1 rounded bg-blue-50 dark:bg-blue-900/20 text-tm-gold border border-blue-200 hover:bg-blue-100 font-medium text-[11px] flex items-center gap-1";
         } else {
-            btn.className = "px-2 py-1 rounded bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200 font-medium text-[11px] flex items-center gap-1";
+            btn.className = "px-2 py-1 rounded bg-tm-upload text-tm-text-sec border border-tm-border hover:bg-tm-upload font-medium text-[11px] flex items-center gap-1";
         }
     }
 }
@@ -4711,18 +4778,18 @@ function showWordInspector(word, pageNum) {
                 <span class="w-2 h-2 rounded-full bg-blue-500"></span>
                 <span class="text-xs font-bold text-slate-200">Word Inspector • Page ${pageNum}</span>
             </div>
-            <button onclick="document.getElementById('word-inspector-card').remove()" class="text-slate-400 hover:text-white p-0.5 text-xs font-bold leading-none">&times;</button>
+            <button onclick="document.getElementById('word-inspector-card').remove()" class="text-tm-text-sec hover:text-white p-0.5 text-xs font-bold leading-none">&times;</button>
         </div>
         <div class="space-y-1.5 text-xs">
             <div class="bg-slate-800/80 p-2 rounded-lg border border-slate-700">
-                <span class="text-[10px] text-slate-400 font-semibold uppercase block">Detected Word (OCR):</span>
+                <span class="text-[10px] text-tm-text-sec font-semibold uppercase block">Detected Word (OCR):</span>
                 <span class="text-sm font-bold text-white tracking-wide select-all">${escapeHtml(word.text)}</span>
             </div>
             <div class="bg-emerald-950/40 p-2 rounded-lg border border-emerald-800/50">
                 <span class="text-[10px] text-emerald-300 font-semibold uppercase block">Bilingual Translation:</span>
                 <span class="text-sm font-bold text-emerald-300 select-all">${escapeHtml(trans)}</span>
             </div>
-            <div class="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+            <div class="flex items-center justify-between text-[11px] text-tm-text-sec pt-1">
                 <span>Confidence: <b class="text-blue-400">${confPct}%</b></span>
                 <button onclick="copyToClipboard('${escapeHtml(trans).replace(/'/g, "\\'")}')" class="text-blue-400 hover:text-blue-300 font-semibold text-[10px] underline">Copy Trans</button>
             </div>
@@ -4864,22 +4931,22 @@ function resetWorkspace() {
     if (subEl) subEl.textContent = `Category: ${catName}. Upload a new document file below to begin OCR extraction.`;
     if (badgeEl) {
         badgeEl.textContent = "Ready for Upload";
-        badgeEl.className = "px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200";
+        badgeEl.className = "px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 dark:bg-blue-900/20 text-tm-gold border border-blue-200";
     }
 
     // 7. Reset Key Fields Tab with upload CTA
     const fieldsContainer = document.getElementById("extracted-fields-container");
     if (fieldsContainer) {
         fieldsContainer.innerHTML = `
-            <div class="p-8 text-center bg-slate-50/60 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center space-y-3">
-                <div class="w-14 h-14 rounded-2xl bg-blue-100/80 text-blue-600 flex items-center justify-center shadow-xs">
+            <div class="p-8 text-center bg-tm-bg/60 rounded-2xl border-2 border-dashed border-tm-border flex flex-col items-center justify-center space-y-3">
+                <div class="w-14 h-14 rounded-2xl bg-blue-100/80 text-tm-gold flex items-center justify-center shadow-xs">
                     <i data-lucide="upload-cloud" class="w-7 h-7"></i>
                 </div>
                 <div>
-                    <h4 class="font-bold text-slate-900 text-sm mb-1">Document Removed & Ready</h4>
-                    <p class="text-xs text-slate-500 max-w-sm">The previous document has been cleared. Select or drop a new document above to extract key fields.</p>
+                    <h4 class="font-bold text-tm-text-pri text-sm mb-1">Document Removed & Ready</h4>
+                    <p class="text-xs text-tm-text-sec max-w-sm">The previous document has been cleared. Select or drop a new document above to extract key fields.</p>
                 </div>
-                <button type="button" onclick="document.getElementById('file-input').click()" class="mt-2 px-4 py-2 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center gap-1.5 transition-colors">
+                <button type="button" onclick="document.getElementById('file-input').click()" class="mt-2 px-4 py-2 text-xs font-semibold rounded-xl bg-tm-action hover:bg-blue-700 text-white shadow-sm flex items-center gap-1.5 transition-colors">
                     <i data-lucide="file-up" class="w-4 h-4"></i>
                     <span>Select New Document to Upload</span>
                 </button>
@@ -4902,7 +4969,7 @@ function resetWorkspace() {
     if (checklistBadge) checklistBadge.textContent = "0/0";
     if (checklistContainer) {
         checklistContainer.innerHTML = `
-            <div class="p-8 text-center text-slate-400 text-xs flex flex-col items-center justify-center space-y-2">
+            <div class="p-8 text-center text-tm-text-sec text-xs flex flex-col items-center justify-center space-y-2">
                 <i data-lucide="check-square" class="w-8 h-8 text-slate-300"></i>
                 <p>Checklist validation will execute automatically when a document is uploaded.</p>
             </div>
@@ -4919,7 +4986,7 @@ function resetWorkspace() {
     const tableContainer = document.getElementById("table-records-container");
     if (tableContainer) {
         tableContainer.innerHTML = `
-            <div class="p-8 text-center text-slate-400 text-xs flex flex-col items-center justify-center space-y-2">
+            <div class="p-8 text-center text-tm-text-sec text-xs flex flex-col items-center justify-center space-y-2">
                 <i data-lucide="table" class="w-8 h-8 text-slate-300"></i>
                 <p>Table records will appear here after document processing.</p>
             </div>
