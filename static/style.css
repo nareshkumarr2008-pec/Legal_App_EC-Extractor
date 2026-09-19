@@ -1,7 +1,13 @@
 /* Custom styles for PlotChoice Document OCR & Cross-Verification Platform */
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
+html {
+  font-size: 18px;
+}
+
 body {
+    background-color: var(--tm-bg, #FCFBFA) !important;
+    color: var(--tm-text-pri, #0F1A30) !important;
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
@@ -27,13 +33,13 @@ body {
 
 /* Glassmorphism effects */
 .glass-panel {
-    background: rgba(255, 255, 255, 0.94);
+    background: var(--tm-card, rgba(255, 255, 255, 0.94)) !important;
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(226, 232, 240, 0.85);
+    border: 1px solid var(--tm-border, rgba(226, 232, 240, 0.85)) !important;
 }
 
 .glass-card {
-    background: rgba(255, 255, 255, 0.88);
+    background: var(--tm-card, rgba(255, 255, 255, 0.88)) !important;
     backdrop-filter: blur(8px);
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -45,16 +51,16 @@ body {
 
 /* Category Card active ring */
 .cat-card-active {
-    border-color: #3b82f6 !important;
-    background: linear-gradient(135deg, rgba(239, 246, 255, 0.95), rgba(240, 253, 250, 0.9)) !important;
-    box-shadow: 0 0 0 2px #3b82f6, 0 10px 15px -3px rgba(59, 130, 246, 0.15) !important;
+    border-color: var(--tm-gold, #B08D57) !important;
+    background: linear-gradient(135deg, rgba(176, 141, 87, 0.05), rgba(176, 141, 87, 0.02)) !important;
+    box-shadow: 0 0 0 2px var(--tm-gold, #B08D57), 0 10px 15px -3px rgba(176, 141, 87, 0.15) !important;
 }
 
 /* Track Selector Active button */
 .track-btn-active {
-    background: #2563eb !important;
+    background: var(--tm-action, #1A2B4C) !important;
     color: #ffffff !important;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25) !important;
+    box-shadow: 0 4px 12px rgba(26, 43, 76, 0.25) !important;
 }
 
 /* Word-Level Bounding Box on Document Canvas */
@@ -189,6 +195,8 @@ body {
 /* Print view optimization */
 @media print {
     body {
+    background-color: var(--tm-bg, #FCFBFA) !important;
+    color: var(--tm-text-pri, #0F1A30) !important;
         background: #ffffff !important;
     }
     .no-print {
@@ -198,9 +206,10 @@ body {
         display: block !important;
     }
     .glass-panel {
-        border: none !important;
-        box-shadow: none !important;
-    }
+    background: var(--tm-card, rgba(255, 255, 255, 0.94)) !important;
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--tm-border, rgba(226, 232, 240, 0.85)) !important;
+}
 }
 
 /* Field Bounding Boxes on Document Canvas */
@@ -310,6 +319,8 @@ body {
 }
 
 .pdf-page-body {
+    background-color: var(--tm-bg, #FCFBFA) !important;
+    color: var(--tm-text-pri, #0F1A30) !important;
     position: relative;
     width: 100%;
     background: #ffffff;
@@ -331,3 +342,6 @@ body {
     pointer-events: auto;
 }
 
+
+.cat-card-active i { color: var(--tm-gold, #B08D57) !important; }
+.cat-card-active .bg-transparent, .cat-card-active div[class*="bg-"] { color: var(--tm-gold, #B08D57) !important; }
