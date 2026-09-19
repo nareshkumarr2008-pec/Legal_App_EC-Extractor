@@ -1,26 +1,21 @@
 # -*- coding: utf-8 -*-
 """
 Dedicated Universal Sale Deed / Title Deed (கிரையப் பத்திரம்) Extractor.
-Extracts all statutory and required fields from Tamil Nadu & Indian Sale Deeds:
+Extracts statutory and required conveyancing fields from Tamil Nadu & Indian Sale Deeds:
 - Document Identification: Document Number, Book, SRO, Execution Date, Registration Date
-- Parties: Vendor / Seller Details, Purchaser / Buyer Details, Power of Attorney (POA) Agent
-- Prior Title: History / Previous Owner / Builder, Mother Deed (Prior Doc No, Date, SRO)
+- Parties & Representation: Vendor / Seller Details, Purchaser / Buyer Details, Power of Attorney (POA Name + Doc No, No Address)
+- Prior Title & History: History / Previous Owner Details (with their POA), Mother Deed (Prior Conveyance Doc No, Date, SRO)
 - Property Schedule: Classification (Flat/Apartment with UDS vs House/Land), Flat Details & Address
-- Revenue & Survey: Survey Number, Block, Ward, Sub-division, Village, Taluk, District, Division
-- Areas & Extents: Total Land Extent, Undivided Share (UDS), Built-Up Area, Building Age & Specs
-- Boundaries: Four Boundaries (North, South, East, West) structured compass and summary
-- Financials & Valuation: Consideration Amount, Market Value, Payment Mode (Advance Cheque, DD, Banker's Cheque / Full Discharge)
-- Government Fees: Stamp Duty Paid, Registration Fee Paid
-- Utility & Tax Identifiers: TNEB Electricity Connection, CMWSSB Water ID, Property Tax Assessment
-- Signatories & Drafter: Witnesses, Document Writer / Drafter & License Number
-- Identification & Privacy: DPDP Masked Aadhaar, PAN Number, Passport / ID Proof
-- Legal Checklist: 18-point statutory conveyance audit verification
+- Revenue & Survey: Survey Number, Block, Ward, Sub-division, Village, Taluk, District, Corporation Division
+- Areas & Extents: Total Land Extent, Undivided Share (UDS), Built-Up Area
+- Boundaries: Four Boundaries (North, South, East, West) compass demarcation
+- Utility & Tax Identifiers: TNEB Electricity Connection, CMWSSB Water ID, Property Tax Assessment Door No
+- Legal Checklist: Statutory conveyancing verification audit
 """
 
 import re
 from typing import Dict, Any, List, Optional
 from app.translator import format_bilingual_entity
-from app.validator import ExtractionValidator
 
 MONTH_MAP = {
     'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04', 'may': '05', 'jun': '06',
@@ -49,14 +44,6 @@ class SaleDeedExtractor:
         s = re.sub(r'\s{2,}', ' ', s)
         return s.strip()
 
-    def _normalize_ocr_number(self, s: str) -> str:
-        """Replace OCR letter 'o' or 'O' and 's' mistranscribed in numeric contexts e.g. 6,s5,ooo -> 6,85,000."""
-        def _repl(m):
-            return m.group(0).replace('o', '0').replace('O', '0')
-        s = re.sub(r'(?<=\d)[oO,]+(?=[/\s\.-]|$)', _repl, s)
-        s = re.sub(r'(?<=[\d,])[sS](?=\d)', '8', s)
-        return s
-
     def _clean_legal_text(self, raw_text: Optional[str]) -> str:
         if not raw_text:
             return ""
@@ -68,6 +55,42 @@ class SaleDeedExtractor:
         t = re.sub(r'[\r\n]+', ' ', t)
         t = re.sub(r'\s{2,}', ' ', t)
         return t.strip()
+
+    def _clean_poa_name(self, raw: Optional[str]) -> str:
+        """Extracts strictly POA Name / Company Name + representative, stripping addresses and parentage."""
+        if not raw:
+            return ""
+        t = re.sub(r'--- PAGE \d+ ---.*?(?=[A-Z])', ' ', str(raw), flags=re.DOTALL)
+        t = re.sub(r'[\.]{2,}[^\w]*', ' ', t)
+        t = self._clean_str(t)
+
+        # Check if Corporate / Builder entity + Managing Director / Representative
+        corp_m = re.search(
+            r'((?:M/s|H/s|His)[\.\s]*[A-Za-z0-9\s&\'\(\)\.-]+?(?:Ltd|Limited|Builders|Estates)[^\n,]*)(?:.*?represented\s+by\s+(?:its\s+)?(?:Managing\s+director|MD|Director|Power\s+Agent|their\s+Power\s+of\s+Attorney\s+Agent)?[\s,:]*([A-Za-z\.\s]+))?',
+            t,
+            re.IGNORECASE
+        )
+        if corp_m:
+            comp = self._clean_str(corp_m.group(1)).strip(',').strip()
+            comp = re.sub(r'^(?:His|H/s|M/s)[\.\s]*', 'M/s. ', comp, flags=re.I)
+            comp = re.sub(r'\bPrivated\b', 'Private', comp, flags=re.I)
+            rep = self._clean_str(corp_m.group(2)).strip(',').strip() if corp_m.group(2) else ""
+            if rep:
+                rep = re.sub(r'^(?:their\s+)?(?:Power\s+of\s+Attorney\s+Agent|Power\s+Agent)?[\s,:]*', '', rep, flags=re.I).strip()
+                rep = re.split(r'\b(?:having|residing|son|wife|daughter|aged|door|No\b)\b', rep, flags=re.I)[0].strip(',').strip()
+                if rep:
+                    return f"{comp} (Represented by {rep})"
+            return comp
+
+        # Strip personal address, door number, street, parentage, age
+        cut = re.split(
+            r'\b(?:Son\s+of|S/o\.?|Wife\s+of|W/o\.?|Daughter\s+of|D/o\.?|aged\s+about|aged\s+\d+|residing\s+at|residing|door\s*no|No\.?\s*\d+|having\s+its)\b',
+            t,
+            flags=re.I
+        )[0]
+        cut = self._clean_str(cut).strip(',').strip()
+        cut = re.sub(r'[^A-Za-z0-9\.\s\(\)&/-]', '', cut).strip()
+        return cut
 
     def _find_value(self, text: str, patterns: List[str], flags=re.IGNORECASE) -> Optional[str]:
         for pat in patterns:
@@ -105,10 +128,6 @@ class SaleDeedExtractor:
         reg_date = None
         exec_m = re.search(r'(?:THIS\s+(?:DEED|INDENTURE)[\s\S]*?(?:executed|[eo]xe[ce]uted|made)\s+[\s\S]*?on\s+this\s+(?:the\s+)?[^\w]*(\d{1,2})\s*(?:st|nd|rd|th)?\s*d[a-z0-9]y\s+of\s+([A-Za-z]+)[,\s]+(\d{4})|(?:executed|[eo]xe[ce]uted|made)\s+at[\s\S]*?this\s+(\d{1,2})\s*(?:st|nd|rd|th)?\s*day\s+of\s+([A-Za-z]+)[,\s]+(\d{4}))', op_text, re.IGNORECASE)
         if exec_m:
-            raw_d = exec_m.group(1) or exec_m.group(3)
-            raw_m = (exec_m.group(2) or exec_m.group(4)).lower()
-            yr = exec_m.group(3) or exec_m.group(5) if len(exec_m.groups()) >= 5 and exec_m.group(5) else (exec_m.group(2) or exec_m.group(4))
-            # Let's cleanly unpack groups
             g1, g2, g3, g4, g5, g6 = (list(exec_m.groups()) + [None]*6)[:6]
             raw_d = g1 or g4
             raw_m = (g2 or g5 or "").lower()
@@ -138,7 +157,8 @@ class SaleDeedExtractor:
         # 2. VENDOR / EXECUTANT DETAILS & POA AGENT
         # ═══════════════════════════════════════════════════════════════════
         vendor_details = None
-        poa_agent = None
+        poa_name = None
+        poa_doc = None
 
         v_m = re.search(
             r'(?:(?:executed|[eo]xe[ce]uted|made|entered\s+into)[\s\S]*?(?:\bbetween\b|\bby\b))\s*[:;\s]+'
@@ -172,15 +192,30 @@ class SaleDeedExtractor:
         # Check for Vendor Power of Attorney representation
         if vendor_details and any(k in vendor_details.lower() for k in ["power of attorney", "power agent", "power ofattorney"]):
             poa_v_m = re.search(
-                r'(?:represen[td]ed\s+by\s+(?:their|his|her)?\s*(?:duly\s+constituted\s+)?(?:(?:General\s+)?Power\s*of\s*Attorney|power\s*ofattorney)|Power\s+Agent\s+of)\s*(.+?)(?:,\s*vide|\s*vide|\s*\(?\s*vide|\s*registered\s+as|\s*registered\s+under|\.\.\d+\.\.|\Z)',
+                r'(?:represen[td]ed\s+by\s+(?:their|his|her)?\s*(?:duly\s+constituted\s+)?(?:(?:General\s+)?Power\s*of\s*Attorney|power\s*ofattorney)|Power\s+Agent\s+of)\s*[:\s]*'
+                r'([A-Za-z0-9\s\.,&\'/-]+?)(?=(?:,\s*vide|\s*vide|\s*\(?\s*vide|\s*registered\s+as|\s*registered\s+under|hereinafter|\.\.\d+\.\.|\Z))',
                 vendor_details,
-                re.IGNORECASE | re.DOTALL
+                re.IGNORECASE
             )
             if poa_v_m:
-                poa_agent = self._clean_legal_text(poa_v_m.group(1)).strip(',').strip()
+                poa_name = self._clean_poa_name(poa_v_m.group(1))
+                # Search for POA Document Number in context of vendor
+                v_ctx = norm_text[poa_v_m.start():min(len(norm_text), poa_v_m.end() + 1200)]
+                v_doc_m = re.search(
+                    r'(?:Document\s*No\.?|Doc\.?\s*No\.?|registered\s+as\s+Document\s*No\.?|Doc\.No\.|Doc\.No|registered\s+as\s+Doc\.No\.?)\s*[:\s]*(\d{1,5})[\.,\s]*(?:of|/|\s+of\s+)\s*(\d{2,4})',
+                    v_ctx,
+                    re.IGNORECASE
+                )
+                if v_doc_m:
+                    dno, dyr = v_doc_m.group(1), v_doc_m.group(2)
+                    if len(dyr) == 2: dyr = f"19{dyr}" if int(dyr) > 25 else f"20{dyr}"
+                    sro_m = re.search(r'(?:office\s+of\s+the\s+Sub\s*Registrar\s*of|Sub\s*Registrar\s*of|SRO|Sub\s*Registrar,)\s*([A-Za-z]+)', v_ctx[v_doc_m.start()-50:v_doc_m.end()+150], re.IGNORECASE)
+                    sro_str = f", SRO {sro_m.group(1).strip()}" if sro_m else ""
+                    poa_doc = f"Doc No. {dno} of {dyr}{sro_str}"
+
                 v_princ = re.split(r'\b(?:represen[td]ed\s+by|hereinafter\s+represen[td]ed)\b', vendor_details, flags=re.IGNORECASE)[0].strip(',').strip()
-                short_v_poa = poa_agent.split(',')[0].strip()
-                vendor_details = f"{v_princ} (Represented by POA: {short_v_poa})"
+                doc_str = f" - POA Doc: {poa_doc}" if poa_doc else ""
+                vendor_details = f"{v_princ} (Represented by POA: {poa_name}{doc_str})"
 
         fields["vendor_details"] = {
             "value": vendor_details or "Not Detected",
@@ -216,20 +251,24 @@ class SaleDeedExtractor:
                     after_text = last_b + ' ' + after_text
 
             p_raw = self._clean_legal_text(after_text).strip(',').strip()
-            p_poa = re.search(r'(.+?)(?:,\s*by\s+(?:his|her|their)?\s*(?:General\s+)?Power\s*of[^\n]*?Attorney|\s*by\s+(?:his|her|their)?\s*(?:General\s+)?Power\s*of[^\n]*?Attorney)\s*(?:Agent)?\s*(.+)', p_raw, re.IGNORECASE | re.DOTALL)
-            if p_poa:
-                p_princ = self._clean_str(p_poa.group(1)).strip(',').strip()
-                poa_raw = self._clean_legal_text(p_poa.group(2)).strip(',').strip()
-                poa_agent_clean = re.sub(r'--- PAGE \d+ ---.*?(?=[A-Z])', ' ', poa_raw, flags=re.DOTALL)
-                poa_agent_clean = re.sub(r'[\.]{2,}[^\w]*', ' ', poa_agent_clean)
-                poa_agent_clean = self._clean_str(poa_agent_clean).strip(',').strip()
-                agent_name_m = re.search(r'((?:Mrs\.?|Mr\.?|Ms\.?|Thiru\.?|Tmt\.?|Smt\.?)\s*[A-Za-z\.\s]+,\s*(?:Wife|Son|Daughter|residing)\s+of[^\n,]+)', poa_agent_clean, re.IGNORECASE)
-                short_poa = agent_name_m.group(1).split(',')[0].strip() if agent_name_m else poa_agent_clean.split(',')[0].strip()
-                purchaser_details = f"{p_princ} (Represented by POA Agent: {short_poa})"
-                if not poa_agent:
-                    poa_agent = poa_agent_clean
-            else:
-                purchaser_details = p_raw
+            purchaser_details = p_raw
+
+        # Check Purchaser POA
+        norm_w_text = re.sub(r'\s+', ' ', norm_text)
+        pur_poa_m = re.search(
+            r'((?:Mrs\.?|Mr\.?|Smt\.?|Thiru\.?)\s*[A-Za-z\.\s]+?),\s*(?:Wife\s+of|Son\s+of|aged)[^\(\)]+?\(\s*(?:which\s+)?deed\s+of\s+Power[^\(\)]+?document\s*No\.?\s*(\d{1,5})[\.,\s]*(?:of|/|\s+of\s+)\s*(\d{2,4})[^\(\)]+?SRO\s*([A-Za-z]+)',
+            norm_w_text,
+            re.IGNORECASE
+        )
+        if pur_poa_m and not poa_name:
+            poa_name = self._clean_poa_name(pur_poa_m.group(1))
+            dno, dyr = pur_poa_m.group(2), pur_poa_m.group(3)
+            if len(dyr) == 2: dyr = f"19{dyr}" if int(dyr) > 25 else f"20{dyr}"
+            sro_str = f", SRO {pur_poa_m.group(4).strip()}"
+            poa_doc = f"Doc No. {dno} of {dyr}{sro_str}"
+            if purchaser_details:
+                p_princ = re.split(r'\b(?:by\s+his|by\s+her|by\s+their)\b', purchaser_details, flags=re.I)[0].strip(',').strip()
+                purchaser_details = f"{p_princ} (Represented by POA: {poa_name} - POA Doc: {poa_doc})"
 
         fields["purchaser_details"] = {
             "value": purchaser_details or "Not Detected",
@@ -238,83 +277,139 @@ class SaleDeedExtractor:
             "box_query": purchaser_details.split(',')[0] if (purchaser_details and purchaser_details != "Not Detected") else "PURCHASER",
         }
 
-        if poa_agent:
+        # Power of Attorney Agent Details (POA Name + Document No, No Address)
+        if poa_name:
+            doc_part = f" (POA Doc No. {poa_doc})" if poa_doc else ""
+            poa_val = f"{poa_name}{doc_part}"
             fields["poa_agent_details"] = {
-                "value": poa_agent,
-                "confidence": 0.94,
+                "value": poa_val,
+                "confidence": 0.95,
                 "label": "பவர் ஏஜென்ட் விவரம் (Power of Attorney Agent)",
-                "box_query": poa_agent.split(',')[0] if poa_agent else "Power of Attorney",
+                "poa_name": poa_name,
+                "poa_document_number": poa_doc or "Recorded in Deed",
+                "box_query": poa_name.split('(')[0].strip(),
             }
 
         # ═══════════════════════════════════════════════════════════════════
-        # 4. HISTORY / PREVIOUS OWNER DETAILS
+        # 4. HISTORY / PREVIOUS OWNER DETAILS (WITH THEIR POA)
         # ═══════════════════════════════════════════════════════════════════
         prev_owners = []
-        # Check legal heir succession
-        heir_m = re.search(r'(?:legal\s+heir\s+of\s+(?:late\s+)?([A-Za-z\.\s]+?)(?:who\s+died\s+on\s+([0-9A-Za-z\.\s-]+?))?(?:,\s*and|\s*and))', norm_text, re.IGNORECASE)
-        if heir_m:
-            h_name = heir_m.group(1).strip().replace('late', '').strip()
-            h_dt = f" (died {heir_m.group(2).strip()})" if heir_m.group(2) else ""
-            prev_owners.append(f"Late {h_name}{h_dt}")
+        clean_p_text = self._clean_str(re.sub(r'[^\x00-\x7F]+', ' ', norm_text))
 
-        orig_m = re.search(r'(?:originally\s+owned\s+by\s+(?:one\s+)?|belonged\s+to\s+)([A-Za-z0-9\.\s,\(\)\'’/&:-]+?)(?:,\s*he\s+had\s+purchased|,\s*who\s+purchased|,\s*and\s+thereafter|\.\s|\Z)', norm_text, re.I)
-        if orig_m:
-            po_cand = self._clean_str(orig_m.group(1)).strip(',').strip()
-            if len(po_cand) > 3 and not any(k in po_cand.lower() for k in ["vendor herein", "out of his"]):
-                prev_owners.append(po_cand)
+        # Check A: "having Purchased ... from [POA] ... and Power Agent of [Owners]" (e.g. 2004 Deed)
+        po_m1 = re.search(
+            r'purchased[^\n]+?from\s+([A-Za-z0-9\s\.,&\'\(\)/-]+?),\s*and\s+Power\s+Agent\s+of\s+([0-9A-Za-z\s\.,&\'\(\)/-]+?)(?=,\s*in\s+and|\s*in\s+and|\.\s|\Z)',
+            clean_p_text,
+            re.IGNORECASE
+        )
+        if po_m1:
+            poa_clean = self._clean_poa_name(po_m1.group(1))
+            owners_clean = self._clean_str(po_m1.group(2)).strip(',').strip()
+            prev_owners.append(f"{owners_clean} (Represented by POA: {poa_clean})")
 
-        # Check purchased from in recitals
-        pur_m = re.search(r'(?:purchased\s+(?:fhe|the)\s+said\s+properties\s+from|having\s+purchased\s+(?:the\s+[^\n]+?\s+)?from|purchased\s+(?:the\s+[^\n]+?\s+)?from|purchased\s+by\s+the\s+Vendor\s+from)\s+([A-Za-z0-9\.\s,\(\)\'’/&:-]+?)(?:,\s*in\s+and\s+by\s+way\s+of|\s*in\s+and\s+by\s+way\s+of|\s*under\s+(?:a\s+)?registered|\s*vide\s+Doc|\s*and\s+others|\Z)', norm_text, re.IGNORECASE)
-        if pur_m:
-            po_name = self._clean_str(pur_m.group(1)).strip(',').strip()
-            if len(po_name) > 3 and not any(k in po_name.lower() for k in ["vendor herein", "out of his"]):
-                prev_owners.append(f"Purchased from {po_name}")
+        # Check B: "purchased by Vendor from [Owners] represented by General Power of Attorney Agent [POA]" (e.g. 2010 Naagesh Deed)
+        if not prev_owners:
+            po_m2 = re.search(
+                r'purchased\s+by\s+the\s+Vendor\s+herein[^\n]+?from\s+(.+?)\s+represented\s+by\s+their\s+(?:General\s+)?Power\s+of\s+Attorney\s+Agent\s+(.+?)(?=,\s*and\s+the\s+same|,\s*and\s+registered|\.\s|\Z)',
+                clean_p_text,
+                re.IGNORECASE
+            )
+            if po_m2:
+                owners_clean = self._clean_str(po_m2.group(1)).replace(' I ', ' ').strip()
+                poa_clean = self._clean_poa_name(po_m2.group(2))
+                prev_owners.append(f"{owners_clean} (Represented by POA: {poa_clean})")
+
+        # Check C: "originally owned by one [Owner] ... purchased from [Prior]" (e.g. 2010 Shailaja Deed)
+        if not prev_owners:
+            po_m3 = re.search(
+                r'originally\s+owned\s+by\s+(?:one\s+)?([A-Za-z0-9\.\s,\(\)\'’/&:-]+?)(?:,\s*he\s+had\s+purchased|,\s*who\s+purchased|\.\s|\Z)',
+                clean_p_text,
+                re.IGNORECASE
+            )
+            if po_m3:
+                c_cand = self._clean_str(po_m3.group(1)).strip(',').strip()
+                if len(c_cand) > 3:
+                    prev_owners.append(c_cand)
+                    pur_sub = re.search(
+                        r'purchased\s+(?:fhe|the)\s+said\s+properties\s+from\s+([A-Za-z0-9\.\s,\(\)\'’/&:-]+?)(?:under\s+the\s+Deed|under\s+a\s+registered|,\s*in\s+and\s+by|\Z)',
+                        clean_p_text,
+                        re.IGNORECASE
+                    )
+                    if pur_sub:
+                        prev_owners.append(f"Purchased from {self._clean_str(pur_sub.group(1)).strip(',').strip()}")
+
+        # Check D: "purchased ... from one [Owner] on [Date]" (e.g. 1995 Deed)
+        if not prev_owners:
+            po_m4 = re.search(
+                r'purchased\s+(?:the\s+property\s+)?from\s+(?:one\s+)?([A-Za-z\.\s]+?)\s+on\s+([0-9A-Za-z\s]+?)(?:under\s+a|\s+under|,\s*and|\.\s|\Z)',
+                clean_p_text,
+                re.IGNORECASE
+            )
+            if po_m4:
+                prev_owners.append(f"Purchased from {self._clean_str(po_m4.group(1))} on {self._clean_str(po_m4.group(2))}")
+
+        # Check E: Legal Heir succession
+        if not prev_owners:
+            heir_m = re.search(r'(?:legal\s+heir\s+of\s+(?:late\s+)?([A-Za-z\.\s]+?)(?:who\s+died\s+on\s+([0-9A-Za-z\.\s-]+?))?(?:,\s*and|\s*and))', norm_text, re.IGNORECASE)
+            if heir_m:
+                h_name = heir_m.group(1).strip().replace('late', '').strip()
+                h_dt = f" (died {heir_m.group(2).strip()})" if heir_m.group(2) else ""
+                prev_owners.append(f"Late {h_name}{h_dt}")
 
         prev_owner_val = " | ".join(prev_owners) if prev_owners else "Not Detected"
         fields["history_previous_owner"] = {
             "value": prev_owner_val,
-            "confidence": 0.92 if prev_owner_val != "Not Detected" else 0.0,
-            "label": "முந்தைய உரிமையாளர் (Previous Owner / History)",
+            "confidence": 0.94 if prev_owner_val != "Not Detected" else 0.0,
+            "label": "முந்தைய உரிமையாளர் (Previous Owner / Title History)",
             "box_query": prev_owner_val.split('|')[0].strip() if prev_owner_val != "Not Detected" else "previous owner",
         }
 
         # ═══════════════════════════════════════════════════════════════════
-        # 5. PREVIOUS DOCUMENT REFERENCE (Mother Deed & Prior Titles)
+        # 5. PREVIOUS DOCUMENT REFERENCE (Mother Deed & Prior Titles Only - Never POA)
         # ═══════════════════════════════════════════════════════════════════
-        prev_docs = []
-        pdr_matches = re.finditer(r'(?:(?:registered\s+as\s+|vide\s+)?(?:Doc\.?\s*No\.?|Document\s*No\.?|ஆவண\s*எண்)\s*[:\s]*(\d{1,5})\s*(?:of|/|\s+of\s+)\s*(\d{2,4}))', norm_text, re.IGNORECASE)
+        mother_docs = []
+        pdr_matches = re.finditer(
+            r'(?:(?:registered\s+as\s+|vide\s+)?(?:Doc\.?\s*No\.?|Document\s*No\.?|Doc\.No\.|ஆவண\s*எண்)\s*[:\s]*(\d{1,5})[\.,\s]*(?:of|/|\s+of\s+)\s*(\d{2,4}))',
+            norm_text,
+            re.IGNORECASE
+        )
         for pm in pdr_matches:
             dno, dyr = pm.group(1), pm.group(2)
             if len(dyr) == 2: dyr = f"19{dyr}" if int(dyr) > 25 else f"20{dyr}"
-            
-            c_start = max(0, pm.start() - 140)
-            c_end = min(len(norm_text), pm.end() + 140)
+
+            c_start = max(0, pm.start() - 160)
+            c_end = min(len(norm_text), pm.end() + 160)
             ctx = norm_text[c_start:c_end]
-            
-            # Extract SRO from context
-            sro_p = re.search(r'(?:in\s+the\s+|at\s+|with\s+)?(?:S\.?R\.?O\.?|Sub[- ]Registrar(?:\s+Office)?)\s*([A-Za-z\s]+?)(?: later| later entered|\.|\n|,|\Z)', ctx, re.IGNORECASE)
+
+            # Strictly exclude POA registration deeds (Book 4 / Power of Attorney)
+            is_poa = any(k in ctx.lower() for k in [
+                "general power of attorney", "general power", "poa deed", "book 4", "book iv",
+                "executed by principal", "deed of power", "power of attorney (executed",
+                "power ofattorney"
+            ])
+            if poa_doc and f"{dno} of {dyr}" in poa_doc:
+                is_poa = True
+
+            # If it explicitly states Book 1, Volume, Sale Deed, it is definitely a Mother Deed
+            is_title = any(k in ctx.lower() for k in ["sale deed", "book 1", "book-1", "book i", "settlement deed", "partition deed", "volume", "pages from"])
+            if is_poa and not is_title:
+                continue
+
+            sro_p = re.search(r'(?:in\s+the\s+|at\s+|with\s+)?(?:S\.?R\.?O\.?|Sub[- ]Registrar(?:\s+Office)?)\s*([A-Za-z\s]+?)(?: later| later entered|\.|\n|,|\Z|\))', ctx, re.IGNORECASE)
             sro_str = f" at SRO {self._clean_str(sro_p.group(1))}" if sro_p else ""
-            
-            # Extract date from context
             dt_p = re.search(r'(?:dated|on)\s*([0-9./-]+)', ctx, re.IGNORECASE)
             dt_str = f" (Dated {dt_p.group(1)})" if dt_p else ""
-            
+
             entry = f"Doc No. {dno} of {dyr}{dt_str}{sro_str}"
-            is_title_deed = any(k in ctx.lower() for k in ["sale deed", "book 1", "book-1", "book i", "settlement deed", "partition deed", "gift deed"])
-            is_poa_deed = any(k in ctx.lower() for k in ["general power of attorney", "general power", "poa deed", "book 4", "book iv", "power of attorney (executed"])
+            mother_entry = f"Mother Deed: {entry}"
+            if mother_entry not in mother_docs:
+                mother_docs.append(mother_entry)
 
-            if is_poa_deed and not is_title_deed:
-                labeled = f"POA Deed: {entry}"
-            else:
-                labeled = f"Mother Deed: {entry}"
-            if labeled not in prev_docs:
-                prev_docs.append(labeled)
-
-        prev_doc_ref = " | ".join(prev_docs) if prev_docs else "Not Detected"
+        prev_doc_ref = " | ".join(mother_docs) if mother_docs else "Not Detected"
         fields["previous_doc_reference"] = {
             "value": prev_doc_ref,
-            "confidence": 0.92 if prev_doc_ref != "Not Detected" else 0.0,
-            "label": "முந்தைய ஆவணக் குறிப்பு (Previous Document Reference)",
+            "confidence": 0.94 if prev_doc_ref != "Not Detected" else 0.0,
+            "label": "முந்தைய மூல ஆவணக் குறிப்பு (Mother Deed Reference)",
             "box_query": prev_doc_ref.split('|')[0].strip() if prev_doc_ref != "Not Detected" else "previous document",
         }
 
@@ -324,17 +419,17 @@ class SaleDeedExtractor:
         survey = None
         sy_m = re.search(r'\b((?:Town\s+Survey\s*No\.?|T\.?\s*S\.?\s*No\.?|Survey\s*Nos?\.?|Sy\.?\s*Nos?\.?|S\.?\s*Nos?\.?|R\.?\s*S\.?\s*No\.?|New\s*Survey\s*No\.?|Old\s*Survey\s*No\.?|புல\s*எண்)\s*[:\s]*[0-9A-Za-z/,\s-]+?(?=\s+(?:measuring|extent|admeasuring|bounded|adjoined|situat|totaling|Block|\Z)))', norm_text, re.IGNORECASE)
         pm_m = re.search(r'\b((?:(?:Old\s+)?Paimash\s*Nos?\.?|பைமாஷ்\s*எண்)\s*[:\s]*[0-9A-Za-z/,\s-]+?(?=\s+(?:Survey|measuring|extent|admeasuring|situat|\Z)))', norm_text, re.IGNORECASE)
-        
+
         sy_cand = self._clean_str(sy_m.group(1)).strip().rstrip(',') if sy_m else None
         if sy_cand:
             sy_cand = re.sub(r'\s+(?:of|in|at|and)$', '', sy_cand, flags=re.I)
             sy_cand = re.sub(r'(\d+(?:/\d+)?)\s+(?=\d)', r'\1, ', sy_cand)
-        
+
         pm_cand = self._clean_str(pm_m.group(1)).strip().rstrip(',') if pm_m else None
         if pm_cand:
             pm_cand = re.sub(r'\s+(?:of|in|at|and)$', '', pm_cand, flags=re.I)
             pm_cand = re.sub(r'(\d+),(\d+)', r'\1, \2', pm_cand)
-        
+
         if sy_cand and pm_cand:
             survey = f"{sy_cand} ({pm_cand})"
         elif sy_cand:
@@ -526,86 +621,7 @@ class SaleDeedExtractor:
         }
 
         # ═══════════════════════════════════════════════════════════════════
-        # 13. CONSIDERATION AMOUNT & MARKET VALUE
-        # ═══════════════════════════════════════════════════════════════════
-        norm_num_text = self._normalize_ocr_number(norm_text)
-        amt_m = re.search(r'(?:SALE\s+DEED\s+FOR\s+Rs\.?|total\s+sale\s+consideration\s+(?:is\s+)?of\s+Rs\.?|in\s+consideration\s+of\s+Rs\.?|sale\s+consideration\s*(?:is\s*)?of\s*Rs\.?|sum\s+of\s+Rs\.?|கிரையத்\s*தொகை)\s*[:\s]*([0-9,]+)(?:/-?|-00|\.00)?\s*(?:\(\s*Rupees\s+([A-Za-z\s]+?only)\s*\))?', norm_num_text, re.IGNORECASE)
-        amt_str = None
-        if amt_m:
-            amt_num = amt_m.group(1).strip().rstrip(',')
-            if len(re.sub(r'\D', '', amt_num)) >= 4:
-                amt_w = f" (Rupees {self._clean_str(amt_m.group(2))})" if amt_m.group(2) else ""
-                amt_str = f"Rs. {amt_num}/-{amt_w}"
-
-        mv_m = re.search(r'(?:market\s+value\s+(?:of\s+the\s+property\s+)?(?:is\s+)?Rs\.?|Market\s+Value\s*[:\s]+Rs\.?)\s*([0-9,]+)(?:/-?|-00|\.00)?\s*(?:\(\s*Rupees\s+([A-Za-z\s]+?only)\s*\))?', norm_num_text, re.IGNORECASE)
-        mv_str = None
-        if mv_m:
-            mv_num = mv_m.group(1).strip().rstrip(',')
-            if len(re.sub(r'\D', '', mv_num)) >= 4:
-                mv_w = f" (Rupees {self._clean_str(mv_m.group(2))})" if mv_m.group(2) else ""
-                mv_str = f"Rs. {mv_num}/-{mv_w}"
-
-        amt_str = amt_str or mv_str
-        mv_str = mv_str or amt_str
-
-        fields["consideration_amount"] = {
-            "value": amt_str or "Not Detected",
-            "confidence": 0.96 if amt_str else 0.0,
-            "label": "கிரையத் தொகை (Consideration Amount)",
-            "box_query": amt_str.split('/')[0].replace('Rs.', '').strip() if amt_str else "consideration",
-        }
-
-        fields["market_value"] = {
-            "value": mv_str or (amt_str or "Not Detected"),
-            "confidence": 0.95 if (mv_str or amt_str) else 0.0,
-            "label": "சந்தை மதிப்பு (Market Value of Property)",
-        }
-
-        # ═══════════════════════════════════════════════════════════════════
-        # 14. PAYMENT & LOAN BREAKDOWN (Dynamic Extraction)
-        # ═══════════════════════════════════════════════════════════════════
-        pay_parts = []
-        pay_matches = re.finditer(r'(?:^|\n)\s*(\d+)\.\s*Rs\.?\s*([0-9,oO]+)/-?\s*(?:\(\s*Rupees\s+([A-Za-z\s]+?only)\s*\))?\s*([^\n]+(?:\n(?!\s*\d+\.)[^\n]+){0,4})', norm_text, re.IGNORECASE)
-        for pm in pay_matches:
-            seq = pm.group(1)
-            p_amt = self._normalize_ocr_number(pm.group(2))
-            p_desc = self._clean_str(pm.group(4))
-            if "cash" in p_desc.lower():
-                dt_m = re.search(r'(?:on\s+)?([0-9./-]+)', p_desc)
-                dt = f" on {dt_m.group(1)}" if dt_m else ""
-                pay_parts.append(f"{seq}. Cash: Rs. {p_amt}/- (Advance{dt})")
-            elif "cheque" in p_desc.lower() or "chocue" in p_desc.lower():
-                chq_m = re.search(r'bearing\s+No\.?\s*([0-9A-Za-z]+)', p_desc, re.IGNORECASE)
-                dt_m = re.search(r'(?:Dt\.?|dated)\s*([0-9.:/-]+)', p_desc, re.IGNORECASE)
-                bnk_m = re.search(r'Drawn\s+on\s*([A-Za-z\s\.,]+?Bank[^\n,.]*)', p_desc, re.IGNORECASE)
-                chq_str = f"Cheque No. {chq_m.group(1)}" if chq_m else "Cheque"
-                dt_str = f" dt {dt_m.group(1)}" if dt_m else ""
-                bnk_str = f" on {bnk_m.group(1).strip()}" if bnk_m else ""
-                pay_parts.append(f"{seq}. Cheque: Rs. {p_amt}/- ({chq_str}{dt_str}{bnk_str})")
-            elif "d.d" in p_desc.lower() or "demand draft" in p_desc.lower():
-                dd_m = re.search(r'bearing\s+No\.?\s*([0-9A-Za-z~]+)', p_desc, re.IGNORECASE)
-                dt_m = re.search(r'dated\s*([0-9./-]+)', p_desc, re.IGNORECASE)
-                bnk_m = re.search(r'drawn\s+on\s*([A-Za-z\s]+Bank[^\n,]*)', p_desc, re.IGNORECASE)
-                dd_str = f"DD No. {dd_m.group(1)}" if dd_m else "Demand Draft"
-                dt_str = f" dated {dt_m.group(1)}" if dt_m else ""
-                bnk_str = f" on {bnk_m.group(1).strip()}" if bnk_m else ""
-                pay_parts.append(f"{seq}. Demand Draft: Rs. {p_amt}/- ({dd_str}{dt_str}{bnk_str})")
-            elif "banker" in p_desc.lower() or "loan" in p_desc.lower():
-                pay_parts.append(f"{seq}. Housing Loan / Banker's Cheque: Rs. {p_amt}/-")
-
-        if not pay_parts:
-            if re.search(r'(?:consideration\s+having\s+been\s+paid\s+in\s+full|receipt\s+of\s+which\s+is\s+hereby\s+acknowledged|receipt\s+of\s+which\s+sum\s+the\s+Vendor)', norm_text, re.IGNORECASE) or amt_str:
-                pay_parts.append(f"100% Consideration ({amt_str}) acknowledged and fully received by Vendor at execution" if amt_str else "100% Consideration acknowledged and fully received by Vendor at execution")
-
-        if pay_parts:
-            fields["payment_breakdown"] = {
-                "value": " | ".join(pay_parts),
-                "confidence": 0.95,
-                "label": "செலுத்தல் விபரம் (Payment & Loan Mode)",
-            }
-
-        # ═══════════════════════════════════════════════════════════════════
-        # 15. SRO & REGISTRATION DETAILS
+        # 13. SRO & REGISTRATION DETAILS
         # ═══════════════════════════════════════════════════════════════════
         sro_m = re.search(r'(?:Registration\s+Sub[- ]District\s+of\s+([A-Za-z]+)|Office\s+of\s+the\s+Sub[- ]Registrar\s*of\s*([A-Za-z]+)|Sub[- ]Registrar\s+of\s+([A-Za-z]+)|S\.?R\.?O\.?\s*([A-Za-z]+)|சார்பதிவாளர்\s+அலுவலகம்\s*[:\s]*([^\n,]+))', norm_text, re.IGNORECASE)
         sro_name = (sro_m.group(1) or sro_m.group(2) or sro_m.group(3) or sro_m.group(4) or sro_m.group(5)) if sro_m else None
@@ -621,25 +637,32 @@ class SaleDeedExtractor:
         }
 
         # ═══════════════════════════════════════════════════════════════════
-        # 16. DOCUMENT NUMBER & BOOK
+        # 14. DOCUMENT NUMBER & BOOK
         # ═══════════════════════════════════════════════════════════════════
         doc_no = None
         if filename and not filename.startswith("media_"):
             fn_m = re.search(r'(\d{1,5})[_-](\d{4})', filename)
             if fn_m: doc_no = f"{fn_m.group(1)} of {fn_m.group(2)}"
-        
+
+        if not doc_no:
+            # TN Endorsement Stamp pattern: e.g. 201003978 ( Bookl ) -> Doc 3978 of 2010
+            tn_stamp_m = re.search(r'\b(19\d\d|20\d\d)0*([1-9]\d{0,4})\s*\(\s*Book\s*[1lI]\s*\)', norm_text, re.I)
+            if tn_stamp_m:
+                doc_no = f"{tn_stamp_m.group(2)} of {tn_stamp_m.group(1)}"
+
         if not doc_no:
             doc_candidates = []
             for dm in re.finditer(r'(?:DOCUMENT|Doc(?:ument)?|DCCUMEN,?|JOCOMENT)[\s\S]{0,40}?(?:No\.?)\s*[:\s]*([0-9A-Za-z]+)[\.,\s]*(?:Year|of|oF)\s*[:\s]*(\d{4})', norm_text, re.I):
                 raw_val = dm.group(1).replace('l', '1').replace('b', '6').replace('o', '0').replace('O', '0').strip()
                 digits = re.sub(r'\D', '', raw_val)
                 yr = dm.group(2)
-                
-                c_start = max(0, dm.start() - 80)
-                c_end = min(len(norm_text), dm.end() + 80)
+
+                c_start = max(0, dm.start() - 100)
+                c_end = min(len(norm_text), dm.end() + 100)
                 ctx = norm_text[c_start:c_end]
-                is_b4 = bool(re.search(r'\b(?:Book\s*4|Book\s*IV)\b', ctx, re.I))
-                if not is_b4 and digits and yr:
+                is_b4 = bool(re.search(r'\b(?:Book\s*4|Book\s*IV|Power\s*of\s*Attorney|General\s*Power|deed\s+of\s+power|Power\s*Agent|POA)\b', ctx, re.I))
+                is_poa_ref = poa_doc and (digits in poa_doc)
+                if not is_b4 and not is_poa_ref and digits and yr:
                     doc_candidates.append((digits, yr))
 
             if doc_candidates:
@@ -663,7 +686,7 @@ class SaleDeedExtractor:
         }
 
         # ═══════════════════════════════════════════════════════════════════
-        # 17. UTILITY IDENTIFIERS & MUNICIPAL TAXES
+        # 15. UTILITY IDENTIFIERS & MUNICIPAL TAXES
         # ═══════════════════════════════════════════════════════════════════
         tneb = self._find_value(norm_text, [
             r'TNEB\s*Service\s*(?:connection)?\s*No\.?\s*([0-9A-Za-z-]+)',
@@ -701,91 +724,11 @@ class SaleDeedExtractor:
             }
 
         # ═══════════════════════════════════════════════════════════════════
-        # 18. WITNESSES & DOCUMENT DRAFTER
+        # 16. STATUTORY CONVEYANCING CHECKLIST (14-Point Essential Legal Rules)
+        # (Consideration, market values, payment methods, witnesses, and drafter removed)
         # ═══════════════════════════════════════════════════════════════════
-        wits = []
-        # Search WITNESSES section first (avoiding "IN WITNESSES WHEREOF")
-        w_block = re.search(r'(?:^|\n)\s*(?<!IN\s)WITNESSES\s*[:;\s]*\n(.+?)(?:DRAFTED\s+BY|DOCUMENT\s*WRITER|VENDOR|PURCHASER|\Z)', norm_text, re.IGNORECASE | re.DOTALL)
-        if w_block:
-            w_lines = [line.strip() for line in w_block.group(1).split('\n') if line.strip()]
-            for wl in w_lines:
-                clean = self._clean_str(re.sub(r'^[12\.\s\(\)]+|[\(\)]+$', '', wl))
-                clean = re.sub(r'[^A-Za-z0-9\.\s-]', '', clean).strip()
-                if sum(c.isalpha() for c in clean) >= 4 and not any(k in clean.lower() for k in ["vendor", "purchaser", "witness", "affidavit", "signature", "whereof", "hereun", "hands"]):
-                    if vendor_details and any(tok in clean.lower() for tok in ["remmka", "renuka"]):
-                        continue
-                    if clean not in wits and len(clean) >= 3:
-                        wits.append(clean)
-
-        # Search IDENTIFIED BY endorsement if needed
-        if len(wits) < 2:
-            id_m = re.search(r'IDENTIFIED\s+BY\s+(.+?)(?:REGISTERED|SUB-REGISTRAR|\Z)', norm_text, re.IGNORECASE | re.DOTALL)
-            if id_m:
-                id_lines = [l.strip() for l in id_m.group(1).split('\n') if l.strip()]
-                for l in id_lines:
-                    m_name = re.search(r'(?:^|[12\.\s]+|\bSlo\.\s+)((?:Mr\.?|Mrs\.?|MC\.?|Me\.?|N\.?|P\.?|R\.?|S\.?|T\.?|K\.?|M\.?)\s*[A-Za-z\.\s]{3,25})', l)
-                    if m_name:
-                        w_cand = self._clean_str(m_name.group(1)).replace("Slo. ", "").replace("S/o. ", "").strip()
-                        if len(w_cand) > 3 and not any(k in w_cand.lower() for k in ["street", "road", "flat", "door", "chennai", "madras", "lane"]):
-                            if w_cand not in wits:
-                                wits.append(w_cand)
-
-        witnesses_val = " | ".join([f"{i+1}. {w}" for i, w in enumerate(wits[:2])]) if wits else "Signed by Attesting Witnesses (Attested before SRO)"
-        fields["witnesses"] = {
-            "value": witnesses_val,
-            "confidence": 0.94,
-            "label": "சாட்சிகள் (Witnesses)",
-        }
-
-        # Document Drafter
-        drafter = None
-        dr_m = re.search(r'(?:DRAFTED\s*BY|CRAFTED\s*BY|DOCUMENT\s*WRITER|DE\s*tedBy)\s*[:\s]*([^\n]+(?:\n[^\n]+){1,3})', norm_text, re.IGNORECASE)
-        if dr_m:
-            dr_text = dr_m.group(0)
-            lic_m = re.search(r'(?:Licence|L\.?\s*No\.?)\s*[:\s]*([A-Za-z0-9\s\(\)/-]+)', dr_text, re.IGNORECASE)
-            lic_str = lic_m.group(1).strip().rstrip('h').rstrip(')') if lic_m else ""
-            name_m = re.search(r'\(([A-Z\.\s]+)\)|(?:By\s*[:\s]*|DOCUMENT\s*WRITER\s*[:\s]*)([A-Za-z\.\s]+)', dr_text, re.IGNORECASE)
-            if name_m:
-                name_cand = self._clean_str(name_m.group(1) or name_m.group(2)).strip()
-                drafter = f"{name_cand}, Document Writer" + (f" (Licence No. {lic_str})" if lic_str else "")
-            elif lic_str:
-                drafter = f"Licensed Document Writer (Licence No. {lic_str})"
-
-        fields["document_drafter"] = {
-            "value": drafter or "Self-Drafted / Legal Counsel (Registered at SRO)",
-            "confidence": 0.94,
-            "label": "பத்திர எழுத்தர் (Document Writer / Drafter)",
-        }
-
-        # ═══════════════════════════════════════════════════════════════════
-        # 19. DPDP MASKED AADHAAR & PAN
-        # ═══════════════════════════════════════════════════════════════════
-        aadhaar_raw = self._find_value(norm_text, [
-            r'(?:aadhaar|ஆதார்)[^\n:]*[:\s]+([^\n]+)',
-            r'([X\d]{4}[\s-]*[X\d]{4}[\s-]*\d{4})',
-        ])
-        masked_aadhaar = ExtractionValidator.enforce_dpdp_masking(aadhaar_raw) if (aadhaar_raw and len(re.findall(r'\d', aadhaar_raw)) >= 4) else "Not Detected"
-        fields["masked_aadhaar"] = {
-            "value": masked_aadhaar,
-            "confidence": 0.92 if masked_aadhaar != "Not Detected" else 0.0,
-            "label": "ஆதார் (DPDP Masked Aadhaar - Last 4 Digits)",
-        }
-
-        pan = self._find_value(norm_text, [
-            r'(?:pan|பான்)[^\n:]*[:\s]+([A-Z]{5}\d{4}[A-Z])',
-            r'\b([A-Z]{5}\d{4}[A-Z])\b',
-        ])
-        fields["pan_number"] = {
-            "value": pan or "Not Detected",
-            "confidence": 0.95 if pan else 0.0,
-            "label": "பான் எண் (PAN Number)",
-        }
-
-        # ═══════════════════════════════════════════════════════════════════
-        # 20. STATUTORY COMPLIANCE CHECKLIST (18 Comprehensive Legal Rules)
-        # ═══════════════════════════════════════════════════════════════════
-        is_current_poa = bool(poa_agent) or bool(re.search(r'\b(?:by|through)\s+(?:his|her|their)?\s*(?:General\s+)?Power\s*of\s*Attorney\b', op_text[:1200], re.IGNORECASE)) or bool("power ofattorney" in op_text[:1200].lower())
-        poa_valid = bool(poa_agent and len(poa_agent) > 5) if is_current_poa else True
+        is_current_poa = bool(poa_name) or bool(re.search(r'\b(?:by|through)\s+(?:his|her|their)?\s*(?:General\s+)?Power\s*of\s*Attorney\b', op_text[:1500], re.IGNORECASE))
+        poa_valid = bool(poa_name and len(poa_name) > 3) if is_current_poa else True
 
         has_boundaries = bool(boundaries_str and boundaries_str != "Not Detected")
         has_schedule_survey = bool(survey and survey != "Not Detected" and extent_total and extent_total != "Not Detected")
@@ -810,10 +753,10 @@ class SaleDeedExtractor:
                 "title": "Power of Attorney (POA) Registration & Authority",
                 "category": "Representation",
                 "is_valid": poa_valid,
-                "details": f"POA Authority: {poa_agent if poa_agent else 'Direct execution by principal parties (No General Power of Attorney required)'}"
+                "details": f"POA Authority: {fields.get('poa_agent_details', {}).get('value', 'Direct execution by principal parties (No General Power of Attorney required)')}"
             },
             {
-                "rule": "முந்தைய மூல ஆவணம் & 30 ஆண்டு உரிமைத் தொடர் (Mother Deed / Prior Title Chain Trace)",
+                "rule": "முந்தைய மூல ஆவணம் & உரிமைத் தொடர் (Mother Deed / Prior Title Chain Trace)",
                 "title": "Mother Deed & Prior Title Chain Trace",
                 "category": "Title Chain",
                 "is_valid": bool((prev_doc_ref and prev_doc_ref != "Not Detected") or (prev_owner_val and prev_owner_val != "Not Detected")),
@@ -838,7 +781,7 @@ class SaleDeedExtractor:
                 "title": "Land Classification & Permitted Use",
                 "category": "Property",
                 "is_valid": bool(fields.get("land_classification", {}).get("value") and fields.get("land_classification", {}).get("value") != "Not Detected"),
-                "details": f"Classification: {fields.get('land_classification', {}).get('value', 'House Site / Residential')} (Residential conversion)"
+                "details": f"Classification: {fields.get('land_classification', {}).get('value', 'House Site / Residential')}"
             },
             {
                 "rule": "மொத்த நில விஸ்தீரணம் (Parent Site Total Land Extent)",
@@ -869,20 +812,6 @@ class SaleDeedExtractor:
                 "details": f"Demarcation: {boundaries_str}" if has_boundaries else f"Demarcation: Specified in Detailed Registered Schedule of Property for {survey} (Total Extent: {extent_total})"
             },
             {
-                "rule": "கிரையத் தொகை ஒப்புதல் (Agreed Sale Consideration)",
-                "title": "Agreed Sale Consideration Recital",
-                "category": "Financials",
-                "is_valid": bool(amt_str and amt_str != "Not Detected"),
-                "details": f"Consideration: {amt_str} stated in legal figures and words"
-            },
-            {
-                "rule": "முழு கிரையத் தொகை செலுத்தல் ஒப்புதல் (100% Payment Reconciliation)",
-                "title": "100% Consideration Payment Reconciliation",
-                "category": "Financials",
-                "is_valid": bool(pay_parts and len(pay_parts) >= 1),
-                "details": f"Payment Modes: {' | '.join(pay_parts) if pay_parts else '100% Consideration acknowledged and fully received by Vendor'}"
-            },
-            {
                 "rule": "சார்பதிவாளர் அலுவலக வரம்பு & ஆவண எண் (SRO Jurisdiction & Doc No)",
                 "title": "SRO Jurisdiction & Document Number",
                 "category": "Registration",
@@ -902,20 +831,6 @@ class SaleDeedExtractor:
                 "category": "Utilities",
                 "is_valid": bool(util_parts and len(util_parts) >= 1) or bool(flat_desc) or bool(corp_m) or is_agri,
                 "details": f"Municipal / Revenue Identifiers: {' | '.join(util_parts) if util_parts else 'Door Number / Corporation Ward identified for revenue mutation'}"
-            },
-            {
-                "rule": "சாட்சிகள் இருவர் கையொப்பம் (Legal Attestation by Two Witnesses)",
-                "title": "Attesting Witnesses Verification",
-                "category": "Attestation",
-                "is_valid": bool(witnesses_val and witnesses_val != "Not Detected"),
-                "details": f"Witnesses: {witnesses_val}"
-            },
-            {
-                "rule": "பத்திர எழுத்தர் உரிமம் & DPDP சட்டம் (Drafter & DPDP Compliance)",
-                "title": "Document Drafter License & DPDP Compliance",
-                "category": "Compliance",
-                "is_valid": True,
-                "details": f"Drafter: {drafter or 'Document Writer / SRO Registration Department Record'} | DPDP Act: Aadhaar & Identity masked"
             }
         ]
         fields["checklist"] = checklist

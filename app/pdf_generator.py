@@ -1364,6 +1364,12 @@ def generate_ocr_pdf_report(data: Dict[str, Any], lang: str = "en") -> bytes:
         "search_window_years", "owners_registry", "schedule", "cadastral_schedule",
     }
 
+    _SALE_DEED_EXCLUDED_KEYS = {
+        "pan_number", "masked_aadhaar", "consideration_amount", "market_value",
+        "payment_breakdown", "witnesses", "document_drafter",
+    }
+    is_sale_deed = doc_type_lower in ("sale_deed", "sale deed") or "sale" in doc_type_lower
+
     # 1. Extracted Key Legal Fields
     elements.append(Paragraph("1. Extracted Key Legal Fields", section_header_style))
 
@@ -1375,6 +1381,8 @@ def generate_ocr_pdf_report(data: Dict[str, Any], lang: str = "en") -> bytes:
 
     for k, v in fields.items():
         if k in _STRUCTURAL_FIELD_KEYS or isinstance(v, list):
+            continue
+        if is_sale_deed and k in _SALE_DEED_EXCLUDED_KEYS:
             continue
 
         if isinstance(v, dict):

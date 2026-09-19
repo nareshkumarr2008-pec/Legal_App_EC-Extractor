@@ -2542,15 +2542,10 @@ function renderSaleDeedFieldsLayout(fields, container) {
     const docNo = getVal(fields.document_number, "Doc No. 3978 of 2010 (Book 1)");
     const regDate = getVal(fields.registration_date, "22-11-2010");
     const sroVal = getVal(fields.sro_details, "SRO Kodambakkam");
-    const considerationVal = getVal(fields.consideration_amount, "Rs. 23,00,000/- (Rupees twenty three lakhs only)");
-    const marketVal = getVal(fields.market_value, "Rs. 23,00,000/- (Rupees twenty three lakhs only)");
-    const stampFeeVal = getVal(fields.stamp_duty_fee, "Stamp Duty: Rs. 1,61,000/- | Registration Fee: Rs. 23,000/-");
 
     const vendorVal = getVal(fields.vendor_details, "");
     const purchaserVal = getVal(fields.purchaser_details, "");
     const poaVal = getVal(fields.poa_agent_details, "");
-    const panVal = getVal(fields.pan_number, "");
-    const aadhaarVal = getVal(fields.masked_aadhaar, "");
 
     const schedType = getVal(fields.schedule_property_type, "Apartment / Flat (with UDS)");
     const surveyVal = getVal(fields.survey_number, "New Survey No. 78 of Block No. 1");
@@ -2589,13 +2584,10 @@ function renderSaleDeedFieldsLayout(fields, container) {
 
     const prevOwnerVal = getVal(fields.history_previous_owner, "");
     const prevDocRef = getVal(fields.previous_doc_reference, "");
-    const paymentVal = getVal(fields.payment_breakdown, "");
     const utilVal = getVal(fields.utility_tax_identifiers, "");
-    const witnessVal = getVal(fields.witnesses, "");
-    const drafterVal = getVal(fields.document_drafter, "");
 
     // Text representation for 1-click clipboard copy
-    const textSummary = `TAMIL NADU REGISTRATION DEPARTMENT - SALE DEED EXTRACTION\n=======================================================\nDocument Number    : ${docNo}\nRegistration Date  : ${regDate}\nSRO Office         : ${sroVal}\nConsideration Amt  : ${considerationVal}\nMarket Value       : ${marketVal}\n\nPARTIES:\nVendor (விற்பவர்)  : ${vendorVal}\nPAN: ${panVal} | Aadhaar: ${aadhaarVal}\nPurchaser (வாங்குபவர்): ${purchaserVal}\n${poaVal ? `POA Agent Details  : ${poaVal}\n` : ''}\nPROPERTY SCHEDULE:\nType & Nature      : ${schedType}\nSurvey Number / SNo: ${surveyVal}\nRevenue Division   : ${vtdVal} | ${corpDivVal}\nFlat & Unit Details: ${flatVal}\nClassification     : ${classVal}\n\nEXTENT & BUILT-UP:\nTotal Land Extent  : ${extentVal}\nUDS & Built-Up Area: ${udsVal}\n\nFOUR BOUNDARIES (நான்கு எல்லைகள்):\nNorth (வடக்கு)     : ${bNorth || '-'}\nSouth (தெற்கு)     : ${bSouth || '-'}\nEast (கிழக்கு)      : ${bEast || '-'}\nWest (மேற்கு)      : ${bWest || '-'}\n\nMOTHER DEED / PRIOR TITLE:\nPrevious Owner     : ${prevOwnerVal}\nPrior Doc Reference: ${prevDocRef}\n\nPAYMENT BREAKDOWN:\n${paymentVal || '-'}\n\nUTILITY & TAX IDENTIFIERS:\n${utilVal || '-'}\n\nWITNESSES & DRAFTER:\nWitnesses          : ${witnessVal || '-'}\nDocument Writer    : ${drafterVal || '-'}\n=======================================================`;
+    const textSummary = `TAMIL NADU REGISTRATION DEPARTMENT - SALE DEED EXTRACTION\n=======================================================\nDocument Number    : ${docNo}\nRegistration Date  : ${regDate}\nSRO Office         : ${sroVal}\n\nPARTIES:\nVendor (விற்பவர்)  : ${vendorVal}\nPurchaser (வாங்குபவர்): ${purchaserVal}\n${poaVal ? `POA Agent Details  : ${poaVal}\n` : ''}\nPROPERTY SCHEDULE:\nType & Nature      : ${schedType}\nSurvey Number / SNo: ${surveyVal}\nRevenue Division   : ${vtdVal} | ${corpDivVal}\nFlat & Unit Details: ${flatVal}\nClassification     : ${classVal}\n\nEXTENT & BUILT-UP:\nTotal Land Extent  : ${extentVal}\nUDS & Built-Up Area: ${udsVal}\n\nFOUR BOUNDARIES (நான்கு எல்லைகள்):\nNorth (வடக்கு)     : ${bNorth || '-'}\nSouth (தெற்கு)     : ${bSouth || '-'}\nEast (கிழக்கு)      : ${bEast || '-'}\nWest (மேற்கு)      : ${bWest || '-'}\n\nMOTHER DEED / PRIOR TITLE:\nPrevious Owner     : ${prevOwnerVal}\nPrior Doc Reference: ${prevDocRef}\n\nUTILITY & TAX IDENTIFIERS:\n${utilVal || '-'}\n=======================================================`;
 
     // Helper to render editable/fillable row
     function makeEditableField(key, label, val, sublabel = "", rows = 1) {
@@ -2669,7 +2661,6 @@ function renderSaleDeedFieldsLayout(fields, container) {
                     <p class="text-xs text-slate-300 flex items-center gap-3 flex-wrap">
                         <span class="flex items-center gap-1"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-blue-400"></i>${escapeHtml(sroVal)}</span>
                         <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-3.5 h-3.5 text-emerald-400"></i>${escapeHtml(regDate)}</span>
-                        <span class="flex items-center gap-1"><i data-lucide="indian-rupee" class="w-3.5 h-3.5 text-amber-400"></i>${escapeHtml(considerationVal)}</span>
                     </p>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
@@ -2687,20 +2678,20 @@ function renderSaleDeedFieldsLayout(fields, container) {
             <!-- Quick Key Metrics Bar -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 text-xs">
                 <div class="p-2.5 rounded-xl bg-white/5 border border-white/10">
-                    <span class="text-[11px] text-slate-400 block font-medium">Consideration</span>
-                    <span class="text-white font-bold truncate block text-sm font-mono">${escapeHtml(considerationVal.split('(')[0].trim())}</span>
+                    <span class="text-[11px] text-slate-400 block font-medium">Document Number</span>
+                    <span class="text-white font-bold truncate block text-sm font-mono">${escapeHtml(docNo)}</span>
                 </div>
                 <div class="p-2.5 rounded-xl bg-white/5 border border-white/10">
                     <span class="text-[11px] text-slate-400 block font-medium">Survey Number</span>
                     <span class="text-white font-bold truncate block text-sm font-mono">${escapeHtml(surveyVal)}</span>
                 </div>
                 <div class="p-2.5 rounded-xl bg-white/5 border border-white/10">
-                    <span class="text-[11px] text-slate-400 block font-medium">Undivided Share</span>
-                    <span class="text-white font-bold truncate block text-sm font-mono">${escapeHtml(udsVal.split('|')[0].replace('UDS:', '').trim())}</span>
+                    <span class="text-[11px] text-slate-400 block font-medium">UDS / Extent</span>
+                    <span class="text-white font-bold truncate block text-sm font-mono">${escapeHtml(udsVal.split('|')[0].replace('UDS:', '').trim() || extentVal)}</span>
                 </div>
                 <div class="p-2.5 rounded-xl bg-white/5 border border-white/10">
                     <span class="text-[11px] text-slate-400 block font-medium">Mother Deed Doc</span>
-                    <span class="text-white font-bold truncate block text-sm font-mono">${escapeHtml(prevDocRef.split('|')[0].trim() || 'Doc 7126/1995')}</span>
+                    <span class="text-white font-bold truncate block text-sm font-mono">${escapeHtml(prevDocRef.split('|')[0].trim() || 'Not Detected')}</span>
                 </div>
             </div>
         </div>
@@ -2723,11 +2714,6 @@ function renderSaleDeedFieldsLayout(fields, container) {
                 </div>
 
                 ${makeEditableField('vendor_details', 'Vendor Full Recital & Address', vendorVal, 'Name, Parentage, Age, Address', 4)}
-
-                <div class="grid grid-cols-2 gap-2 pt-1">
-                    ${makeEditableField('pan_number', 'Vendor PAN', panVal, '10-Digit PAN')}
-                    ${makeEditableField('masked_aadhaar', 'Aadhaar (DPDP Masked)', aadhaarVal, 'Last 4 Digits')}
-                </div>
             </div>
 
             <!-- Purchaser Card -->
@@ -2751,10 +2737,10 @@ function renderSaleDeedFieldsLayout(fields, container) {
                 ${poaVal ? `
                     <div class="p-3 rounded-xl bg-amber-50/70 border border-amber-200 text-xs space-y-1">
                         <div class="flex items-center justify-between text-amber-900 font-bold">
-                            <span class="flex items-center gap-1.5"><i data-lucide="shield-alert" class="w-3.5 h-3.5 text-amber-600"></i>Represented by Power of Attorney (POA) Agent</span>
+                            <span class="flex items-center gap-1.5"><i data-lucide="shield-check" class="w-3.5 h-3.5 text-amber-600"></i>Power of Attorney (POA) Registered Agent</span>
                             <span class="text-[10px] px-2 py-0.5 bg-amber-200 text-amber-900 rounded-full font-bold">POA Registered</span>
                         </div>
-                        <p class="text-[11px] text-amber-800 leading-relaxed font-sans">${escapeHtml(poaVal)}</p>
+                        <p class="text-xs font-semibold text-amber-950 font-sans">${escapeHtml(poaVal)}</p>
                     </div>
                 ` : `
                     <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-500 flex items-center justify-between">
@@ -2928,82 +2914,20 @@ function renderSaleDeedFieldsLayout(fields, container) {
             </div>
         </div>
 
-        <!-- Section 6: Consideration & Payment Breakdown -->
+        <!-- Section 6: Utilities & Municipal Identifiers -->
         <div class="rounded-2xl bg-white border border-slate-200/90 p-4 sm:p-5 shadow-sm space-y-3">
             <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
                 <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
-                        <i data-lucide="credit-card" class="w-4 h-4"></i>
+                    <div class="w-8 h-8 rounded-xl bg-cyan-50 border border-cyan-100 flex items-center justify-center text-cyan-600">
+                        <i data-lucide="zap" class="w-4 h-4"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm font-bold text-slate-900">Financial Consideration & Payment Modes (கிரையத் தொகை)</h3>
-                        <p class="text-[11px] text-slate-500">Consideration, market valuation, and payment instruments (Cheques/DD/Loans)</p>
+                        <h3 class="text-sm font-bold text-slate-900">Utilities & Municipal Identifiers (மின் & வரி இணைப்பு)</h3>
+                        <p class="text-[11px] text-slate-500">TNEB electricity, CMWSSB water connection, and property tax assessment</p>
                     </div>
                 </div>
             </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                ${makeEditableField('consideration_amount', 'Sale Consideration Amount (கிரையத் தொகை)', considerationVal, 'Agreed Price')}
-                ${makeEditableField('market_value', 'Market Valuation (சந்தை மதிப்பு)', marketVal, 'Guide Valuation')}
-                ${makeEditableField('stamp_duty_fee', 'Stamp Duty & Registration Fee', stampFeeVal, 'Govt Duties')}
-            </div>
-
-            ${paymentVal ? `
-                <div class="mt-2 p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
-                    <div class="flex items-center justify-between text-xs font-bold text-slate-800">
-                        <span class="flex items-center gap-1.5"><i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>Verified Payment Tranches:</span>
-                        <span class="text-[10px] text-slate-500 font-semibold">100% Consideration Acknowledged</span>
-                    </div>
-                    <div class="space-y-1.5 font-mono text-xs">
-                        ${paymentVal.split('|').map(tr => `
-                            <div class="p-2 rounded-lg bg-white border border-slate-200 flex items-center justify-between text-slate-800">
-                                <span>${escapeHtml(tr.trim())}</span>
-                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Paid & Received</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            ` : ''}
-            
-            <div class="pt-1">
-                ${makeEditableField('payment_breakdown', 'Edit / Add Payment Instruments', paymentVal, 'Cheques, DD, Housing Loans', 2)}
-            </div>
-        </div>
-
-        <!-- Section 7: Utilities, Taxes, Witnesses & Drafter -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <!-- Utilities & Taxes -->
-            <div class="rounded-2xl bg-white border border-slate-200/90 p-4 sm:p-5 shadow-sm space-y-3">
-                <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                    <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-xl bg-cyan-50 border border-cyan-100 flex items-center justify-center text-cyan-600">
-                            <i data-lucide="zap" class="w-4 h-4"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-bold text-slate-900">Utilities & Municipal Identifiers</h3>
-                            <p class="text-[11px] text-slate-500">TNEB, CMWSSB water, and property tax records</p>
-                        </div>
-                    </div>
-                </div>
-                ${makeEditableField('utility_tax_identifiers', 'TNEB, CMWSSB & Property Tax Door No', utilVal, 'Electricity, Water, Tax Assessment', 3)}
-            </div>
-
-            <!-- Witnesses & Drafter -->
-            <div class="rounded-2xl bg-white border border-slate-200/90 p-4 sm:p-5 shadow-sm space-y-3">
-                <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                    <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-xl bg-violet-50 border border-violet-100 flex items-center justify-center text-violet-600">
-                            <i data-lucide="file-check-2" class="w-4 h-4"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-bold text-slate-900">Attestation & Document Drafter</h3>
-                            <p class="text-[11px] text-slate-500">Registered witnesses and licensed document writer</p>
-                        </div>
-                    </div>
-                </div>
-                ${makeEditableField('witnesses', 'Attesting Witnesses (சாட்சிகள்)', witnessVal, 'Witness 1 & Witness 2', 2)}
-                ${makeEditableField('document_drafter', 'Document Writer / Drafter (பத்திர எழுத்தர்)', drafterVal, 'Name, Advocate/Lic No')}
-            </div>
+            ${makeEditableField('utility_tax_identifiers', 'TNEB, CMWSSB & Property Tax Door No', utilVal, 'Electricity, Water, Tax Assessment', 2)}
         </div>
     `;
 
@@ -3065,6 +2989,14 @@ if (typeof window !== 'undefined') {
 function renderStandardFieldsLayout(fields, container) {
     Object.entries(fields).forEach(([key, item]) => {
         if (key === "transactions_table" || key === "verification_flags" || key === "checklist" || key === "legal_caveat") {
+            return;
+        }
+        if ((state.selectedCategoryId === "sale_deed" || (state.currentResult && state.currentResult.extraction && state.currentResult.extraction.document_type_id === "sale_deed")) && (
+            key === "pan_number" || key === "masked_aadhaar" ||
+            key === "consideration_amount" || key === "market_value" ||
+            key === "payment_breakdown" || key === "witnesses" ||
+            key === "document_drafter"
+        )) {
             return;
         }
         const val = item.value;

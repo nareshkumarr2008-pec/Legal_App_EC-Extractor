@@ -60,16 +60,17 @@ DEFAULT_TARGET_FIELDS_BY_DOC_TYPE = {
         "nature_of_land": "Nature of Land (Wet/Dry) / நில வகைப்பாடு"
     },
     "sale_deed": {
-        "vendor_details": "Vendor / Seller name(s), PAN, masked Aadhaar",
-        "purchaser_details": "Purchaser / Buyer name(s), PAN, masked Aadhaar",
-        "history_previous_owner": "History / Previous Owner / Prior Deed details",
+        "vendor_details": "Vendor / Seller name(s) and any POA representation (No address, PAN, or Aadhaar)",
+        "purchaser_details": "Purchaser / Buyer name(s) and any POA representation (No address, PAN, or Aadhaar)",
+        "poa_agent_details": "Power of Attorney Agent Name & POA Document No (No personal address)",
+        "history_previous_owner": "Previous Owner(s) and their POA representation (prior deed history)",
+        "previous_doc_reference": "Prior title conveyance document reference (excluding POA doc)",
         "schedule_property_type": "Schedule of Property (Plot / House / Apartment with UDS)",
         "survey_number": "Survey Number & Sub-division (e.g., '142/2A')",
         "land_extent": "Total Land Extent transferred (verbatim Sq.Ft / Cents / Acres)",
         "apartment_uds_floor": "Flat No, Floor, Built-Up Area, and UDS (if apartment)",
         "boundary": "Four boundaries (North, South, East, West)",
-        "sro_details": "Sub-Registrar Office, Document Number, Year & Book",
-        "consideration_amount": "Total Sale Consideration Amount in Rs."
+        "sro_details": "Sub-Registrar Office, Document Number, Year & Book"
     },
     "parent_docs": {
         "previous_owner_vendor": "Prior Vendor / Previous Owner",
@@ -301,8 +302,7 @@ class QwenDocumentExtractor:
             "village": "Village",
             "taluk": "Taluk",
             "district": "District",
-            "sro_office": "SRO Office",
-            "consideration_amount": "Consideration Amount"
+            "sro_office": "SRO Office"
         }
 
         # 1. Try Gemini Flash if configured (ultra-fast 1.2s execution)
