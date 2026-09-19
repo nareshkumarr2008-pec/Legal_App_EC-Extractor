@@ -84,7 +84,7 @@
 
     </style>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="/static/style.css?v=25">
+    <link rel="stylesheet" href="/static/style.css?v=43">
     <script>
         function toggleTheme() {
             const html = document.documentElement;
@@ -94,13 +94,13 @@
             
             if (isDark) {
                 html.classList.remove('dark');
-                if (moonIcon) moonIcon.classList.remove('hidden');
-                if (sunIcon) sunIcon.classList.add('hidden');
+                if (moonIcon) moonIcon.classList.add('hidden');
+                if (sunIcon) sunIcon.classList.remove('hidden');
                 localStorage.theme = 'light';
             } else {
                 html.classList.add('dark');
-                if (moonIcon) moonIcon.classList.add('hidden');
-                if (sunIcon) sunIcon.classList.remove('hidden');
+                if (moonIcon) moonIcon.classList.remove('hidden');
+                if (sunIcon) sunIcon.classList.add('hidden');
                 localStorage.theme = 'dark';
             }
         }
@@ -111,8 +111,8 @@
             document.addEventListener('DOMContentLoaded', () => {
                 const moonIcon = document.getElementById('theme-icon-moon');
                 const sunIcon = document.getElementById('theme-icon-sun');
-                if (moonIcon) moonIcon.classList.add('hidden');
-                if (sunIcon) sunIcon.classList.remove('hidden');
+                if (moonIcon) moonIcon.classList.remove('hidden');
+                if (sunIcon) sunIcon.classList.add('hidden');
             });
         }
     </script>
@@ -124,22 +124,21 @@
         <div class="max-w-full mx-auto px-3 sm:px-5 lg:px-6 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
                 <div class="flex items-center justify-center shrink-0">
-                    <img src="/static/logo-colored.png" class="w-14 h-14 object-contain block dark:hidden" alt="PlotChoice Logo" />
-                    <div class="logo-mask w-14 h-14 bg-white hidden dark:block"></div>
+                    <img src="/static/logo-colored.png" class="w-14 h-14 object-contain" alt="PlotChoice Logo" />
                 </div>
                 <div>
                     <div class="flex items-baseline gap-1">
-                        <span class="text-[22px] font-extrabold text-[#182235] dark:text-[#F2EDE3] tracking-tight">PlotChoice</span>
-                        <span class="text-[22px] font-medium text-[#E2C054] tracking-tight">DocuScan</span>
+                        <span class="text-[22px] font-extrabold text-black dark:text-[#F2EDE3] tracking-tight">PlotChoice</span>
+                        <span class="text-[22px] font-medium text-black dark:text-[#E2C054] tracking-tight">DocuScan</span>
                     </div>
-                    <p class="text-sm text-tm-text-sec mt-1">Tamil Nadu Real Estate Document OCR & Multi-Doc Cross-Verification</p>
+                    <p class="text-base text-blue-900 dark:text-tm-text-sec mt-1 font-semibold tracking-wide">Tamil Nadu Real Estate Document OCR & Multi-Doc Cross-Verification</p>
                 </div>
             </div>
 
             <div class="flex items-center space-x-3">
                 <button id="theme-toggle" onclick="toggleTheme()" class="px-2 py-1.5 border border-tm-gold text-tm-gold bg-transparent hover:opacity-80 rounded-lg transition-colors flex items-center justify-center">
-                    <span id="theme-icon-moon"><i data-lucide="moon" class="w-4 h-4"></i></span>
-                    <span id="theme-icon-sun" class="hidden"><i data-lucide="sun" class="w-4 h-4"></i></span>
+                    <span id="theme-icon-moon" class="hidden"><i data-lucide="moon" class="w-4 h-4"></i></span>
+                    <span id="theme-icon-sun"><i data-lucide="sun" class="w-4 h-4"></i></span>
                 </button>
                 <button onclick="resetWorkspace()" class="px-3 py-1.5 text-xs font-medium border border-tm-gold text-tm-gold bg-transparent hover:opacity-80 rounded-lg transition-colors flex items-center space-x-1.5">
                     <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
@@ -161,7 +160,7 @@
                         <h2 class="text-base font-bold text-tm-text-pri flex items-center gap-2">
                             <i data-lucide="folder-search" class="w-5 h-5 text-tm-gold"></i>
                             <span>Select Document Category</span>
-                            <span class="text-xs font-normal text-tm-text-sec">(11 Document Types: Sale Deed, Patta, Parent Docs, EC, Building Plan, RERA, Tax/EB, Layout, Legal Heir, Loan Docs, TSLR)</span>
+                            <span class="text-xs font-normal text-tm-text-sec">(7 Document Types: Sale Deed, Patta, Parent Docs, EC, RERA, Loan Docs, TSLR)</span>
                         </h2>
                     </div>
                     <div class="flex items-center space-x-2">
@@ -229,13 +228,13 @@
                         </div>
                     </div>
 
-                    <!-- 6. Rera certificate approval certificate -->
+                    <!-- 5. Rera certificate approval certificate -->
                     <div id="cat-card-rera" onclick="selectCategory('rera', true)" class="border-tm-border bg-tm-card hover:border-tm-border hover:bg-transparent/20 p-3 rounded-xl border cursor-pointer transition-all duration-150 flex flex-col justify-between shadow-2xs">
                         <div class="flex items-start justify-between mb-1">
                             <div class="w-6 h-6 rounded-lg bg-transparent text-tm-gold flex items-center justify-center">
                                 <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
                             </div>
-                            <span class="text-[9px] font-bold text-tm-gold">#06</span>
+                            <span class="text-[9px] font-bold text-tm-gold">#05</span>
                         </div>
                         <div>
                             <h4 class="text-xs font-bold text-tm-text-pri leading-snug">Rera certificate approval</h4>
@@ -243,13 +242,13 @@
                         </div>
                     </div>
 
-                    <!-- 10. Loan documents (if applicable) -->
+                    <!-- 6. Loan documents (if applicable) -->
                     <div id="cat-card-loan_docs" onclick="selectCategory('loan_docs', true)" class="border-tm-border bg-tm-card hover:border-tm-border hover:bg-transparent/20 p-3 rounded-xl border cursor-pointer transition-all duration-150 flex flex-col justify-between shadow-2xs">
                         <div class="flex items-start justify-between mb-1">
                             <div class="w-6 h-6 rounded-lg bg-transparent text-tm-gold flex items-center justify-center">
                                 <i data-lucide="landmark" class="w-3.5 h-3.5"></i>
                             </div>
-                            <span class="text-[9px] font-bold text-tm-text-sec">#10</span>
+                            <span class="text-[9px] font-bold text-tm-text-sec">#06</span>
                         </div>
                         <div>
                             <h4 class="text-xs font-bold text-tm-text-pri leading-snug">Loan documents (MODT/NOC)</h4>
@@ -257,13 +256,13 @@
                         </div>
                     </div>
 
-                    <!-- 11. TSLR document (Town Survey Land Record) -->
+                    <!-- 7. TSLR document (Town Survey Land Record) -->
                     <div id="cat-card-tslr" onclick="selectCategory('tslr', true)" class="border-tm-border bg-tm-card hover:border-cyan-300 hover:bg-transparent/20 p-3 rounded-xl border cursor-pointer transition-all duration-150 flex flex-col justify-between shadow-2xs">
                         <div class="flex items-start justify-between mb-1">
                             <div class="w-6 h-6 rounded-lg bg-transparent text-tm-gold flex items-center justify-center">
                                 <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
                             </div>
-                            <span class="text-[9px] font-bold text-tm-text-sec">#11</span>
+                            <span class="text-[9px] font-bold text-tm-text-sec">#07</span>
                         </div>
                         <div>
                             <h4 class="text-xs font-bold text-tm-text-pri leading-snug">TSLR document</h4>
@@ -274,9 +273,9 @@
 
                 <div id="active-category-info" class="mt-6 py-3 px-4 rounded-xl border border-blue-100 dark:border-gray-700 flex flex-col md:flex-row md:items-center justify-between gap-2 text-xs bg-[#F5F3F0] dark:bg-[#1A1F1B]">
                     <div class="flex items-center space-x-2">
-                        <span class="text-base font-bold text-[#182235] dark:text-white" id="selected-cat-title">Selected: Sale Deed / Title Deed</span>
-                        <span class="text-[#182235] dark:text-gray-400">|</span>
-                        <span class="text-[#182235] dark:text-gray-300" id="selected-cat-tamil" class="truncate max-w-[150px] sm:max-w-[300px]">கிரையப் பத்திரம் / உரிமை ஆவணம்</span>
+                        <span class="text-base font-bold text-blue-900 dark:text-white" id="selected-cat-title">Selected: Sale Deed / Title Deed</span>
+                        <span class="text-blue-900 dark:text-gray-400">|</span>
+                        <span class="text-blue-900 dark:text-gray-300" id="selected-cat-tamil" class="truncate max-w-[150px] sm:max-w-[300px]">கிரையப் பத்திரம் / உரிமை ஆவணம்</span>
                     </div>
                     <div class="flex items-center gap-1.5 flex-wrap" id="selected-cat-tags"></div>
                 </div>
@@ -671,6 +670,6 @@
         </div>
     </footer>
 
-    <script src="/static/app.js?v=2.7.0"></script>
+    <script src="/static/app.js?v=43.7.0"></script>
 </body>
 </html>

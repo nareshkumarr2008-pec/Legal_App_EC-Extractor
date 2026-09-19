@@ -345,3 +345,7 @@ body {
 
 .cat-card-active i { color: var(--tm-gold, #B08D57) !important; }
 .cat-card-active .bg-transparent, .cat-card-active div[class*="bg-"] { color: var(--tm-gold, #B08D57) !important; }
+
+html.dark .theme-logo {
+    filter: brightness(0) invert(1) !important;
+}
