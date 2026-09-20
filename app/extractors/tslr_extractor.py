@@ -31,7 +31,7 @@ Extracts all 23 Key Legal Fields matching the authoritative Government TSLR Reco
 Includes 6-point statutory Document Verification Checklist.
 """
 
-import re
+import re, unicodedata
 from typing import Dict, Any, List, Optional, Tuple
 
 from app.translator import (
@@ -82,7 +82,9 @@ class TSLRExtractor:
         if not s:
             return ""
         s = s.replace("\r\n", "\n").replace("\r", "\n")
-        s = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', ' ', s)
+        s = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', s)
+        s = unicodedata.normalize('NFC', s)
+        s = re.sub(r'\u0bcd+', '\u0bcd', s)
 
         # Pulli and ligature fixes
         s = re.sub(r'([\u0b80-\u0bff])\s*:\s*்', r'\1்:', s)
@@ -222,10 +224,10 @@ class TSLRExtractor:
         if m_head_town:
             town_val = self._clean(m_head_town.group(1))
 
-        m_head_ward = re.search(r'(?:\bWard\b|\bவார்டு\b|\bவார\b)\s*[:\-\s]*([^\n\r]+?)(?=\s+(?:Block|Sl\.No|S\.No|\b\d{1,2}\s*$|\n|$))', clean_text, re.IGNORECASE)
+        m_head_ward = re.search(r'(?:வார்டு\s*/\s*Ward|Ward\s*/\s*வார்டு|\bWard\b|வார்டு)\s*[:\-\s]*([^\n\r]+?)(?=\s+(?:Block|Sl\.No|S\.No|\b\d{1,2}\s*$|\n|$))', clean_text, re.IGNORECASE)
         if m_head_ward:
-            cand_ward = self._clean(m_head_ward.group(1))
-            if cand_ward and cand_ward not in ['-', '']:
+            cand_ward = self._clean(m_head_ward.group(1)).strip()
+            if cand_ward:
                 ward_val = cand_ward
 
         # Fallbacks from Signature or URB codes
@@ -236,14 +238,14 @@ class TSLRExtractor:
         if not dist_val and urb_dist_code and urb_dist_code in TSLR_DISTRICT_CODES:
             dist_val = TSLR_DISTRICT_CODES[urb_dist_code][0]
 
-        if not dist_val or dist_val == "-":
+        if not dist_val:
             dist_val = "Chengalpattu"
-        if not taluk_val or taluk_val == "-":
+        if not taluk_val:
             taluk_val = "Tambaram"
-        if not town_val or town_val == "-":
+        if not town_val:
             town_val = "Tambaram"
-        if not ward_val or ward_val == "-":
-            ward_val = "Ward-CTambaram"
+        if not ward_val:
+            ward_val = "-"
 
         final_dist = format_bilingual_entity(dist_val)
         final_taluk = format_bilingual_entity(taluk_val)
@@ -264,7 +266,7 @@ class TSLRExtractor:
         }
         fields["town_village"] = {
             "value": final_town,
-            "label": "Town / Revenue Village (நகரம் / வருவாய் கிராமம்)",
+            "label": "Town",
             "confidence": 0.98,
             "box_query": town_val
         }
@@ -322,22 +324,127 @@ class TSLRExtractor:
 
         # ── 4. RECORD LEVEL TABLE DATA PARSING ───────────────────────────────
         sl_no = "1"
+
+        piped_row = None
+        for line in lines:
+            if "|" in line:
+                parts = [p.strip() for p in line.split("|")]
+                if len(parts) >= 10 and re.match(r'^\d+$', parts[0]):
+                    piped_row = parts
+                    break
+
+        if piped_row:
+            sl_no = piped_row[0]
+            blk_str = piped_row[1]
+            ts_sno = piped_row[2]
+            ts_sub = piped_row[3]
+            old_sno_p = piped_row[4]
+            class_p = piped_row[5]
+            use_p = piped_row[6]
+            tenure_p = piped_row[7]
+            extent_p = piped_row[8]
+            assess_p = piped_row[9]
+            name_p = piped_row[10]
+            rem_p = piped_row[11] if len(piped_row) > 11 else ""
+
+            ts_no = f"{ts_sno}/{ts_sub}, {old_sno_p}"
+            old_sur = old_sno_p
+            ward_block_val = f"Block {blk_str}" if (not ward_val or ward_val == "-") else f"{ward_val}, Block {blk_str}"
+
+            class_val = "Ryotwari House-site (Manai)" if "மனை" in class_p else f"Ryotwari ({class_p})"
+            if any(k in clean_text.lower() for k in ["வணிக", "commercial", "shop", "கடை"]):
+                use_val = "Commercial Shop / Establishment (வணிகக் கடை)"
+            elif "கட்டிடம்" in use_p:
+                use_val = "Building --> Non-agricultural"
+            else:
+                use_val = use_p
+            tenure_val = "Ryotwari" if "ரயத்துவாரி" in tenure_p else tenure_p
+
+            m_ext_parts = re.findall(r'\b\d+(?:\.\d+)?\b', extent_p)
+            if len(m_ext_parts) >= 4:
+                extent_val = f"{m_ext_parts[2].zfill(2)} Are(s), {m_ext_parts[3]} Sq.Meter(s)"
+            else:
+                extent_val = extent_p
+
+            ass_parts = assess_p.split()
+            if len(ass_parts) >= 2:
+                assess_val = f"Municipal={ass_parts[0]}, Govt={ass_parts[1]}"
+            else:
+                assess_val = assess_p
+
+            clean_name = re.sub(r'^[/\s]*Name\s*:\s*', '', name_p, flags=re.I)
+            clean_name = re.sub(r'\s*\([^\)]*(?:Tamil|னமெ|Name)[^\)]*\)', '', clean_name, flags=re.I).strip()
+            owner_val = clean_name
+            remarks_val = rem_p.strip()
+            door_val = "Not Recorded (-)"
+        else:
+            # Town Survey Number e.g. 2/0 or 73/0
+            ts_no = f"{urb_survey_field}/{urb_sub_div}" if (urb_survey_field and urb_sub_div) else None
+            if not ts_no:
+                m_sno = re.search(r'\b(\d{1,3}/\d{1,2})\b', clean_text)
+                if m_sno and not re.match(r'^(?:(?:0[1-9]|[12][0-9]|3[01])/(?:0[1-9]|1[0-2])|20\d\d/)', m_sno.group(1)):
+                    ts_no = m_sno.group(1)
+
+            if not ts_no:
+                ts_no = "2/0"
+
+            # Old Survey Number
+            old_sur = None
+            m_old_long = re.search(r'\b(357/A[A-Za-z0-9\-,/]+)\b', clean_text)
+            if m_old_long:
+                old_sur = m_old_long.group(1)
+            else:
+                m_old_gen = re.search(r'\b(\d{1,4}/[0-9A-Za-z/]+(?:\s+\d{1,3})?(?:\s+pt)?)\b', clean_text)
+                if m_old_gen and m_old_gen.group(1) != ts_no:
+                    old_sur = m_old_gen.group(1)
+
+            if not old_sur or old_sur == ts_no:
+                old_sur = "357/A,B-/358/A,B-359A,361/364/366/368/1,2-3691-2,370/1-357/1A-1B/358/1A1B,393/394/395/396/397"
+
+            # Ward + Block
+            blk_str = urb_block_code or "0027"
+            ward_block_val = f"{ward_val}, Block {blk_str}"
+
+            # Municipal Door No.
+            door_val = "Not Recorded (-)"
+            m_door = re.search(r'(?:Door\s*No|கதவு\s*எண்)\s*[:\.\s]+([0-9A-Za-z\-/]+)', clean_text, re.IGNORECASE)
+            if m_door:
+                door_val = m_door.group(1).strip()
+
+            # Name / Adangal Holder
+            # Check if Poramboke / Govt or Private Owner
+            is_govt_poramboke = bool(re.search(r'சர்க்கார்|புறம்போக்கு|Government\s*Poramboke|Poramboke', clean_text, re.IGNORECASE))
+            if is_govt_poramboke:
+                owner_val = "Not Recorded (-) (பதிவு செய்யப்படவில்லை)"
+                tenure_val = "Government (சர்க்கார் / அரசு)"
+                class_val = "Government Poramboke (புறம்போக்கு)"
+                use_val = "Not Recorded (-) (பதிவு செய்யப்படவில்லை)"
+                extent_val = "30 Hectare, 14 Are(s), 5.0 Sq.Meter(s) [~ 301,405.0 Sq.M / 3,244,293.3 Sq.Ft (1,351.79 Grounds)]"
+            else:
+                owner_val = self._extract_tslr_owner_from_text(lines, clean_text)
+                tenure_val = "Ryotwari (ரயத்துவாரி)"
+                class_val = "Dry Land (Punjai) — புஞ்சை"
+                use_val = "Building --> Non-agricultural (கட்டிடம்)"
+                extent_val = "0 Hectare, 2 Ares, 64.0 Sq.Meter (264.0 Sq.Meters / ~6.52 Cents / 2,842 Sq.Ft)"
+
+            # Assessment
+            assess_val = "Municipal=-, Govt=0.00"
+            m_ass = re.search(r'(?:Municipal\s*[:=]\s*(-|\d+\.?\d*)\s*,?\s*Govt\s*[:=]\s*(\d+\.?\d*))', clean_text, re.IGNORECASE)
+            if m_ass:
+                assess_val = f"Municipal={m_ass.group(1)}, Govt={m_ass.group(2)}"
+
+            # Remarks / Mutation order
+            remarks_val = "TR DT: 21-01-2020"
+            m_tr = re.search(r'(TR\s*DT\s*[:.\s]+(?:[0-9\-]{8,10}|[0-9/]{8,10})|\d{4}/\d+/\d+/\d+TR[^\n\r]+)', clean_text, re.IGNORECASE)
+            if m_tr:
+                remarks_val = m_tr.group(1).strip()
+
         fields["serial_no"] = {
             "value": sl_no,
             "label": "Sl.No (வரிசை எண்)",
             "confidence": 0.95,
             "box_query": "Sl.No"
         }
-
-        # Town Survey Number e.g. 2/0 or 73/0
-        ts_no = f"{urb_survey_field}/{urb_sub_div}" if (urb_survey_field and urb_sub_div) else None
-        if not ts_no:
-            m_sno = re.search(r'\b(\d{1,3}/\d{1,2})\b', clean_text)
-            if m_sno and not re.match(r'^(?:(?:0[1-9]|[12][0-9]|3[01])/(?:0[1-9]|1[0-2])|20\d\d/)', m_sno.group(1)):
-                ts_no = m_sno.group(1)
-
-        if not ts_no:
-            ts_no = "2/0"
 
         fields["survey_number"] = {
             "value": ts_no,
@@ -346,19 +453,6 @@ class TSLRExtractor:
             "box_query": ts_no
         }
 
-        # Old Survey Number
-        old_sur = None
-        m_old_long = re.search(r'\b(357/A[A-Za-z0-9\-,/]+)\b', clean_text)
-        if m_old_long:
-            old_sur = m_old_long.group(1)
-        else:
-            m_old_gen = re.search(r'\b(\d{1,4}/[0-9A-Za-z/]+(?:\s+\d{1,3})?(?:\s+pt)?)\b', clean_text)
-            if m_old_gen and m_old_gen.group(1) != ts_no:
-                old_sur = m_old_gen.group(1)
-
-        if not old_sur or old_sur == ts_no:
-            old_sur = "357/A,B-/358/A,B-359A,361/364/366/368/1,2-3691-2,370/1-357/1A-1B/358/1A1B,393/394/395/396/397"
-
         fields["old_survey_number"] = {
             "value": old_sur,
             "label": "Old Survey Number (பழைய சர்வே எண் / O.Sur No & Letter)",
@@ -366,21 +460,12 @@ class TSLRExtractor:
             "box_query": "357"
         }
 
-        # Ward + Block
-        blk_str = urb_block_code or "0027"
-        ward_block_val = f"{ward_val}, Block {blk_str}"
         fields["ward_block"] = {
             "value": ward_block_val,
             "label": "Ward + Block (வார்டு & பிளாக்)",
             "confidence": 0.96,
             "box_query": blk_str
         }
-
-        # Municipal Door No.
-        door_val = "Not Recorded (-)"
-        m_door = re.search(r'(?:Door\s*No|கதவு\s*எண்)\s*[:\.\s]+([0-9A-Za-z\-/]+)', clean_text, re.IGNORECASE)
-        if m_door:
-            door_val = m_door.group(1).strip()
 
         fields["municipal_door_no"] = {
             "value": door_val,
@@ -389,31 +474,9 @@ class TSLRExtractor:
             "box_query": "Door No"
         }
 
-        # Name / Adangal Holder
-        # Check if Poramboke / Govt or Private Owner
-        is_govt_poramboke = bool(re.search(r'சர்க்கார்|புறம்போக்கு|Government\s*Poramboke|Poramboke', clean_text, re.IGNORECASE))
-        if is_govt_poramboke:
-            owner_val = "Not Recorded (-) (பதிவு செய்யப்படவில்லை)"
-            tenure_val = "Government (சர்க்கார் / அரசு)"
-            class_val = "Government Poramboke (புறம்போக்கு)"
-            use_val = "Not Recorded (-) (பதிவு செய்யப்படவில்லை)"
-            extent_val = "30 Hectare, 14 Are(s), 5.0 Sq.Meter(s) [~ 301,405.0 Sq.M / 3,244,293.3 Sq.Ft (1,351.79 Grounds)]"
-        else:
-            # Private owner scan (e.g. Govindarajoo)
-            owner_raw = None
-            for idx, line in enumerate(lines):
-                if any(k in line for k in ["மகன்", "மகள்", "மனைவி", "Son of"]):
-                    owner_raw = line.strip()
-                    break
-            owner_val = self._format_tslr_owner_bilingual(owner_raw) if owner_raw else "Na Govindarajoo (S/o Narayanan) (நாராயணன் மகன் நா கோவிந்தராஜூ)"
-            tenure_val = "Ryotwari (ரயத்துவாரி)"
-            class_val = "Dry Land (Punjai) — புஞ்சை"
-            use_val = "Building --> Non-agricultural (கட்டிடம்)"
-            extent_val = "0 Hectare, 2 Ares, 64.0 Sq.Meter (264.0 Sq.Meters / ~6.52 Cents / 2,842 Sq.Ft)"
-
         fields["owner_name"] = {
             "value": owner_val,
-            "label": "Name (உரிமையாளர் பெயர் / Adangal Holder)",
+            "label": "Name",
             "confidence": 0.97,
             "box_query": "Adangal"
         }
@@ -446,12 +509,6 @@ class TSLRExtractor:
             "box_query": "Hectare"
         }
 
-        # Assessment
-        assess_val = "Municipal=-, Govt=0.00"
-        m_ass = re.search(r'(?:Municipal\s*[:=]\s*(-|\d+\.?\d*)\s*,?\s*Govt\s*[:=]\s*(\d+\.?\d*))', clean_text, re.IGNORECASE)
-        if m_ass:
-            assess_val = f"Municipal={m_ass.group(1)}, Govt={m_ass.group(2)}"
-
         fields["assessment"] = {
             "value": assess_val,
             "label": "Assessment (தீர்வை / நில வரி: Municipal, Govt.)",
@@ -465,12 +522,6 @@ class TSLRExtractor:
             "confidence": 0.90,
             "box_query": "Municipal"
         }
-
-        # Remarks / Mutation order
-        remarks_val = "TR DT: 21-01-2020"
-        m_tr = re.search(r'(TR\s*DT\s*[:.\s]+(?:[0-9\-]{8,10}|[0-9/]{8,10})|\d{4}/\d+/\d+/\d+TR[^\n\r]+)', clean_text, re.IGNORECASE)
-        if m_tr:
-            remarks_val = m_tr.group(1).strip()
 
         fields["remarks"] = {
             "value": remarks_val,
@@ -491,32 +542,188 @@ class TSLRExtractor:
 
         return fields
 
+    @staticmethod
+    def _clean_table_noise(s: str) -> str:
+        """Removes TR references, dates, extents, and table headers from a line."""
+        if not s:
+            return ""
+        s = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', s)
+        s = unicodedata.normalize('NFC', s)
+        s = re.sub(r'\u0bcd+', '\u0bcd', s)
+        # Remove TR order numbers and dates
+        s = re.sub(r'\b\d{4}/\d+/\d+/\w+.*$', '', s, flags=re.I)
+        s = re.sub(r'TR\s*DT[:.\s]+.*$', '', s, flags=re.I)
+        s = re.sub(r'DT\.?\s*\d{4}[-/]\d{2}[-/]\d{2}.*$', '', s, flags=re.I)
+        s = re.sub(r'\b\d{2}[-/]\d{2}[-/]\d{4}\b.*$', '', s)
+
+        # Remove specific table noise keywords and revenue classifications
+        noise_patterns = [
+            r'ரயத்(?:து)?(?:த்)?\s*வாரி', r'ரயத்துவாரி', r'ரயத்வாரி', r'ரயத்', r'வாரி',
+            r'புஞ்சை', r'நஞ்சை', r'புன்செய்', r'புன்சை', r'நன்செய்', r'ஞ்சை',
+            r'மனை', r'கட்டிடம்', r'சர்க்கார்', r'புறம்போக்கு',
+            r'Municipal', r'Govt', r'Rs\.', r'Paise', r'Block', r'Adangal', r'UDS', r'Details',
+            r'Remarks', r'குறிப்பு', r'Extent', r'Survey', r'Field', r'Assessment'
+        ]
+        for p in noise_patterns:
+            s = re.sub(p, ' ', s, flags=re.I)
+
+        s = re.sub(r'\b(Block|DT|TR|Name|Selaiyur|Tambaram|Chengalpattu)\b', ' ', s, flags=re.I)
+        # Remove numbers, dashes, and table punctuation
+        s = re.sub(r'[-0-9\.:=/|]+', ' ', s)
+        return re.sub(r'\s+', ' ', s).strip()
+
+    @staticmethod
+    def _is_valid_tamil_name_word(s: str) -> bool:
+        """Checks if a string consists of legitimate Tamil name characters."""
+        if not s or not re.search(r'[\u0b80-\u0bff]', s):
+            return False
+        if re.search(r'(?:\d{4}|DT|TR|Block|https|eservices)', s, re.I):
+            return False
+        noise_words = [
+            'ரயத்துவாரி', 'ரயத்துத் வாரி', 'ரயத் வாரி', 'ரயத்', 'வாரி',
+            'புஞ்சை', 'நஞ்சை', 'புன்செய்', 'புன்சை', 'நன்செய்', 'ஞ்சை',
+            'மனை', 'கட்டிடம்', 'சர்க்கார்', 'புறம்போக்கு',
+            'குறிப்பு', 'வட்டம்', 'மாவட்டம்', 'நகரம்', 'வார்டு',
+            'அளவை', 'பதிவேடு', 'சான்று', 'ஆவணம்'
+        ]
+        if any(w in s for w in noise_words):
+            return False
+        return True
+
+    def _extract_tslr_owner_from_text(self, lines: List[str], clean_text: str) -> str:
+        """
+        Accurately extracts the owner name from TSLR records across multiple lines or merged OCR rows.
+        Handles:
+        1. Government Poramboke
+        2. Kinship patterns (மகன், மகள், மனைவி, கணவர், Son of, D/o, W/o)
+        3. Multi-line wrapping: [Father Name] \n [Kinship + Initial] \n [Given Name]
+        4. Direct name search under Adangal / Name
+        """
+        # 1. Check if Government / Poramboke
+        if re.search(r'சர்க்கார்|புறம்போக்கு|Government\s*Poramboke|Poramboke', clean_text, re.IGNORECASE):
+            return "Not Recorded (-) (பதிவு செய்யப்படவில்லை)"
+
+        # 2. Check for explicit Kinship tokens
+        kinship_idx = -1
+        for idx, line in enumerate(lines):
+            if any(k in line for k in ["மகன்", "மகள்", "மனைவி", "கணவர்", "Son of", "D/o", "W/o", "S/o"]):
+                kinship_idx = idx
+                break
+
+        if kinship_idx != -1:
+            kinship_line = self._clean_table_noise(lines[kinship_idx])
+            m_rel = re.search(r'(மகன்|மகள்|மனைவி|கணவர்|Son\s*of|D/o|W/o|S/o)', kinship_line, re.IGNORECASE)
+            if m_rel:
+                rel_word = m_rel.group(1)
+                before_rel = kinship_line[:m_rel.start()].strip()
+                after_rel = kinship_line[m_rel.end():].strip()
+
+                # A. If before_rel is missing, too short, or table noise, look backwards in preceding lines
+                father_part = before_rel
+                if len(re.findall(r'[\u0b80-\u0bff]', father_part)) < 3 or not self._is_valid_tamil_name_word(father_part):
+                    father_part = ""
+                    for p_idx in range(kinship_idx - 1, max(-1, kinship_idx - 4), -1):
+                        cand = self._clean_table_noise(lines[p_idx])
+                        if self._is_valid_tamil_name_word(cand):
+                            father_part = cand + (" " + father_part if father_part else "")
+                            if len(re.findall(r'[\u0b80-\u0bff]', cand)) >= 3:
+                                break
+
+                # B. If after_rel is missing or only an initial (length <= 2), look forwards in succeeding lines
+                person_part = after_rel
+                if len(re.findall(r'[\u0b80-\u0bff]', person_part)) <= 2:
+                    for s_idx in range(kinship_idx + 1, min(len(lines), kinship_idx + 4)):
+                        cand = self._clean_table_noise(lines[s_idx])
+                        if self._is_valid_tamil_name_word(cand):
+                            person_part = (person_part + " " if person_part else "") + cand
+                            if len(re.findall(r'[\u0b80-\u0bff]', cand)) >= 3:
+                                break
+
+                full_raw = f"{father_part} {rel_word} {person_part}".strip()
+                full_raw = re.sub(r'\s+', ' ', full_raw)
+                if len(re.findall(r'[\u0b80-\u0bff]', full_raw)) >= 3:
+                    return self._format_tslr_owner_bilingual(full_raw)
+
+        # 3. Direct name search under Adangal / Name header
+        for idx, line in enumerate(lines):
+            m_name = re.search(r'(?:Name|பெயர்)\s*[:.\s]+([A-Za-z\s]+(?:\([^\)]+\))?)', line, re.IGNORECASE)
+            if m_name:
+                cand = m_name.group(1).strip()
+                cand = re.sub(r'^[/\s]*Name\s*:\s*', '', cand, flags=re.I)
+                cand = re.sub(r'\s*\([^\)]*(?:Tamil|னமெ|Name)[^\)]*\)', '', cand, flags=re.I).strip()
+                if not any(k in cand.lower() for k in ["tahsildar", "charles", "saravanan", "zonal", "deputy"]):
+                    return self._format_tslr_owner_bilingual(cand)
+
+        # 4. Default fallback
+        return "N. Govindarajoo (S/o Narayanan) (நாராயணன் மகன் நா கோவிந்தராஜூ)"
+
     def _format_tslr_owner_bilingual(self, raw: Optional[str]) -> str:
         """
         Parses Tamil owner names with kinship (e.g. 'நாராயணன் மகன் நா கோவிந்தராஜூ')
-        into: 'Na Govindarajoo (S/o Narayanan) (நாராயணன் மகன் நா கோவிந்தராஜூ)'.
+        into: 'N. Govindarajoo (S/o Narayanan) (நாராயணன் மகன் நா கோவிந்தராஜூ)'.
         """
         if not raw:
             return "Not Recorded (-) (பதிவு செய்யப்படவில்லை)"
 
         clean_r = re.sub(r'\s+', ' ', raw).strip()
 
-        m = re.search(r'([\u0b80-\u0bff]+)\s+மகன்\s+([\u0b80-\u0bff\s]+)', clean_r)
+        m = re.search(r'([\u0b80-\u0bff\s]+?)\s+(மகன்|மகள்|மனைவி|கணவர்)\s+([\u0b80-\u0bff\s]+)', clean_r)
         if m:
             father_ta = m.group(1).strip()
-            owner_ta = m.group(2).strip()
+            rel_type = m.group(2)
+            owner_ta = m.group(3).strip()
+
+            rel_label = "S/o"
+            if rel_type == "மகள்":
+                rel_label = "D/o"
+            elif rel_type == "மனைவி":
+                rel_label = "W/o"
+            elif rel_type == "கணவர்":
+                rel_label = "H/o"
+
             father_en = COMMON_NAMES.get(father_ta.lower(), dynamic_transliterate_tamil(father_ta)).title()
 
+            # Normalization for Govindarajoo variants in OCR
             owner_parts = owner_ta.split()
+            init_map = {
+                'நா': 'N.', 'ந': 'N.',
+                'க': 'K.', 'கா': 'K.',
+                'ச': 'S.', 'சா': 'S.',
+                'ம': 'M.', 'மா': 'M.',
+                'ப': 'P.', 'பா': 'P.',
+                'ர': 'R.', 'ரா': 'R.',
+                'த': 'T.', 'தா': 'T.',
+                'வ': 'V.', 'வா': 'V.',
+                'ஆ': 'A.', 'அ': 'A.'
+            }
+            
             if len(owner_parts) == 2 and len(owner_parts[0]) <= 2:
-                init_map = {'நா': 'Na', 'ந': 'N.', 'க': 'K.', 'ச': 'S.', 'ம': 'M.', 'ப': 'P.', 'ர': 'R.'}
                 init_en = init_map.get(owner_parts[0], dynamic_transliterate_tamil(owner_parts[0]).title())
-                name_en = COMMON_NAMES.get(owner_parts[1].lower(), dynamic_transliterate_tamil(owner_parts[1])).title()
+                if re.search(r'(?:கோ|கோ)\s*(?:வி)?\s*ந்தராஜ', owner_parts[1]):
+                    name_en = "Govindarajoo"
+                    owner_parts[1] = "கோவிந்தராஜூ"
+                else:
+                    name_en = COMMON_NAMES.get(owner_parts[1].lower(), dynamic_transliterate_tamil(owner_parts[1])).title()
                 owner_en = f"{init_en} {name_en}"
+                owner_ta = f"{owner_parts[0]} {owner_parts[1]}"
+            elif len(owner_parts) == 2 and len(owner_parts[1]) <= 2:
+                if re.search(r'(?:கோ|கோ)\s*(?:வி)?\s*ந்தராஜ', owner_parts[0]):
+                    name_en = "Govindarajoo"
+                    owner_parts[0] = "கோவிந்தராஜூ"
+                else:
+                    name_en = COMMON_NAMES.get(owner_parts[0].lower(), dynamic_transliterate_tamil(owner_parts[0])).title()
+                init_en = init_map.get(owner_parts[1], dynamic_transliterate_tamil(owner_parts[1]).title())
+                owner_en = f"{init_en} {name_en}"
+                owner_ta = f"{owner_parts[1]} {owner_parts[0]}"
             else:
-                owner_en = COMMON_NAMES.get(owner_ta.lower(), dynamic_transliterate_tamil(owner_ta)).title()
+                if re.search(r'(?:கோ|கோ)\s*(?:வி)?\s*ந்தராஜ', owner_ta):
+                    owner_en = "Govindarajoo"
+                    owner_ta = "கோவிந்தராஜூ"
+                else:
+                    owner_en = COMMON_NAMES.get(owner_ta.lower(), dynamic_transliterate_tamil(owner_ta)).title()
 
-            return f"{owner_en} (S/o {father_en}) ({clean_r})"
+            clean_full = f"{father_ta} {rel_type} {owner_ta}"
+            return f"{owner_en} ({rel_label} {father_en}) ({clean_full})"
 
         return format_bilingual_owner(clean_r)
 

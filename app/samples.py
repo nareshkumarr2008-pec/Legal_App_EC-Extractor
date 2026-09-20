@@ -8,7 +8,13 @@ DOCUMENT_CATEGORIES = [
         "color": "emerald",
         "description": "Vendor & Purchaser details, History/Previous owner, Schedule of property (Land, Land+Building, Apartment UDS), Boundary, and SRO details.",
         "key_fields": [
-            "Vendor Details", "Purchaser Details", "History / Previous Owner Details", "Schedule of Property", "Survey Number / S No", "Land Extent", "Building Built-Up Area", "Apartment UDS & Floor", "Boundary", "SRO Details"
+            "Present Owner (Document number, POA, Agent)",
+            "Previous Owner (Document number, POA, Agent)",
+            "Survey Number / Village / Taluk / District",
+            "Extent (Land) / Total Parent Site Area / Building (UDS & Built-up area)",
+            "Flat Number and Floor / Type of land",
+            "Boundaries",
+            "SRO Details"
         ]
     },
     {
@@ -17,9 +23,9 @@ DOCUMENT_CATEGORIES = [
         "tamil_name": "பட்டா ஆவணம் (Patta Document)",
         "icon": "award",
         "color": "blue",
-        "description": "Tamil Nadu Revenue Record: Patta Number, Owner Name(s), Survey Number & Sub-division, Village, Taluk, District, Extent of Land, Nature of Land.",
+        "description": "Tamil Nadu Revenue Record: Patta Number, Owner Name, Survey Number, and Extent in Ares with automated Sq.Ft conversion.",
         "key_fields": [
-            "Patta Number", "Owner Name(s)", "Survey Number(s) and Sub-division", "Village", "Taluk", "District", "Extent of Land under each Survey Number", "Nature of Land"
+            "Patta No", "Owner Name", "Survey No", "Extent (ares --> sq feet)"
         ]
     },
     {
@@ -118,7 +124,7 @@ DOCUMENT_CATEGORIES = [
         "color": "cyan",
         "description": "Tamil Nadu Urban Land Records: Town Survey Land Register extract with Town Survey No, Old Survey No, Ward & Block, Extent, Land classification, Current land use, Tenure type, Assessment, and Mutation remarks.",
         "key_fields": [
-            "District", "Taluk", "Town", "Ward", "Name", "Survey Number / S.No", "Extent", "Ward + Block", "Land classification", "Current land use", "Tenure type", "Assessment (Rs.)", "Remarks"
+            "Name of the owner", "Survey no(Town Survey No)", "Old Survey No", "Taluk", "Town", "Extend", "Block", "Ward"
         ]
     }
 ]
@@ -256,11 +262,18 @@ Stamp Duty Paid: Rs. 5,25,000/- | Registration Fee: Rs. 1,50,000/-""",
                 "label": "SRO Details",
                 "box": {"x_pct": 5.0, "y_pct": 67.0, "w_pct": 88.0, "h_pct": 3.8}
             },
-            "stamp_duty_fee": {
-                "value": "Stamp Duty: Rs. 5,25,000/- | Registration Fee: Rs. 1,50,000/-",
-                "confidence": 0.95,
-                "label": "Stamp Duty & Fees",
-                "box": {"x_pct": 5.0, "y_pct": 71.0, "w_pct": 88.0, "h_pct": 3.5}
+            "title_chain": {
+                "present_owner": {
+                    "name": "Mrs. S. LAKSHMI PRIYA",
+                    "doc_no": "Doc No. 4521 of 2023 (Book 1)",
+                    "poa": "Direct Execution / Self"
+                },
+                "previous_owner": {
+                    "name": "Classic Foundations Pvt Ltd",
+                    "doc_no": "Doc No. 1820 / 2008 registered at SRO Velachery",
+                    "poa": "Mr. V. Ramanathan"
+                },
+                "flow_summary": "Classic Foundations Pvt Ltd (POA: Mr. V. Ramanathan) ➔ Mrs. S. LAKSHMI PRIYA"
             }
         }
     },
@@ -315,9 +328,10 @@ https://eservices.tn.gov.in""",
                 "label": "Survey Number(s)"
             },
             "extent_details": {
-                "value": "128/7: 0.00.06 Hectares (நன்செய் / Wet) — Tax: Rs. 2.00\nTotal: 0.00.06 Hectares (0 Sq.M / 0 Sq.Ft / 0.00 Grounds / 0.000 Acres) — Total Tax: Rs. 2.00",
+                "value": "128/7: 0.06 Ares (65 Sq.Ft)\nTotal: 0.06 Ares (65 Sq.Ft)",
+                "summary_ares_sqft": "0.06 Ares (65 Sq.Ft)",
                 "confidence": 0.98,
-                "label": "Extent of Land under each Survey Number"
+                "label": "Extent (Ares ➔ Sq.Ft)"
             },
             "nature_of_land": {
                 "value": "Rayathuvari Manai (Residential Plot) — ரயத்துவாரி மனை",
@@ -594,47 +608,53 @@ GREATER CHENNAI CORPORATION / CMDA
 Permit No: PP/WD14/0481/2021 | Date: 18-08-2021
 Sanctioning Authority: Greater Chennai Corporation (GCC) & CMDA
 Property Location: Plot No. 28, T.S. No. 142/2A, Velachery, Chennai
-Building Type: Stilt + 3 Floors Residential Apartment Building
+Building Type & Use: Commercial & Office Building (வணிகம் மற்றும் அலுவலக பயன்பாடு)
 Approved Built-Up Area: 4,850 Sq.Ft | Plinth Area: 1,600 Sq.Ft
 Floor Space Index (FSI): 1.50 (Permissible: 1.75 - Compliant)
 Setbacks: Front: 3.5m, Rear: 3.0m, Side 1: 2.0m, Side 2: 2.0m (Compliant).""",
         "structured": {
             "document_type": "Approved building plan",
+            "building_use": {
+                "value": "Commercial & Office Building (வணிகம் மற்றும் அலுவலக பயன்பாடு)",
+                "confidence": 0.96,
+                "label": "கட்டிட பயன்பாடு (Building Use / Occupancy)",
+                "box": {"x_pct": 5.0, "y_pct": 10.0, "w_pct": 80.0, "h_pct": 3.8}
+            },
             "permit_number_date": {
                 "value": "PP/WD14/0481/2021 dated 18-08-2021",
                 "confidence": 0.94,
                 "label": "Permit Number & Date",
-                "box": {"x_pct": 5.0, "y_pct": 14.0, "w_pct": 75.0, "h_pct": 3.8}
+                "box": {"x_pct": 5.0, "y_pct": 18.0, "w_pct": 75.0, "h_pct": 3.8}
             },
             "sanctioning_authority": {
                 "value": "Greater Chennai Corporation (GCC) & CMDA",
                 "confidence": 0.92,
                 "label": "Sanctioning Authority",
-                "box": {"x_pct": 5.0, "y_pct": 20.0, "w_pct": 75.0, "h_pct": 3.8}
+                "box": {"x_pct": 5.0, "y_pct": 24.0, "w_pct": 75.0, "h_pct": 3.8}
             },
             "survey_plot_village": {
                 "value": "Plot No. 28, T.S. No. 142/2A, Velachery, Chennai",
                 "confidence": 0.91,
                 "label": "Survey No / Plot No & Village",
-                "box": {"x_pct": 5.0, "y_pct": 26.0, "w_pct": 80.0, "h_pct": 3.8}
+                "box": {"x_pct": 5.0, "y_pct": 30.0, "w_pct": 80.0, "h_pct": 3.8}
             },
             "approved_builtup_area": {
                 "value": "4,850 Sq.Ft (Stilt + 3 Floors)",
                 "confidence": 0.90,
                 "label": "Approved Built-Up Area",
-                "box": {"x_pct": 5.0, "y_pct": 32.0, "w_pct": 65.0, "h_pct": 3.8}
+                "box": {"x_pct": 5.0, "y_pct": 36.0, "w_pct": 65.0, "h_pct": 3.8}
             },
             "height_floors": {
                 "value": "Stilt + 3 Floors (Height: 12.0 Meters)",
                 "confidence": 0.90,
                 "label": "Height & Number of Floors",
-                "box": {"x_pct": 5.0, "y_pct": 38.0, "w_pct": 65.0, "h_pct": 3.8}
+                "box": {"x_pct": 5.0, "y_pct": 42.0, "w_pct": 65.0, "h_pct": 3.8}
             },
             "fsi_setbacks_compliance": {
                 "value": "PASS: FSI 1.50 (Limit 1.75) | Setbacks: Front 3.5m, Rear 3.0m, Sides 2.0m",
                 "confidence": 0.93,
                 "label": "FSI & Setbacks Compliance",
-                "box": {"x_pct": 5.0, "y_pct": 44.0, "w_pct": 90.0, "h_pct": 4.0}
+                "box": {"x_pct": 5.0, "y_pct": 48.0, "w_pct": 90.0, "h_pct": 4.0}
             }
         }
     },
@@ -973,6 +993,16 @@ https://eservices.tn.gov.in""",
                 "confidence": 0.96,
                 "label": "Ward + Block (வார்டு & பிளாக்)"
             },
+            "block": {
+                "value": "Block 0027",
+                "confidence": 0.96,
+                "label": "Block (பிளாக்)"
+            },
+            "town": {
+                "value": "Tambaram (தாம்பரம்)",
+                "confidence": 0.98,
+                "label": "Town (நகரம்)"
+            },
             "municipal_door_no": {
                 "value": "Not Recorded (-)",
                 "confidence": 0.90,
@@ -1120,7 +1150,29 @@ MULTI_DOC_BUNDLES = {
             "partition_deed": {"allotted_share_extent": "1200 Sq.Ft (50% share)", "doc_no": "890/2023"},
             "selling_extent": "1200 Sq.Ft",
             "patta_mutation": {"mutation_status": "MUTATED TO HEIRS (Order No. MUT/MYL/2023/4812)", "hard_gate_passed": True},
-            "sale_deed_signatories": ["Smt. R. Saradha", "Thiru. R. Vijayakumar"]
+            "sale_deed_signatories": ["Smt. R. Saradha", "Thiru. R. Vijayakumar"],
+            "property_inheritance": {
+                "survey_number": "New Survey No. 78 of Block No. 1 (Old S.No. 128/7)",
+                "extent": "Two Grounds and 2130 Sq.Ft (6,930 Sq.Ft Total Parent Site Area)",
+                "boundaries": {
+                    "north": "24 Feet Wide Common Access Road",
+                    "south": "Plot No. 14 Owned by Krishnamurthy",
+                    "east": "Survey No. 79/2 Property",
+                    "west": "30 Feet Municipal Main Road"
+                },
+                "title_chain": {
+                    "past_owner_c": {
+                        "name": "Late Mr. V. Ramamoorthy",
+                        "document_number": "Mother Deed Doc No. 1120 of 1998",
+                        "poa_agent": "Smt. V. Meenakshi (POA Doc No. 891/2023)"
+                    },
+                    "present_owner_d": {
+                        "name": "Thiru. R. Vijayakumar & Smt. R. Saradha",
+                        "document_number": "Sale Deed Doc No. 3978 of 2010",
+                        "poa_agent": "Direct Execution / Self"
+                    }
+                }
+            }
         }
     },
     "fraud_alert_bundle": {

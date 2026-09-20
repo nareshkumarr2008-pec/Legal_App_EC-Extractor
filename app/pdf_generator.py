@@ -1366,7 +1366,7 @@ def generate_ocr_pdf_report(data: Dict[str, Any], lang: str = "en") -> bytes:
 
     _SALE_DEED_EXCLUDED_KEYS = {
         "pan_number", "masked_aadhaar", "consideration_amount", "market_value",
-        "payment_breakdown", "witnesses", "document_drafter",
+        "payment_breakdown", "witnesses", "document_drafter", "utility_tax_identifiers",
     }
     is_sale_deed = doc_type_lower in ("sale_deed", "sale deed") or "sale" in doc_type_lower
 

@@ -6,85 +6,33 @@
     <title>PlotChoice DocuScan OCR - Indian Real Estate & Legal Document Intelligence</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-        <script>
+    <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        brand: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af' },
+                        brand: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a' },
                         'tm-bg': 'var(--tm-bg)',
                         'tm-card': 'var(--tm-card)',
+                        'tm-panel': 'var(--tm-panel)',
                         'tm-upload': 'var(--tm-upload)',
                         'tm-text-pri': 'var(--tm-text-pri)',
                         'tm-text-sec': 'var(--tm-text-sec)',
+                        'tm-text-muted': 'var(--tm-text-muted)',
                         'tm-action': 'var(--tm-action)',
                         'tm-action-text': 'var(--tm-action-text)',
                         'tm-gold': 'var(--tm-gold)',
                         'tm-gold-text': 'var(--tm-gold-text)',
                         'tm-border': 'var(--tm-border)',
-                        'tm-tab-inactive': 'var(--tm-tab-inactive)'
+                        'tm-border-hover': 'var(--tm-border-hover)'
                     }
                 }
             }
         }
     </script>
-    <style>
-        :root {
-            --tm-bg: #FCFBFA;
-            --tm-card: #FFFFFF;
-            --tm-upload: #F5F7FA;
-            --tm-text-pri: #0B111A;
-            --tm-text-sec: #6E736A;
-            --tm-action: #182235;
-            --tm-action-text: #FFFFFF;
-            --tm-gold: #B08D57;
-            --tm-gold-text: #FFFFFF;
-            --tm-border: #E6E2D8;
-            --tm-tab-inactive: #182235;
-        }
-        .dark {
-            --tm-bg: #0B111A;
-            --tm-card: #182235;
-            --tm-upload: #141D2D;
-            --tm-text-pri: #FFFFFF;
-            --tm-text-sec: #94A3B8;
-            --tm-action: #E2C054;
-            --tm-action-text: #0B111A;
-            --tm-gold: #E2C054;
-            --tm-gold-text: #0B111A;
-            --tm-border: #26334D;
-            --tm-tab-inactive: #94A3B8;
-        }
-        
-        body { background-color: var(--tm-bg); color: var(--tm-text-pri); }
-        .glass-panel, header { background-color: var(--tm-card); border-color: var(--tm-border); }
-        .cat-card-active { border-color: var(--tm-gold) !important; border-width: 2px; }
-        .track-btn-active { background-color: var(--tm-action) !important; color: var(--tm-action-text) !important; border:none; }
-            .dark {
-            --tm-bar-bg: #1A1F1B;
-            --tm-bar-text: #F2EDE3;
-        }
-        :root {
-            --tm-bar-bg: #F5F3F0;
-            --tm-bar-text: #182235;
-        }
-
-    
-        .logo-mask {
-            -webkit-mask-image: url('/static/logo.png');
-            mask-image: url('/static/logo.png');
-            -webkit-mask-size: contain;
-            mask-size: contain;
-            -webkit-mask-repeat: no-repeat;
-            mask-repeat: no-repeat;
-            -webkit-mask-position: center;
-            mask-position: center;
-        }
-
-    </style>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="/static/style.css?v=43">
+    <link rel="stylesheet" href="/static/style.css?v=55.0">
     <script>
         function toggleTheme() {
             const html = document.documentElement;
@@ -105,7 +53,6 @@
             }
         }
 
-        // On page load or when changing themes, best to add inline in head to avoid FOUC
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
             document.addEventListener('DOMContentLoaded', () => {
@@ -117,30 +64,37 @@
         }
     </script>
 </head>
-<body class="bg-tm-bg text-tm-text-pri min-h-screen flex flex-col antialiased selection:bg-transparent border border-tm-border selection:text-tm-text-pri">
+<body class="bg-tm-bg text-tm-text-pri min-h-screen flex flex-col antialiased selection:bg-brand-500/20 selection:text-tm-text-pri">
 
     <!-- Top Navigation Bar -->
     <header class="sticky top-0 z-40 bg-tm-card/95 backdrop-blur-md border-b border-tm-border shadow-xs">
-        <div class="max-w-full mx-auto px-3 sm:px-5 lg:px-6 h-16 flex items-center justify-between">
+        <div class="max-w-full mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
                 <div class="flex items-center justify-center shrink-0">
-                    <img src="/static/logo-colored.png" class="w-14 h-14 object-contain" alt="PlotChoice Logo" />
+                    <img src="/static/logo-colored.png" class="w-10 h-10 object-contain rounded-lg shadow-xs" alt="PlotChoice Logo" />
                 </div>
                 <div>
-                    <div class="flex items-baseline gap-1">
-                        <span class="text-[22px] font-extrabold text-black dark:text-[#F2EDE3] tracking-tight">PlotChoice</span>
-                        <span class="text-[22px] font-medium text-black dark:text-[#E2C054] tracking-tight">DocuScan</span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg font-black tracking-tight text-slate-900 dark:text-white">PlotChoice</span>
+                        <span class="text-lg font-bold tracking-tight text-blue-600 dark:text-amber-400">DocuScan</span>
+                        <span class="hidden sm:inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">LEGAL AI v4.3</span>
                     </div>
-                    <p class="text-base text-blue-900 dark:text-tm-text-sec mt-1 font-semibold tracking-wide">Tamil Nadu Real Estate Document OCR & Multi-Doc Cross-Verification</p>
+                    <p class="text-[11px] text-tm-text-sec font-medium tracking-wide">Tamil Nadu Real Estate & Legal Document Cross-Verification</p>
                 </div>
             </div>
 
-            <div class="flex items-center space-x-3">
-                <button id="theme-toggle" onclick="toggleTheme()" class="px-2 py-1.5 border border-tm-gold text-tm-gold bg-transparent hover:opacity-80 rounded-lg transition-colors flex items-center justify-center">
+            <!-- Status Indicator (Online Engine) -->
+            <div class="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>TNREGINET & e-Services Parser Ready</span>
+            </div>
+
+            <div class="flex items-center space-x-2">
+                <button id="theme-toggle" onclick="toggleTheme()" class="p-2 border border-tm-border text-tm-text-sec hover:text-tm-text-pri hover:bg-tm-panel rounded-lg transition-colors flex items-center justify-center" title="Toggle Theme">
                     <span id="theme-icon-moon" class="hidden"><i data-lucide="moon" class="w-4 h-4"></i></span>
                     <span id="theme-icon-sun"><i data-lucide="sun" class="w-4 h-4"></i></span>
                 </button>
-                <button onclick="resetWorkspace()" class="px-3 py-1.5 text-xs font-medium border border-tm-gold text-tm-gold bg-transparent hover:opacity-80 rounded-lg transition-colors flex items-center space-x-1.5">
+                <button onclick="resetWorkspace()" class="px-3 py-1.5 text-xs font-semibold border border-tm-border text-tm-text-sec hover:text-tm-text-pri hover:bg-tm-panel rounded-lg transition-colors flex items-center space-x-1.5 shadow-2xs">
                     <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
                     <span>Reset</span>
                 </button>
@@ -148,200 +102,357 @@
         </div>
     </header>
 
-    <!-- Track Switcher Bar (3 Modes) -->
+    <!-- Sticky Secondary Navigation Bar: 3 Modes & Pre-loaded Bundles -->
+    <div class="sticky top-16 z-30 bg-tm-card/90 backdrop-blur-md border-b border-tm-border shadow-xs">
+        <div class="max-w-full mx-auto px-4 sm:px-6 h-13 flex items-center justify-between gap-4 overflow-x-auto">
+            <!-- 3 Track Switching Tabs -->
+            <div class="flex items-center space-x-1 p-1 bg-tm-panel rounded-xl border border-tm-border text-xs shrink-0">
+                <button id="track-btn-ocr" onclick="switchTrack('ocr')" class="track-tab-btn track-btn-active">
+                    <i data-lucide="file-search" class="w-3.5 h-3.5"></i>
+                    <span>Track 1: Document OCR & Inspector</span>
+                </button>
+                <button id="track-btn-matrix" onclick="switchTrack('matrix')" class="track-tab-btn track-btn-inactive">
+                    <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+                    <span>Track 2: Cross-Verification Matrix</span>
+                </button>
+                <button id="track-btn-inheritance" onclick="switchTrack('inheritance')" class="track-tab-btn track-btn-inactive">
+                    <i data-lucide="git-merge" class="w-3.5 h-3.5"></i>
+                    <span>Track 3: Property Inheritance & Title Flow</span>
+                </button>
+            </div>
+
+            <!-- Quick Demo Bundles Loader Bar -->
+            <div class="flex items-center space-x-2 shrink-0">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-tm-text-muted hidden xl:inline">Demo Bundles:</span>
+                <button onclick="loadBundle('standard_sale_bundle')" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 transition-colors flex items-center gap-1.5 shadow-2xs">
+                    <i data-lucide="check-circle" class="w-3 h-3 text-blue-600"></i>
+                    <span>Standard Sale</span>
+                </button>
+                <button onclick="loadBundle('rural_patta_bundle')" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 transition-colors flex items-center gap-1.5 shadow-2xs">
+                    <i data-lucide="award" class="w-3 h-3 text-emerald-600"></i>
+                    <span>Rural Patta 1092</span>
+                </button>
+                <button onclick="loadBundle('inherited_property_bundle')" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 transition-colors flex items-center gap-1.5 shadow-2xs">
+                    <i data-lucide="git-merge" class="w-3 h-3 text-purple-600"></i>
+                    <span>Varisu Track</span>
+                </button>
+                <button onclick="loadBundle('fraud_alert_bundle')" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 transition-colors flex items-center gap-1.5 shadow-2xs">
+                    <i data-lucide="alert-triangle" class="w-3 h-3 text-rose-600"></i>
+                    <span>Fraud Demo</span>
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Main Container -->
-    <main class="flex-1 max-w-full w-full mx-auto px-3 sm:px-5 lg:px-6 py-3.5 space-y-12 pb-12">
+    <main class="flex-1 max-w-full w-full mx-auto px-4 sm:px-6 py-6 space-y-8 pb-12">
         <!-- TRACK 1: SINGLE DOCUMENT DEEP OCR & FIELD INSPECTOR -->
-        <div id="track-view-ocr" class="space-y-12 pb-12">
-            <section class="glass-panel p-6 sm:p-8 rounded-2xl shadow-sm border border-tm-border">
-                <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 pb-4 border-b border-tm-border gap-2">
-                    <div>
-                        <h2 class="text-base font-bold text-tm-text-pri flex items-center gap-2">
-                            <i data-lucide="folder-search" class="w-5 h-5 text-tm-gold"></i>
-                            <span>Select Document Category</span>
-                            <span class="text-xs font-normal text-tm-text-sec">(7 Document Types: Sale Deed, Patta, Parent Docs, EC, RERA, Loan Docs, TSLR)</span>
-                        </h2>
+        <div id="track-view-ocr" class="space-y-6 pb-12">
+            <!-- 3-Step Guided Legal Intelligence Workflow Pipeline -->
+            <div class="glass-panel p-4 rounded-2xl border border-tm-border bg-gradient-to-r from-blue-50/60 via-slate-50/40 to-purple-50/60 dark:from-slate-900/90 dark:via-slate-900/60 dark:to-slate-900/90 shadow-xs">
+                <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+                    <!-- Step 1 Pill -->
+                    <div id="step-pill-1" class="flex-1 flex items-center gap-3 p-2.5 rounded-xl bg-white/90 dark:bg-slate-800/90 border border-blue-300 dark:border-amber-400/40 shadow-xs transition-all">
+                        <div class="w-8 h-8 rounded-lg bg-blue-600 dark:bg-amber-400 text-white dark:text-slate-950 font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
+                            01
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center justify-between gap-1">
+                                <span class="text-xs font-bold text-slate-900 dark:text-white truncate">Category & Scope</span>
+                                <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-amber-400/20 dark:text-amber-300">ACTIVE</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">Select deed type & language model</p>
+                        </div>
+                    </div>
+
+                    <div class="hidden lg:flex items-center text-slate-400 dark:text-slate-600 px-1">
+                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                    </div>
+
+                    <!-- Step 2 Pill -->
+                    <div id="step-pill-2" class="flex-1 flex items-center gap-3 p-2.5 rounded-xl bg-white/60 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:bg-white/90 dark:hover:bg-slate-800 transition-all">
+                        <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center justify-center shrink-0">
+                            02
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center justify-between gap-1">
+                                <span class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">Document Ingestion</span>
+                                <span class="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400">READY</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">Drop deed PDF or click 1-touch demo</p>
+                        </div>
+                    </div>
+
+                    <div class="hidden lg:flex items-center text-slate-400 dark:text-slate-600 px-1">
+                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                    </div>
+
+                    <!-- Step 3 Pill -->
+                    <div id="step-pill-3" class="flex-1 flex items-center gap-3 p-2.5 rounded-xl bg-white/60 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:bg-white/90 dark:hover:bg-slate-800 transition-all">
+                        <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center justify-center shrink-0">
+                            03
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center justify-between gap-1">
+                                <span class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">Intelligence Audit</span>
+                                <span class="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400">INSPECT</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">Canvas bounding boxes, 6 details & PDF</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 1: SELECT CATEGORY -->
+            <section class="glass-panel p-5 sm:p-6 rounded-2xl shadow-sm border border-tm-border">
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-4 pb-3 border-b border-tm-border gap-2">
+                    <div class="flex items-center gap-3">
+                        <span class="px-2.5 py-1 rounded-lg text-xs font-black tracking-wider bg-blue-600 text-white dark:bg-amber-400 dark:text-slate-950 shadow-xs">STEP 1</span>
+                        <div>
+                            <h2 class="text-sm font-bold text-tm-text-pri flex items-center gap-2">
+                                <i data-lucide="folder-search" class="w-4 h-4 text-blue-600 dark:text-amber-400"></i>
+                                <span>Select Document Category</span>
+                            </h2>
+                            <p class="text-xs text-tm-text-sec">7 Core Legal Document Categories: Sale Deed, Patta, Parent Docs, EC, TSLR, RERA, Loan Documents</p>
+                        </div>
                     </div>
                     <div class="flex items-center space-x-2">
-                        <button id="btn-load-sample" onclick="loadSampleDocument()" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-tm-gold hover:opacity-90 text-tm-gold-text shadow-sm shadow-indigo-500/20 transition-all flex items-center gap-1.5">
-                            <i data-lucide="play-circle" class="w-3.5 h-3.5"></i>
+                        <button id="btn-load-sample" onclick="loadSampleDocument()" class="px-4 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 dark:from-amber-500 dark:to-amber-600 dark:text-slate-950 text-white shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 cursor-pointer active:scale-95">
+                            <i data-lucide="play-circle" class="w-4 h-4"></i>
                             <span>Load Sample Document</span>
                         </button>
                     </div>
                 </div>
 
-                <div id="category-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+                <div id="category-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
                     <!-- 1. Sale deed / title deed -->
-                    <div id="cat-card-sale_deed" onclick="selectCategory('sale_deed', true)" class="cat-card-active p-3 rounded-xl border cursor-pointer transition-all duration-150 flex flex-col justify-between shadow-2xs">
-                        <div class="flex items-start justify-between mb-1">
-                            <div class="w-6 h-6 rounded-lg bg-transparent text-tm-gold flex items-center justify-center">
-                                <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                    <div id="cat-card-sale_deed" onclick="selectCategory('sale_deed', true)" class="cat-card cat-card-active group" data-category="sale_deed">
+                        <div class="card-accent-strip"></div>
+                        <div class="flex items-start justify-between mb-2.5">
+                            <div class="cat-icon-box w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-2xs group-hover:scale-110 transition-transform">
+                                <i data-lucide="file-text" class="w-5 h-5"></i>
                             </div>
-                            <span class="text-[9px] font-bold text-tm-gold">#01</span>
+                            <span class="cat-num-badge text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-100/80 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border border-blue-200 dark:border-blue-800">#01</span>
                         </div>
                         <div>
-                            <h4 class="text-xs font-bold text-tm-text-pri leading-snug">Sale deed / title deed</h4>
-                            <p class="text-[10px] text-tm-text-sec line-clamp-1 mt-0.5">கிரையப் பத்திரம்</p>
+                            <h4 class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-snug">Sale deed / title deed</h4>
+                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1">கிரையப் பத்திரம்</p>
                         </div>
                     </div>
 
                     <!-- 2. Patta document -->
-                    <div id="cat-card-patta" onclick="selectCategory('patta', true)" class="border-tm-border bg-tm-card hover:border-tm-border hover:bg-transparent/20 p-3 rounded-xl border cursor-pointer transition-all duration-150 flex flex-col justify-between shadow-2xs">
-                        <div class="flex items-start justify-between mb-1">
-                            <div class="w-6 h-6 rounded-lg bg-transparent text-tm-gold flex items-center justify-center">
-                                <i data-lucide="award" class="w-3.5 h-3.5"></i>
+                    <div id="cat-card-patta" onclick="selectCategory('patta', true)" class="cat-card group" data-category="patta">
+                        <div class="card-accent-strip"></div>
+                        <div class="flex items-start justify-between mb-2.5">
+                            <div class="cat-icon-box w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-2xs group-hover:scale-110 transition-transform">
+                                <i data-lucide="award" class="w-5 h-5"></i>
                             </div>
-                            <span class="text-[9px] font-bold text-tm-gold">#02</span>
+                            <span class="cat-num-badge text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100/80 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">#02</span>
                         </div>
                         <div>
-                            <h4 class="text-xs font-bold text-tm-text-pri leading-snug">Patta document</h4>
-                            <p class="text-[10px] text-tm-text-sec line-clamp-1 mt-0.5">பட்டா / TSLR</p>
+                            <h4 class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors leading-snug">Patta document</h4>
+                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1">பட்டா ஆவணம் (Ares &rarr; Sq.Ft)</p>
                         </div>
                     </div>
 
                     <!-- 3. Parent docs / mother copy -->
-                    <div id="cat-card-parent_docs" onclick="selectCategory('parent_docs', true)" class="border-tm-border bg-tm-card hover:border-tm-border hover:bg-transparent/20 p-3 rounded-xl border cursor-pointer transition-all duration-150 flex flex-col justify-between shadow-2xs">
-                        <div class="flex items-start justify-between mb-1">
-                            <div class="w-6 h-6 rounded-lg bg-transparent text-tm-text-sec flex items-center justify-center">
-                                <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+                    <div id="cat-card-parent_docs" onclick="selectCategory('parent_docs', true)" class="cat-card group" data-category="parent_docs">
+                        <div class="card-accent-strip"></div>
+                        <div class="flex items-start justify-between mb-2.5">
+                            <div class="cat-icon-box w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shadow-2xs group-hover:scale-110 transition-transform">
+                                <i data-lucide="layers" class="w-5 h-5"></i>
                             </div>
-                            <span class="text-[9px] font-bold text-tm-gold">#03</span>
+                            <span class="cat-num-badge text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-indigo-100/80 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">#03</span>
                         </div>
                         <div>
-                            <h4 class="text-xs font-bold text-tm-text-pri leading-snug">Parent docs / mother copy</h4>
-                            <p class="text-[10px] text-tm-text-sec line-clamp-1 mt-0.5">தாய் பத்திரம் (5-Yr Trace)</p>
+                            <h4 class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-snug">Parent docs / mother copy</h4>
+                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1">தாய் பத்திரம் (5-Yr Trace)</p>
                         </div>
                     </div>
 
                     <!-- 4. EC -->
-                    <div id="cat-card-ec" onclick="selectCategory('ec', true)" class="border-tm-border bg-tm-card hover:border-tm-border hover:bg-transparent/20 p-3 rounded-xl border cursor-pointer transition-all duration-150 flex flex-col justify-between shadow-2xs">
-                        <div class="flex items-start justify-between mb-1">
-                            <div class="w-6 h-6 rounded-lg bg-transparent text-tm-gold flex items-center justify-center">
-                                <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                    <div id="cat-card-ec" onclick="selectCategory('ec', true)" class="cat-card group" data-category="ec">
+                        <div class="card-accent-strip"></div>
+                        <div class="flex items-start justify-between mb-2.5">
+                            <div class="cat-icon-box w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 flex items-center justify-center shadow-2xs group-hover:scale-110 transition-transform">
+                                <i data-lucide="shield-check" class="w-5 h-5"></i>
                             </div>
-                            <span class="text-[9px] font-bold text-tm-gold">#04</span>
+                            <span class="cat-num-badge text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-purple-100/80 text-purple-800 dark:bg-purple-950/80 dark:text-purple-300 border border-purple-200 dark:border-purple-800">#04</span>
                         </div>
                         <div>
-                            <h4 class="text-xs font-bold text-tm-text-pri leading-snug">EC</h4>
-                            <p class="text-[10px] text-tm-text-sec line-clamp-1 mt-0.5">வில்லங்கச் சான்றிதழ்</p>
+                            <h4 class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors leading-snug">EC</h4>
+                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1">வில்லங்கச் சான்றிதழ்</p>
                         </div>
                     </div>
 
-                    <!-- 5. Rera certificate approval certificate -->
-                    <div id="cat-card-rera" onclick="selectCategory('rera', true)" class="border-tm-border bg-tm-card hover:border-tm-border hover:bg-transparent/20 p-3 rounded-xl border cursor-pointer transition-all duration-150 flex flex-col justify-between shadow-2xs">
-                        <div class="flex items-start justify-between mb-1">
-                            <div class="w-6 h-6 rounded-lg bg-transparent text-tm-gold flex items-center justify-center">
-                                <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                    <!-- 5. TSLR document (Town Survey Land Record) -->
+                    <div id="cat-card-tslr" onclick="selectCategory('tslr', true)" class="cat-card group" data-category="tslr">
+                        <div class="card-accent-strip"></div>
+                        <div class="flex items-start justify-between mb-2.5">
+                            <div class="cat-icon-box w-10 h-10 rounded-xl bg-cyan-100 dark:bg-cyan-900/40 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shadow-2xs group-hover:scale-110 transition-transform">
+                                <i data-lucide="map-pin" class="w-5 h-5"></i>
                             </div>
-                            <span class="text-[9px] font-bold text-tm-gold">#05</span>
+                            <span class="cat-num-badge text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-100/80 text-cyan-800 dark:bg-cyan-950/80 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800">#05</span>
                         </div>
                         <div>
-                            <h4 class="text-xs font-bold text-tm-text-pri leading-snug">Rera certificate approval</h4>
-                            <p class="text-[10px] text-tm-text-sec line-clamp-1 mt-0.5">TNRERA சான்றிதழ்</p>
+                            <h4 class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors leading-snug">TSLR document</h4>
+                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1">நகர நில அளவை (8 Fields)</p>
                         </div>
                     </div>
 
-                    <!-- 6. Loan documents (if applicable) -->
-                    <div id="cat-card-loan_docs" onclick="selectCategory('loan_docs', true)" class="border-tm-border bg-tm-card hover:border-tm-border hover:bg-transparent/20 p-3 rounded-xl border cursor-pointer transition-all duration-150 flex flex-col justify-between shadow-2xs">
-                        <div class="flex items-start justify-between mb-1">
-                            <div class="w-6 h-6 rounded-lg bg-transparent text-tm-gold flex items-center justify-center">
-                                <i data-lucide="landmark" class="w-3.5 h-3.5"></i>
+                    <!-- 6. Rera certificate approval certificate -->
+                    <div id="cat-card-rera" onclick="selectCategory('rera', true)" class="cat-card group" data-category="rera">
+                        <div class="card-accent-strip"></div>
+                        <div class="flex items-start justify-between mb-2.5">
+                            <div class="cat-icon-box w-10 h-10 rounded-xl bg-teal-100 dark:bg-teal-900/40 text-teal-600 dark:text-teal-400 flex items-center justify-center shadow-2xs group-hover:scale-110 transition-transform">
+                                <i data-lucide="check-circle" class="w-5 h-5"></i>
                             </div>
-                            <span class="text-[9px] font-bold text-tm-text-sec">#06</span>
+                            <span class="cat-num-badge text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-teal-100/80 text-teal-800 dark:bg-teal-950/80 dark:text-teal-300 border border-teal-200 dark:border-teal-800">#06</span>
                         </div>
                         <div>
-                            <h4 class="text-xs font-bold text-tm-text-pri leading-snug">Loan documents (MODT/NOC)</h4>
-                            <p class="text-[10px] text-tm-text-sec line-clamp-1 mt-0.5">வங்கி கடன் ஆவணம்</p>
+                            <h4 class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors leading-snug">Rera certificate approval</h4>
+                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1">TNRERA சான்றிதழ்</p>
                         </div>
                     </div>
 
-                    <!-- 7. TSLR document (Town Survey Land Record) -->
-                    <div id="cat-card-tslr" onclick="selectCategory('tslr', true)" class="border-tm-border bg-tm-card hover:border-cyan-300 hover:bg-transparent/20 p-3 rounded-xl border cursor-pointer transition-all duration-150 flex flex-col justify-between shadow-2xs">
-                        <div class="flex items-start justify-between mb-1">
-                            <div class="w-6 h-6 rounded-lg bg-transparent text-tm-gold flex items-center justify-center">
-                                <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+                    <!-- 7. Loan documents (if applicable) -->
+                    <div id="cat-card-loan_docs" onclick="selectCategory('loan_docs', true)" class="cat-card group" data-category="loan_docs">
+                        <div class="card-accent-strip"></div>
+                        <div class="flex items-start justify-between mb-2.5">
+                            <div class="cat-icon-box w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shadow-2xs group-hover:scale-110 transition-transform">
+                                <i data-lucide="landmark" class="w-5 h-5"></i>
                             </div>
-                            <span class="text-[9px] font-bold text-tm-text-sec">#07</span>
+                            <span class="cat-num-badge text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-100/80 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-200 dark:border-amber-800">#07</span>
                         </div>
                         <div>
-                            <h4 class="text-xs font-bold text-tm-text-pri leading-snug">TSLR document</h4>
-                            <p class="text-[10px] text-tm-text-sec line-clamp-1 mt-0.5">நகர நில அளவை ஆவணம்</p>
+                            <h4 class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors leading-snug">Loan documents (MODT/NOC)</h4>
+                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1">வங்கி கடன் ஆவணம்</p>
                         </div>
                     </div>
                 </div>
 
-                <div id="active-category-info" class="mt-6 py-3 px-4 rounded-xl border border-blue-100 dark:border-gray-700 flex flex-col md:flex-row md:items-center justify-between gap-2 text-xs bg-[#F5F3F0] dark:bg-[#1A1F1B]">
-                    <div class="flex items-center space-x-2">
-                        <span class="text-base font-bold text-blue-900 dark:text-white" id="selected-cat-title">Selected: Sale Deed / Title Deed</span>
-                        <span class="text-blue-900 dark:text-gray-400">|</span>
-                        <span class="text-blue-900 dark:text-gray-300" id="selected-cat-tamil" class="truncate max-w-[150px] sm:max-w-[300px]">கிரையப் பத்திரம் / உரிமை ஆவணம்</span>
+                <div id="active-category-info" class="mt-5 py-3 px-4 rounded-xl border border-tm-border flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs bg-tm-panel/60 shadow-xs border-l-4 border-l-blue-600 dark:border-l-amber-400">
+                    <div class="flex items-center space-x-2.5">
+                        <span class="w-3 h-3 rounded-full bg-blue-600 dark:bg-amber-400 animate-pulse"></span>
+                        <span class="font-extrabold text-sm text-tm-text-pri" id="selected-cat-title">Selected: Sale Deed / Title Deed</span>
+                        <span class="text-tm-text-muted">|</span>
+                        <span class="text-xs font-semibold text-tm-text-sec" id="selected-cat-tamil">கிரையப் பத்திரம் / உரிமை ஆவணம்</span>
                     </div>
                     <div class="flex items-center gap-1.5 flex-wrap" id="selected-cat-tags"></div>
                 </div>
             </section>
 
-            <section class="glass-panel p-6 sm:p-8 rounded-2xl shadow-sm border border-tm-border">
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+            <!-- STEP 2: Modern Upload Dropzone & Action Bar -->
+            <section class="glass-panel p-5 space-y-4 shadow-sm">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-tm-border/70 pb-3">
+                    <div class="flex items-center space-x-3">
+                        <span class="px-2.5 py-1 rounded-lg text-xs font-black tracking-wider bg-slate-800 text-white dark:bg-slate-700 dark:text-amber-300 shadow-xs">STEP 2</span>
+                        <div>
+                            <h2 class="text-sm font-bold text-tm-text-pri flex items-center gap-2">
+                                <i data-lucide="upload-cloud" class="w-4 h-4 text-blue-600 dark:text-amber-400"></i>
+                                <span>Upload Legal Document or Choose Fast Sample</span>
+                            </h2>
+                            <p class="text-xs text-tm-text-sec">Drop any real estate deed, revenue record, or certificate for instant legal extraction</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Instant 1-Click Test Documents Launchpad -->
+                <div class="mb-5 p-3.5 rounded-xl bg-tm-panel/70 border border-tm-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="flex items-center gap-2 shrink-0">
+                        <div class="w-6 h-6 rounded-md bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0">
+                            <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+                        </div>
+                        <span class="text-xs font-bold text-tm-text-pri">Instant 1-Click Launchpad:</span>
+                        <span class="text-[11px] text-tm-text-sec hidden md:inline">(Directly test real TN docs)</span>
+                    </div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <button type="button" onclick="quickLaunch('sale_deed')" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-tm-card hover:bg-tm-panel text-tm-text-pri border border-tm-border hover:border-blue-500 transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer">
+                            <i data-lucide="file-text" class="w-3 h-3 text-blue-600"></i>
+                            <span>Sale Deed (Naagesh 2010)</span>
+                        </button>
+                        <button type="button" onclick="quickLaunch('patta')" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-tm-card hover:bg-tm-panel text-tm-text-pri border border-tm-border hover:border-emerald-500 transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer">
+                            <i data-lucide="award" class="w-3 h-3 text-emerald-600"></i>
+                            <span>Rural Patta 1092 (Ares &rarr; Sq.Ft)</span>
+                        </button>
+                        <button type="button" onclick="quickLaunch('ec')" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-tm-card hover:bg-tm-panel text-tm-text-pri border border-tm-border hover:border-purple-500 transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer">
+                            <i data-lucide="shield-check" class="w-3 h-3 text-purple-600"></i>
+                            <span>33-Year EC (Form 15)</span>
+                        </button>
+                        <button type="button" onclick="quickLaunch('tslr')" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-tm-card hover:bg-tm-panel text-tm-text-pri border border-tm-border hover:border-cyan-500 transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer">
+                            <i data-lucide="map-pin" class="w-3 h-3 text-cyan-600"></i>
+                            <span>TSLR 8-Core Fields</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
                     <div class="md:col-span-8">
-                        <input type="file" id="file-input" class="sr-only" accept=".pdf,.png,.jpg,.jpeg,.tiff,.webp,.bmp">
-                        <label for="file-input" id="dropzone" class="my-6 border-2 border-dashed border-tm-border hover:border-tm-gold bg-tm-upload hover:opacity-90 rounded-2xl p-5 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[140px] shadow-2xs block">
-                            <div id="dropzone-inner" class="flex flex-col items-center justify-center pointer-events-none">
-                                <div class="w-11 h-11 rounded-full bg-transparent border border-tm-border text-tm-gold flex items-center justify-center mb-2 shadow-2xs">
-                                    <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+                        <input type="file" id="file-input" style="display:none;" accept=".pdf,.png,.jpg,.jpeg,.tiff,.webp,.bmp">
+                        <div id="dropzone" onclick="triggerBrowseFile(event)" class="border-2 border-dashed border-tm-border hover:border-blue-500 dark:hover:border-amber-400 bg-tm-upload hover:bg-tm-panel rounded-2xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[160px] shadow-2xs block">
+                            <div id="dropzone-inner" class="flex flex-col items-center justify-center space-y-2">
+                                <div class="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-amber-400 flex items-center justify-center shadow-xs border border-blue-100 dark:border-blue-800">
+                                    <i data-lucide="upload-cloud" class="w-6 h-6"></i>
                                 </div>
-                                <h3 class="text-lg font-semibold text-tm-text-pri mb-0.5">Click to Upload or Drag & Drop Document</h3>
-                                <p class="text-sm text-tm-text-sec mt-2 mb-1.5">Supports PDF, PNG, JPG, TIFF, WebP, BMP (Multi-page supported)</p>
-                                <span class="px-3.5 py-1 text-xs font-semibold rounded-lg bg-transparent border border-tm-gold text-tm-gold hover:opacity-80 shadow-2xs inline-block">
-                                    Browse Document File...
-                                </span>
+                                <div>
+                                    <h3 class="text-sm font-bold text-tm-text-pri">Click to Upload or Drag & Drop Legal Document</h3>
+                                    <p class="text-xs text-tm-text-sec mt-1">Supports PDF, PNG, JPG, TIFF, WebP, BMP (Automatic Multi-Page Handling)</p>
+                                </div>
+                                <div class="flex items-center gap-1.5 pt-1">
+                                    <span class="px-2.5 py-0.5 text-[10px] font-semibold rounded bg-tm-card border border-tm-border text-tm-text-sec">PDF</span>
+                                    <span class="px-2.5 py-0.5 text-[10px] font-semibold rounded bg-tm-card border border-tm-border text-tm-text-sec">TIFF</span>
+                                    <span class="px-2.5 py-0.5 text-[10px] font-semibold rounded bg-tm-card border border-tm-border text-tm-text-sec">PNG / JPG</span>
+                                    <button type="button" onclick="triggerBrowseFile(event)" class="px-3.5 py-1 text-xs font-bold rounded-lg bg-blue-600 hover:bg-blue-700 dark:bg-amber-500 dark:hover:bg-amber-600 dark:text-slate-950 text-white ml-2 shadow-xs cursor-pointer">
+                                        Browse File...
+                                    </button>
+                                </div>
                             </div>
-                        </label>
+                        </div>
                     </div>
 
-                    <div class="md:col-span-4 space-y-2 bg-tm-bg/80 p-3.5 rounded-xl border border-tm-border/60 text-xs">
+                    <div class="md:col-span-4 space-y-3 bg-tm-panel/60 p-4 rounded-xl border border-tm-border text-xs">
                         <div>
-                            <label class="block text-sm font-medium text-tm-text-sec mb-1.5 flex items-center gap-1">
-                                <i data-lucide="folder-check" class="w-3.5 h-3.5 text-tm-gold"></i>
+                            <label class="block text-xs font-semibold text-tm-text-sec mb-1.5 flex items-center gap-1">
+                                <i data-lucide="folder-check" class="w-3.5 h-3.5 text-blue-600 dark:text-amber-400"></i>
                                 <span>Choose Document Type to Verify</span>
                             </label>
-                            <select id="doc-category-select" onchange="selectCategory(this.value, true)" class="w-full text-base bg-tm-card border border-tm-border rounded-lg px-3 py-2 font-bold text-tm-text-pri focus:outline-none focus:ring-2 focus:ring-tm-gold shadow-2xs">
+                            <select id="doc-category-select" onchange="selectCategory(this.value, true)" class="w-full bg-tm-card border border-tm-border rounded-lg px-3 py-2 font-bold text-tm-text-pri focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-amber-400 shadow-2xs">
                                 <option value="sale_deed" selected>1. Sale deed / title deed</option>
                                 <option value="patta">2. Patta document (Rural Patta)</option>
                                 <option value="parent_docs">3. Parent docs / mother copy</option>
                                 <option value="ec">4. EC (Encumbrance Certificate)</option>
+                                <option value="tslr">5. TSLR document (Town Survey Land Record)</option>
                                 <option value="rera">6. Rera certificate approval certificate</option>
-                                <option value="loan_docs">10. Loan documents (MODT / NOC)</option>
-                                <option value="tslr">11. TSLR document (Town Survey Land Record) - நகர நில அளவை ஆவணம்</option>
+                                <option value="loan_docs">7. Loan documents (MODT / NOC)</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-tm-text-sec mb-1.5 flex items-center gap-1">
-                                <i data-lucide="languages" class="w-3.5 h-3.5 text-tm-gold"></i>
+                            <label class="block text-xs font-semibold text-tm-text-sec mb-1.5 flex items-center gap-1">
+                                <i data-lucide="languages" class="w-3.5 h-3.5 text-blue-600 dark:text-amber-400"></i>
                                 <span>OCR Language Model</span>
                             </label>
-                            <select id="ocr-lang-select" class="w-full bg-tm-card border border-tm-border rounded-lg px-3 py-2 font-medium text-tm-text-pri focus:outline-none focus:ring-2 focus:ring-tm-gold">
+                            <select id="ocr-lang-select" class="w-full bg-tm-card border border-tm-border rounded-lg px-3 py-2 font-medium text-tm-text-pri focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-amber-400">
                                 <option value="ta" selected>Tamil + English (தமிழ் & Bilingual Deeds - Recommended)</option>
                                 <option value="en">English Only (Fast for pure English Deeds)</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block font-semibold text-tm-text-sec mb-1.5 flex items-center justify-between">
+                            <label class="block text-xs font-semibold text-tm-text-sec mb-1.5 flex items-center justify-between">
                                 <span class="flex items-center gap-1">
-                                    <i data-lucide="file-stack" class="w-3.5 h-3.5 text-tm-gold"></i>
+                                     <i data-lucide="file-stack" class="w-3.5 h-3.5 text-blue-600 dark:text-amber-400"></i>
                                     <span>Page Scope</span>
                                 </span>
-                                <span class="text-[10px] text-tm-text-sec font-normal">For multi-page docs</span>
+                                <span class="text-[10px] text-tm-text-muted">Multi-page handler</span>
                             </label>
-                            <select id="ocr-pages-select" onchange="toggleCustomPageRange(this.value)" class="w-full bg-tm-card border border-tm-border rounded-lg px-3 py-2 font-medium text-tm-text-pri focus:outline-none focus:ring-2 focus:ring-tm-gold">
+                            <select id="ocr-pages-select" onchange="toggleCustomPageRange(this.value)" class="w-full bg-tm-card border border-tm-border rounded-lg px-3 py-2 font-medium text-tm-text-pri focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-amber-400">
                                 <option value="all" selected>All Pages</option>
                                 <option value="first_3">First 3 Pages (Fast Preview ~1 min)</option>
                                 <option value="first_5">First 5 Pages (~2 mins)</option>
                                 <option value="custom">Custom Range (e.g. 1-3, 5)...</option>
                             </select>
-                            <input type="text" id="ocr-custom-page-range" placeholder="e.g. 1-3, 5" class="hidden mt-1.5 w-full bg-tm-card border border-tm-border rounded-lg px-3 py-1.5 text-xs text-tm-text-pri focus:outline-none focus:ring-2 focus:ring-tm-gold" />
+                            <input type="text" id="ocr-custom-page-range" placeholder="e.g. 1-3, 5" class="hidden mt-1.5 w-full bg-tm-card border border-tm-border rounded-lg px-3 py-1.5 text-xs text-tm-text-pri focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-amber-400" />
                         </div>
-                        <button id="btn-process" onclick="triggerProcess()" class="w-full py-2.5 px-4 bg-[#E2C054] hover:opacity-90 text-[#0B111A] font-semibold rounded-xl shadow-md shadow-blue-500/20 transition-all flex items-center justify-center space-x-2">
+                        <button id="btn-process" onclick="triggerProcess()" class="w-full py-2.5 px-4 rounded-xl font-bold text-xs tracking-wide transition-all duration-200 flex items-center justify-center gap-2 shadow-md bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white dark:from-amber-500 dark:via-amber-600 dark:to-amber-500 dark:text-slate-950 dark:hover:from-amber-400 dark:hover:to-amber-500 cursor-pointer">
                             <i data-lucide="sparkles" class="w-4 h-4"></i>
                             <span>Start OCR & Field Extraction</span>
                         </button>
@@ -389,31 +500,56 @@
                 </div>
             </section>
 
-            <section id="workspace-section" class="grid grid-cols-1 lg:grid-cols-12 gap-3.5">
+            <!-- STEP 3: WORKSPACE (VIEWER & INSPECTOR) -->
+            <section id="workspace-section" class="space-y-4">
+                <div class="flex items-center justify-between pb-2 border-b border-tm-border">
+                    <div class="flex items-center gap-3">
+                        <span class="px-2.5 py-1 rounded-lg text-xs font-black tracking-wider bg-blue-600 text-white dark:bg-amber-400 dark:text-slate-950 shadow-xs">STEP 3</span>
+                        <div>
+                            <h2 class="text-sm font-bold text-tm-text-pri flex items-center gap-2">
+                                <i data-lucide="scan-line" class="w-4 h-4 text-blue-600 dark:text-amber-400"></i>
+                                <span>Document Canvas & Legal Intelligence Inspector</span>
+                            </h2>
+                            <p class="text-xs text-tm-text-sec">Interactive OCR overlay, Tamil-to-English transliteration & automated title audit</p>
+                        </div>
+                    </div>
+                    <div class="hidden sm:flex items-center gap-2">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span>Inspector Live</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
                 <!-- Viewer Pane -->
                 <div class="lg:col-span-5 flex flex-col space-y-3">
-                    <div class="glass-panel p-6 sm:p-8 rounded-2xl shadow-sm border border-tm-border flex flex-col h-[880px] min-h-[820px]">
-                        <div class="flex items-center justify-between pb-3 border-b border-tm-border/70 text-xs">
-                            <div class="flex items-center space-x-2">
-                                <button id="btn-prev-page" onclick="changePage(-1)" class="p-1 rounded bg-transparent hover:bg-tm-upload text-tm-text-sec disabled:opacity-40" title="Previous Page"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
-                                <span id="page-indicator" class="font-semibold text-tm-text-sec">Page 1 / 1</span>
-                                <button id="btn-next-page" onclick="changePage(1)" class="p-1 rounded bg-transparent hover:bg-tm-upload text-tm-text-sec disabled:opacity-40" title="Next Page"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
-                                <select id="page-jump-select" onchange="jumpToPage(parseInt(this.value))" class="hidden text-xs font-semibold bg-tm-card border border-tm-border rounded px-1.5 py-0.5 text-tm-text-sec focus:outline-none focus:ring-1 focus:ring-tm-gold shadow-2xs"></select>
+                    <div class="glass-panel p-5 sm:p-6 rounded-2xl shadow-sm border border-tm-border flex flex-col h-[880px] min-h-[820px]">
+                        <div class="flex items-center justify-between pb-3 border-b border-tm-border text-xs">
+                            <div class="flex items-center space-x-1.5">
+                                <button id="btn-prev-page" onclick="changePage(-1)" class="p-1.5 rounded-lg bg-tm-panel hover:bg-tm-border text-tm-text-sec disabled:opacity-40 transition-colors shadow-2xs cursor-pointer" title="Previous Page"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                                <span id="page-indicator" class="px-2.5 py-0.5 rounded-md font-semibold text-tm-text-pri bg-tm-card border border-tm-border text-xs font-mono">Page 1 / 1</span>
+                                <button id="btn-next-page" onclick="changePage(1)" class="p-1.5 rounded-lg bg-tm-panel hover:bg-tm-border text-tm-text-sec disabled:opacity-40 transition-colors shadow-2xs cursor-pointer" title="Next Page"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                                <select id="page-jump-select" onchange="jumpToPage(parseInt(this.value))" class="hidden text-xs font-semibold bg-tm-card border border-tm-border rounded-lg px-2 py-1 text-tm-text-sec focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-amber-400 shadow-2xs"></select>
                             </div>
                             <div class="flex items-center space-x-1.5">
-                                <button onclick="adjustZoom(-0.15)" class="p-1.5 rounded bg-transparent hover:bg-tm-upload text-tm-text-sec"><i data-lucide="zoom-out" class="w-3.5 h-3.5"></i></button>
-                                <span id="zoom-level-text" class="px-1 text-[11px] font-mono text-tm-text-sec">100%</span>
-                                <button onclick="adjustZoom(0.15)" class="p-1.5 rounded bg-transparent hover:bg-tm-upload text-tm-text-sec"><i data-lucide="zoom-in" class="w-3.5 h-3.5"></i></button>
-                                <button onclick="resetZoom()" class="p-1.5 rounded bg-transparent hover:bg-tm-upload text-tm-text-sec"><i data-lucide="maximize" class="w-3.5 h-3.5"></i></button>
-                                <button id="btn-toggle-bbox" onclick="toggleBBoxes()" class="px-2 py-1 rounded bg-transparent text-tm-gold border border-tm-border hover:bg-transparent font-medium text-[11px] flex items-center gap-1"><i data-lucide="layers" class="w-3.5 h-3.5"></i><span>Boxes</span></button>
+                                <button onclick="adjustZoom(-0.15)" class="p-1.5 rounded-lg bg-tm-panel hover:bg-tm-border text-tm-text-sec transition-colors shadow-2xs cursor-pointer" title="Zoom Out"><i data-lucide="zoom-out" class="w-3.5 h-3.5"></i></button>
+                                <span id="zoom-level-text" class="px-1.5 py-0.5 rounded text-[11px] font-mono text-tm-text-sec bg-tm-card border border-tm-border">100%</span>
+                                <button onclick="adjustZoom(0.15)" class="p-1.5 rounded-lg bg-tm-panel hover:bg-tm-border text-tm-text-sec transition-colors shadow-2xs cursor-pointer" title="Zoom In"><i data-lucide="zoom-in" class="w-3.5 h-3.5"></i></button>
+                                <button onclick="resetZoom()" class="p-1.5 rounded-lg bg-tm-panel hover:bg-tm-border text-tm-text-sec transition-colors shadow-2xs cursor-pointer" title="Reset Zoom / Fit"><i data-lucide="maximize" class="w-3.5 h-3.5"></i></button>
+                                <button id="btn-toggle-bbox" onclick="toggleBBoxes()" class="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 dark:bg-amber-400/10 dark:text-amber-300 dark:border-amber-400/30 font-bold text-[11px] flex items-center gap-1.5 shadow-2xs cursor-pointer" title="Toggle OCR Word Bounding Boxes">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-amber-400 animate-pulse"></span>
+                                    <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+                                    <span>Boxes ON</span>
+                                </button>
                             </div>
                         </div>
 
-                        <div class="pt-2 pb-2">
+                        <div class="pt-2.5 pb-2.5">
                             <div class="relative">
                                 <i data-lucide="search" class="w-3.5 h-3.5 text-tm-text-sec absolute left-3 top-2.5"></i>
-                                <input type="text" id="doc-search-input" oninput="searchInDocument(this.value)" placeholder="Search keywords in document (e.g. Survey No, SRO, UDS, Consideration)..." class="w-full bg-tm-bg border border-tm-border rounded-lg pl-8 pr-8 py-1.5 text-xs text-tm-text-pri placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-tm-gold">
-                                <span id="search-match-count" class="text-[10px] text-tm-text-sec absolute right-3 top-2"></span>
+                                <input type="text" id="doc-search-input" oninput="searchInDocument(this.value)" placeholder="Search keywords in document (e.g. Survey No, SRO, UDS, Consideration)..." class="w-full bg-tm-panel/60 border border-tm-border rounded-lg pl-8 pr-16 py-1.5 text-xs text-tm-text-pri placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-amber-400">
+                                <span id="search-match-count" class="text-[10px] font-bold text-amber-600 dark:text-amber-400 absolute right-3 top-2"></span>
                             </div>
                         </div>
 
@@ -421,9 +557,22 @@
                             <div id="all-pages-container" class="all-pages-container w-full transition-transform duration-100 origin-top">
                                 <!-- Multi-page cards will be dynamically injected here for continuous reading of all pages -->
                             </div>
-                            <div id="viewer-empty-state" class="text-center p-8 space-y-2 my-auto">
-                                <i data-lucide="file-question" class="w-14 h-14 text-slate-300 mx-auto"></i>
-                                <p class="text-xs text-tm-text-sec">Upload a document or click "Load Sample Document" to view OCR text lines.</p>
+                            <div id="viewer-empty-state" class="text-center p-8 space-y-3 my-auto max-w-sm">
+                                <div class="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-slate-800 text-blue-600 dark:text-amber-400 flex items-center justify-center mx-auto shadow-sm border border-blue-100 dark:border-slate-700">
+                                    <i data-lucide="file-text" class="w-7 h-7"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-bold text-tm-text-pri">No Document Ingested Yet</h4>
+                                    <p class="text-xs text-tm-text-sec mt-1 leading-relaxed">
+                                        Upload any registered deed or revenue document above, or click below to launch an instant verified Tamil Nadu deed.
+                                    </p>
+                                </div>
+                                <div class="pt-2">
+                                    <button onclick="quickLaunch('sale_deed')" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white dark:bg-amber-500 dark:hover:bg-amber-600 dark:text-slate-950 text-xs font-bold transition-all shadow-sm inline-flex items-center gap-2 cursor-pointer">
+                                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                                        <span>Load Sale Deed Sample Now</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -441,27 +590,39 @@
                                 <p id="result-doc-subtitle" class="text-[11px] text-tm-text-sec">Government of Tamil Nadu - Registration Department</p>
                             </div>
 
-                            <div class="flex items-center space-x-1.5">
-                                <select id="pdf-lang-select" title="PDF report language" class="text-xs font-medium rounded-lg border border-tm-border bg-tm-card text-tm-text-sec px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-red-500">
+                            <div class="flex items-center space-x-2">
+                                <select id="pdf-lang-select" title="PDF report language" class="text-xs font-semibold rounded-lg border border-tm-border bg-tm-card text-tm-text-sec px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-amber-400">
                                     <option value="en" selected>PDF: English</option>
                                     <option value="ta">PDF: Tamil (தமிழ்)</option>
                                     <option value="both">PDF: Both (English + Tamil)</option>
                                 </select>
-                                <button onclick="exportResult('pdf')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#E2C054] hover:opacity-90 text-[#0B111A] shadow-xs transition-colors flex items-center gap-1.5"><i data-lucide="file-down" class="w-3.5 h-3.5"></i><span>Download PDF</span></button>
-                                <button onclick="exportResult('json')" class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-transparent hover:bg-tm-upload text-tm-text-sec transition-colors flex items-center gap-1"><i data-lucide="file-json" class="w-3.5 h-3.5 text-tm-gold"></i><span>JSON</span></button>
-                                <button onclick="exportResult('csv')" class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-transparent hover:bg-tm-upload text-tm-text-sec transition-colors flex items-center gap-1"><i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-tm-gold"></i><span>CSV</span></button>
-                                <button onclick="printReport()" class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-[#182235] hover:opacity-90 text-white shadow-xs transition-colors flex items-center gap-1"><i data-lucide="printer" class="w-3.5 h-3.5"></i><span>Print</span></button>
+                                <button onclick="exportResult('pdf')" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-blue-600 hover:bg-blue-700 text-white dark:bg-amber-500 dark:hover:bg-amber-600 dark:text-slate-950 shadow-xs transition-all flex items-center gap-1.5 cursor-pointer">
+                                    <i data-lucide="file-down" class="w-3.5 h-3.5"></i>
+                                    <span>Download PDF</span>
+                                </button>
+                                <button onclick="exportResult('json')" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-tm-border bg-tm-card hover:bg-tm-panel text-tm-text-sec hover:text-tm-text-pri transition-colors flex items-center gap-1 shadow-2xs cursor-pointer">
+                                    <i data-lucide="file-json" class="w-3.5 h-3.5 text-blue-600 dark:text-amber-400"></i>
+                                    <span>JSON</span>
+                                </button>
+                                <button onclick="exportResult('csv')" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-tm-border bg-tm-card hover:bg-tm-panel text-tm-text-sec hover:text-tm-text-pri transition-colors flex items-center gap-1 shadow-2xs cursor-pointer">
+                                    <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-blue-600 dark:text-amber-400"></i>
+                                    <span>CSV</span>
+                                </button>
+                                <button onclick="printReport()" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-tm-border bg-tm-card hover:bg-tm-panel text-tm-text-sec hover:text-tm-text-pri transition-colors flex items-center gap-1 shadow-2xs cursor-pointer">
+                                    <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                                    <span>Print</span>
+                                </button>
                             </div>
                         </div>
 
-                        <div class="flex space-x-2 pt-3 pb-2 border-b border-tm-border text-xs overflow-x-auto">
-                            <button id="tab-btn-ec-analysis" onclick="switchTab('ec-analysis')" class="hidden px-3 py-1.5 font-semibold rounded-lg bg-transparent hover:bg-tm-upload text-tm-text-sec flex items-center gap-1.5 shrink-0"><i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i><span>EC Analysis</span></button>
-                            <button id="tab-btn-fields" onclick="switchTab('fields')" class="px-3 py-1.5 font-semibold rounded-lg bg-[#182235] text-[#F2EDE3] shadow-sm flex items-center gap-1.5 shrink-0"><i data-lucide="list-tree" class="w-3.5 h-3.5"></i><span>Sale Deed Details</span></button>
-                            <button id="tab-btn-owners" onclick="switchTab('owners')" class="hidden px-3 py-1.5 font-semibold rounded-lg bg-transparent hover:bg-tm-upload text-tm-text-sec flex items-center gap-1.5 shrink-0"><i data-lucide="users" class="w-3.5 h-3.5 text-tm-gold"></i><span>Owners Directory</span><span id="owners-count-badge" class="px-1.5 py-0.2 bg-purple-100 text-purple-800 rounded-full text-[10px] font-bold">0</span></button>
-                            <button id="tab-btn-property-filter" onclick="switchTab('property-filter')" class="hidden px-3 py-1.5 font-semibold rounded-lg bg-transparent hover:bg-tm-upload text-tm-text-sec flex items-center gap-1.5 shrink-0"><i data-lucide="filter" class="w-3.5 h-3.5 text-tm-gold"></i><span>Property Title Filter</span><span id="prop-filter-match-badge" class="hidden px-1.5 py-0.2 bg-transparent border border-tm-border text-tm-action rounded-full text-[10px] font-bold">0</span></button>
-                            <button id="tab-btn-checklist" onclick="switchTab('checklist')" class="px-3 py-1.5 font-semibold rounded-lg bg-transparent hover:bg-tm-upload text-tm-text-sec flex items-center gap-1.5 shrink-0"><i data-lucide="check-square" class="w-3.5 h-3.5 text-tm-gold"></i><span>Verification Checklist</span><span id="checklist-badge-count" class="px-1.5 py-0.2 bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300 rounded-full text-[10px] font-bold">18/18</span></button>
-                            <button id="tab-btn-table" onclick="switchTab('table')" class="hidden px-3 py-1.5 font-semibold rounded-lg bg-transparent hover:bg-tm-upload text-tm-text-sec flex items-center gap-1.5 shrink-0"><i data-lucide="table" class="w-3.5 h-3.5 text-tm-gold"></i><span>Table Records</span></button>
-                            <button id="tab-btn-ocr" onclick="switchTab('ocr')" class="hidden px-3 py-1.5 font-semibold rounded-lg bg-transparent hover:bg-tm-upload text-tm-text-sec flex items-center gap-1.5 shrink-0"><i data-lucide="align-left" class="w-3.5 h-3.5 text-tm-text-sec"></i><span>Full OCR Text</span></button>
+                        <div class="flex space-x-1.5 pt-3 pb-2 border-b border-tm-border text-xs overflow-x-auto">
+                            <button id="tab-btn-ec-analysis" onclick="switchTab('ec-analysis')" class="hidden px-3.5 py-1.5 font-semibold rounded-lg bg-tm-panel text-tm-text-sec hover:text-tm-text-pri flex items-center gap-1.5 shrink-0"><i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i><span>EC Analysis</span></button>
+                            <button id="tab-btn-fields" onclick="switchTab('fields')" class="px-3.5 py-1.5 font-bold rounded-lg bg-blue-600 text-white dark:bg-amber-500 dark:text-slate-950 shadow-xs flex items-center gap-1.5 shrink-0"><i data-lucide="list-tree" class="w-3.5 h-3.5"></i><span>Sale Deed Details</span></button>
+                            <button id="tab-btn-owners" onclick="switchTab('owners')" class="hidden px-3.5 py-1.5 font-semibold rounded-lg bg-tm-panel text-tm-text-sec hover:text-tm-text-pri flex items-center gap-1.5 shrink-0"><i data-lucide="users" class="w-3.5 h-3.5 text-blue-600 dark:text-amber-400"></i><span>Owners Directory</span><span id="owners-count-badge" class="px-1.5 py-0.2 bg-purple-100 text-purple-800 rounded-full text-[10px] font-bold">0</span></button>
+                            <button id="tab-btn-property-filter" onclick="switchTab('property-filter')" class="hidden px-3.5 py-1.5 font-semibold rounded-lg bg-tm-panel text-tm-text-sec hover:text-tm-text-pri flex items-center gap-1.5 shrink-0"><i data-lucide="filter" class="w-3.5 h-3.5 text-blue-600 dark:text-amber-400"></i><span>Property Title Filter</span><span id="prop-filter-match-badge" class="hidden px-1.5 py-0.2 bg-transparent border border-tm-border text-tm-action rounded-full text-[10px] font-bold">0</span></button>
+                            <button id="tab-btn-checklist" onclick="switchTab('checklist')" class="px-3.5 py-1.5 font-semibold rounded-lg bg-tm-panel text-tm-text-sec hover:text-tm-text-pri flex items-center gap-1.5 shrink-0"><i data-lucide="check-square" class="w-3.5 h-3.5 text-emerald-600"></i><span>Verification Checklist</span><span id="checklist-badge-count" class="px-1.5 py-0.2 bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300 rounded-full text-[10px] font-bold">18/18</span></button>
+                            <button id="tab-btn-table" onclick="switchTab('table')" class="hidden px-3.5 py-1.5 font-semibold rounded-lg bg-tm-panel text-tm-text-sec hover:text-tm-text-pri flex items-center gap-1.5 shrink-0"><i data-lucide="table" class="w-3.5 h-3.5 text-blue-600 dark:text-amber-400"></i><span>Table Records</span></button>
+                            <button id="tab-btn-ocr" onclick="switchTab('ocr')" class="hidden px-3.5 py-1.5 font-semibold rounded-lg bg-tm-panel text-tm-text-sec hover:text-tm-text-pri flex items-center gap-1.5 shrink-0"><i data-lucide="align-left" class="w-3.5 h-3.5 text-tm-text-sec"></i><span>Full OCR Text</span></button>
                         </div>
 
                         <div class="flex-1 overflow-y-auto pt-3 pr-1 space-y-3">
@@ -493,6 +654,7 @@
                         </div>
                     </div>
                 </div>
+                </div>
             </section>
         </div>
         <!-- TRACK 2: MULTI-DOCUMENT CROSS-VERIFICATION MATRIX -->
@@ -509,11 +671,13 @@
                     </div>
 
                     <div class="flex items-center space-x-2">
-                        <button onclick="loadBundle('standard_sale_bundle')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-transparent hover:bg-tm-upload text-tm-text-sec">
-                            Load Clean Title
+                        <button onclick="loadBundle('standard_sale_bundle')" class="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer">
+                            <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                            <span>Load Clean Title</span>
                         </button>
-                        <button onclick="loadBundle('fraud_alert_bundle')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white shadow-sm shadow-rose-500/20">
-                            Load Poramboke Fraud Demo
+                        <button onclick="loadBundle('fraud_alert_bundle')" class="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-rose-600 hover:bg-rose-700 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer">
+                            <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+                            <span>Load Poramboke Fraud Demo</span>
                         </button>
                     </div>
                 </div>
@@ -577,8 +741,9 @@
                         <p class="text-xs text-tm-text-sec mt-0.5">High-fraud risk track verifying all heirs are signatories or have registered release/POA, plus the TN Patta Passbook Act mutation hard gate.</p>
                     </div>
 
-                    <button onclick="loadBundle('inherited_property_bundle')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-purple-600 hover:bg-purple-700 text-white shadow-sm shadow-purple-500/20">
-                        Reload Inheritance Demo
+                    <button onclick="loadBundle('inherited_property_bundle')" class="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-purple-600 hover:bg-purple-700 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer">
+                        <i data-lucide="git-merge" class="w-3.5 h-3.5"></i>
+                        <span>Reload Inheritance Demo</span>
                     </button>
                 </div>
 
@@ -595,6 +760,26 @@
                             A Legal Heir Certificate (Varisu) is an administrative snapshot, not a title deed. The Patta has been officially mutated from Late Mr. V. Ramamoorthy to the surviving heirs under Tahsildar Order MUT/MYL/2023/4812. Clean ownership is established.
                         </p>
                     </div>
+                </div>
+            </section>
+
+            <!-- PROPERTY INHERITANCE ESSENTIAL DETAILS (SURVEY NUMBER, EXTENT, BOUNDARY, AND TITLE CHAIN) -->
+            <section class="glass-panel p-6 sm:p-8 rounded-2xl shadow-sm border border-tm-border" id="property-inheritance-section">
+                <div class="flex items-center justify-between mb-4 pb-3 border-b border-tm-border">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 flex items-center justify-center">
+                            <i data-lucide="git-merge" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-tm-text-pri">Property Inheritance & Title Lineage (சொத்து உரிமை தொடர்)</h3>
+                            <p class="text-xs text-tm-text-sec">Inherited property identification: Survey Number, Extent, Boundaries & Past-to-Present Title Flow</p>
+                        </div>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 border border-purple-200">Authenticated Inheritance Chain</span>
+                </div>
+
+                <div id="property-inheritance-container" class="space-y-4">
+                    <!-- Populated dynamically via renderInheritanceResults -->
                 </div>
             </section>
 
@@ -670,6 +855,6 @@
         </div>
     </footer>
 
-    <script src="/static/app.js?v=43.7.0"></script>
+    <script src="/static/app.js?v=55.0"></script>
 </body>
 </html>

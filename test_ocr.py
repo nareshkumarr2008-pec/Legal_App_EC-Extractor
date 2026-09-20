@@ -89,12 +89,23 @@ PAN: AAMPM9014C
         self.assertIn("907", fields["apartment_uds_floor"]["value"])
         self.assertIn("Duraiswamy Pillai", fields["boundaries"]["value"])
         self.assertIn("Public Road", fields["boundaries"]["value"])
-        self.assertIn("23,00,000", fields["consideration_amount"]["value"])
         self.assertIn("Kodambakkam", fields["sro_details"]["value"])
         self.assertIn("3978 of 2010", fields["document_number"]["value"])
         self.assertIn("22-11-2010", fields["registration_date"]["value"])
-        self.assertIn("09-285-003-181", fields["utility_tax_identifiers"]["value"])
-        self.assertIn("AAMPM9014C", fields["pan_number"]["value"])
+
+        # Excluded fields per user specification must not be exposed
+        self.assertNotIn("consideration_amount", fields)
+        self.assertNotIn("market_value", fields)
+        self.assertNotIn("pan_number", fields)
+        self.assertNotIn("utility_tax_identifiers", fields)
+        self.assertNotIn("witnesses", fields)
+        self.assertNotIn("document_drafter", fields)
+
+        # Title chain verification
+        self.assertIn("title_chain", extracted)
+        chain = extracted["title_chain"]
+        self.assertIn("present_owner", chain)
+        self.assertIn("previous_owner", chain)
 
 
     def test_dynamic_ec_header_extraction(self):
@@ -416,6 +427,57 @@ PATTA EXTRACT - TAMIL NADU REVENUE DEPARTMENT
         self.assertIn("Nanjai (Wet", fields["nature_of_land"]["value"])
         self.assertIn("Used to confirm", fields["revenue_owner_confirmation"]["value"])
 
+    def test_natham_patta_extraction(self):
+        """Verify dynamic universal extraction for Tamil Nadu Natham Patta (Doc 324 Sembakkam)."""
+        natham_sample_text = """தமிழ்நாடு அரசு
+வருவாய் மற்றும் பேரிடர் மேலாண்மைத் துறை
+நத்தம் பட்டா
+மாவட்டம் : செங்கல்பட்டுட் வட்டம் : தாம்பரம்
+வருவாய் கிராமம் : செம்பாக்கம் பட்டா எண் : 324
+உரிமையாளர்கள் பெயர்
+1. குப்புசாமி மகன் ஜானிகிராமன் -
+நத்தம் புல எண் உட்பிட் ரிவு எண் பழைய புல எண் வகை ப்பாடு பரப்பு தீர்வைர் குறிப்பு
+ஹெக் - ஏர் - சமீ ரூ - பை
+128 11 128--
+ரயத்துத் வாரி
+மனை
+0 - 0.51 2.00
+---- --G.O. MS 221
+dated 04.05.2023-
+--
+Digitally signed:
+Kavitha S
+Tahsildar
+22/01/2024
+05:47:27:PM
+0 - 0.51 2.00
+தாம்பரம் வட்டாட்சியர் / மண்டல துணை வட்டாட்சியரால் 22/01/2024 அன்று 05:47:27:PM நேரத்தில் மின்
+கை யொப்பம் இடப்பட்டது.
+குறிப்பு :
+1.
+மேற்கண்ட நத்தம் நில உரிமை விபரங்கள் நத்தம் தூய அடங்கலின் உண்மை நகல் என
+சான்றளிக்கப்படுகிறது. இவற்றை தாங்கள் https://eservices.tn.gov.in என்ற இணைய
+தளத்தில் S/NA/35/05/128/00324/30899 என்ற குறிப்பு எண்ணை உள்ளீடுளீ செய்து உறுதி
+செய்துகொள்ளவும்.
+"""
+        extracted = self.extractor.extract(natham_sample_text, doc_type="patta")
+        fields = extracted["fields"]
+
+        self.assertEqual(fields["patta_number"]["value"], "324")
+        self.assertIn("Janakiraman", fields["owner_name"]["value"])
+        self.assertIn("Kuppusamy", fields["owner_name"]["value"])
+        self.assertIn("128/11", fields["survey_numbers"]["value"])
+        self.assertNotIn("0-0", fields["survey_numbers"]["value"])
+        self.assertNotIn("35/05", fields["survey_numbers"]["value"])
+        self.assertIn("Chengalpattu", fields["district"]["value"])
+        self.assertIn("Tambaram", fields["taluk"]["value"])
+        self.assertIn("Sembakkam", fields["village"]["value"])
+        self.assertIn("0.51 Ares", fields["extent_details"]["value"])
+        self.assertIn("549 Sq.Ft", fields["extent_details"]["value"])
+        self.assertIn("Rayathuvari Manai", fields["nature_of_land"]["value"])
+        self.assertEqual(fields["total_tax"]["value"], "Rs. 2.00")
+        self.assertIn("S/NA/35/05/128/00324/30899", fields["portal_reference"]["value"])
+
     def test_llm_status_endpoint(self):
         """Verify /api/llm/status reports model name, base url, and fallback status."""
         res = self.client.get("/api/llm/status")
@@ -637,6 +699,43 @@ PATTA EXTRACT - TAMIL NADU REVENUE DEPARTMENT
         self.assertIn(dynamic_english_to_tamil("Bank"), ["வங்கி", "பேங்க்"])
         self.assertEqual(dynamic_english_to_tamil("Neetu"), "நீத்து")
         self.assertEqual(dynamic_english_to_tamil("Hinduja"), "ஹிந்துஜா")
+
+    def test_tslr_owner_name_extraction_merged_and_split(self):
+        """Verify accurate TSLR owner name extraction on split-lines and merged OCR row text."""
+        from app.extractors.tslr_extractor import TSLRExtractor
+        ext = TSLRExtractor()
+
+        # Split lines case (Official TSLR narrow column)
+        split_text = """
+1
+Block : Block-27-..
+73 0
+380/1A1C
+23 -
+23 ரயத்துத் வாரி புஞ்சை - 0- 0.00 0 2 64.0 - 0.00 -
+நாராயணன்
+மகன் நா
+கோவிந்தராஜூ
+2025/0153/35/005324TR
+DT. 2025-08-31 TR DT:
+"""
+        res_split = ext.extract(split_text)
+        self.assertEqual(res_split["owner_name"]["value"], "N. Govindarajoo (S/o Narayanan) (நாராயணன் மகன் நா கோவிந்தராஜூ)")
+
+        # Merged OCR row case (horizontal row with numbers and TR date)
+        merged_text = """
+1
+Block : Block-27-..
+73 0
+380/1A1C
+23 -
+நாராயணன்
+1 Block- 73 0 23 ரயத்துத் வாரி புஞ்சை - 0- 0.00 0 2 64.0 - 0.00 - மகன் நா DT. 2025-08-31 TR DT:
+கோவிந்தராஜூ
+2025/0153/35/005324TR
+"""
+        res_merged = ext.extract(merged_text)
+        self.assertEqual(res_merged["owner_name"]["value"], "N. Govindarajoo (S/o Narayanan) (நாராயணன் மகன் நா கோவிந்தராஜூ)")
 
 
 if __name__ == "__main__":

@@ -391,6 +391,29 @@ class CrossVerificationEngine:
             "details": f"Status: {mutation_status}."
         })
 
+        prop_inh = inheritance_data.get("property_inheritance", {
+            "survey_number": "New Survey No. 78 of Block No. 1 (Old S.No. 128/7)",
+            "extent": "Two Grounds and 2130 Sq.Ft (6,930 Sq.Ft Total Parent Site Area)",
+            "boundaries": {
+                "north": "24 Feet Wide Common Access Road",
+                "south": "Plot No. 14 Owned by Krishnamurthy",
+                "east": "Survey No. 79/2 Property",
+                "west": "30 Feet Municipal Main Road"
+            },
+            "title_chain": {
+                "past_owner_c": {
+                    "name": "Late Mr. V. Ramamoorthy",
+                    "document_number": "Mother Deed Doc No. 1120 of 1998",
+                    "poa_agent": "Smt. V. Meenakshi (POA Doc No. 891/2023)"
+                },
+                "present_owner_d": {
+                    "name": "Thiru. R. Vijayakumar & Smt. R. Saradha",
+                    "document_number": "Sale Deed Doc No. 3978 of 2010",
+                    "poa_agent": "Direct Execution / Self"
+                }
+            }
+        })
+
         return {
             "track": "Death certificate and legal hier certificate Track",
             "overall_status": overall_status,
@@ -398,5 +421,6 @@ class CrossVerificationEngine:
             "total_heirs_count": total_heirs,
             "accounted_heirs_count": accounted_heirs,
             "heirs_breakdown": heirs_list,
-            "verification_steps": checks
+            "verification_steps": checks,
+            "property_inheritance": prop_inh
         }

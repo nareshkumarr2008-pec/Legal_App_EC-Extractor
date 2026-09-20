@@ -1,0 +1,32 @@
+{
+  "fields": {
+    "patta_number": "324",
+    "portal_reference": "S/NA/35/05/128/00324/30899",
+    "village": "Sembakkam (செம்பாக்கம்)",
+    "district": "Chengalpattu (செங்கல்பட்டு)",
+    "taluk": "Tambaram (தாம்பரம்)",
+    "owner_name": "Janakiraman, S/o Kuppusamy (குப்புசாமி மகன் ஜானிகிராமன்)",
+    "survey_numbers": "128/11",
+    "extent_details": "128/11: 0 - 0.51 (0.51 Ares / 549 Sq.Ft / 51 Sq.M / 0.23 Grounds) — Tax: Rs. 2.00\nTotal Extent: 0.51 Ares (549 Sq.Ft / 51 Sq.M / 0.23 Grounds / 0.013 Acres) — Total Tax: Rs. 2.00",
+    "nature_of_land": "Rayathuvari Manai (Residential Plot) — ரயத்துவாரி மனை",
+    "revenue_owner_confirmation": "Used to confirm revenue ownership matching sale deed",
+    "digital_signature_timestamp": "22/01/2024 at 05:47:27",
+    "authorized_signatory": "Kavitha S (Tahsildar)",
+    "certificate_printed_date": "15-09-2026 at 08:42:26 AM",
+    "verification_portal": "https://eservices.tn.gov.in",
+    "total_tax": "Rs. 2.00"
+  },
+  "cadastral_schedule": [
+    {
+      "sl": "1",
+      "survey_no": "128/11",
+      "old_survey_no": "128",
+      "land_type": "ரயத்துவாரி மனை (Residential Site / Manai)",
+      "extent_ha": "0 - 0.51",
+      "extent_ares": "0.51 Ares",
+      "sq_meters": "51 Sq.M",
+      "sq_feet": "549 Sq.Ft",
+      "tax": "Rs. 2.00"
+    }
+  ]
+}

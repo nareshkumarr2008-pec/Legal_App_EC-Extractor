@@ -132,10 +132,16 @@ print("=== TESTING PATTA EXTRACTOR ===")
 p_ext = PattaExtractor()
 p_res = p_ext.extract(patta_text)
 for k, v in p_res.items():
-    print(f"[{k}]: {v.get('value')}")
+    if isinstance(v, dict):
+        print(f"[{k}]: {v.get('value')}")
+    else:
+        print(f"[{k}]: {v}")
 
 print("\n=== TESTING TSLR EXTRACTOR ===")
 t_ext = TSLRExtractor()
 t_res = t_ext.extract(tslr_text)
 for k, v in t_res.items():
-    print(f"[{k}]: {v.get('value')}")
+    if isinstance(v, dict):
+        print(f"[{k}]: {v.get('value')}")
+    else:
+        print(f"[{k}]: {v}")

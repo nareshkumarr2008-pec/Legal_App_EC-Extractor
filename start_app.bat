@@ -12,9 +12,9 @@ for /f "tokens=5" %%a in ('netstat -aon ^| findstr :8000 ^| findstr LISTENING 2^
 
 set PYTHONPATH=%~dp0
 if exist "%~dp0.venv\Scripts\python.exe" (
-    "%~dp0.venv\Scripts\python.exe" -m uvicorn app.server:app --host 127.0.0.1 --port 8000 --reload --reload-dir app --reload-dir static
+    "%~dp0.venv\Scripts\python.exe" "%~dp0run.py"
 ) else (
-    py -m uvicorn app.server:app --host 127.0.0.1 --port 8000 --reload --reload-dir app --reload-dir static
+    py "%~dp0run.py"
 )
 pause
 

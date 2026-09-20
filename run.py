@@ -36,12 +36,39 @@ def ensure_port_free(port=8000):
         print(f"[PlotChoice] Port check warning: {err}")
 
 
+def _launch_browser_when_ready(url="http://127.0.0.1:8000"):
+    """Poll the health check endpoint and automatically open the default browser when live."""
+    import time
+    import urllib.request
+    import webbrowser
+
+    for _ in range(30):
+        time.sleep(0.5)
+        try:
+            req = urllib.request.Request(f"{url}/api/health")
+            with urllib.request.urlopen(req, timeout=1) as resp:
+                if resp.status == 200:
+                    print(f"\n[PlotChoice] >>> Server is ready! Automatically opening web browser to: {url} <<<\n")
+                    webbrowser.open(url)
+                    return
+        except Exception:
+            pass
+
+
 if __name__ == "__main__":
+    import threading
+
     ensure_port_free(8000)
+
+    # Launch browser automatically once uvicorn finishes startup
+    threading.Thread(target=_launch_browser_when_ready, daemon=True).start()
+
     import uvicorn
     print("=========================================================")
-    print("  Starting Real Estate Document OCR & Intelligence Server")
-    print("  Access Web Application at: http://127.0.0.1:8000")
+    print("  PlotChoice Real Estate OCR & Intelligence Server")
+    print("  Web Application URL: http://127.0.0.1:8000")
+    print("  Web browser will launch automatically in a moment...")
+    print("  (Keep this terminal window running while using the app)")
     print("=========================================================")
     uvicorn.run("app.server:app", host="127.0.0.1", port=8000, reload=True, reload_dirs=["app", "static"], access_log=True)
 

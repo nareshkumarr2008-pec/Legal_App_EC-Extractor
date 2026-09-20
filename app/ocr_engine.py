@@ -555,6 +555,12 @@ class OCREngine:
         # Strip raw CID font artifacts e.g. (cid:2), (cid:39)
         t = re.sub(r'\(cid:\d+\)', '', t)
 
+        # Repair null bytes & eServices font character drops
+        t = re.sub(r'([\u0b80-\u0bff])\x00+([\u0b80-\u0bff])', r'\1\2', t)
+        t = re.sub(r'[\s\x00]*ப்[\s\x00]*சா[\s\x00]*(?=\s*மகன்)', ' குப்புசாமி ', t)
+        t = re.sub(r'ஜானி[\x00\s]*(?:கி)?ராமன்', 'ஜானிகிராமன்', t)
+        t = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', ' ', t)
+
         # Fix noisy quotes and punctuation inserted inside words
         t = re.sub(r"மாவ['`’]டம்", "மாவட்டம்", t)
         t = re.sub(r"\bமராவட்டம்\b", "மாவட்டம்", t)

@@ -444,7 +444,7 @@ class DocumentExtractor:
                     if "anchor_keywords" in v:
                         del v["anchor_keywords"]
 
-        return {
+        res = {
             "document_type_id": doc_type,
             "document_type_name": category_meta["name"],
             "tamil_name": category_meta["tamil_name"],
@@ -455,6 +455,9 @@ class DocumentExtractor:
             "text_length": len(text),
             "lines_count": len([l for l in text.splitlines() if l.strip()])
         }
+        if "title_chain" in fields:
+            res["title_chain"] = fields["title_chain"]
+        return res
 
     # ── Helper: extract a value near a Tamil/English label ──
 
@@ -569,17 +572,7 @@ class DocumentExtractor:
     # ═══════════════════════════════════════════════════════════════════
 
     def _extract_building_plan(self, text):
-        fields = {}
-        for key, label, patterns in [
-            ("permit_number", "அனுமதி எண் (Planning Permit No)", [r'(?:permit|sanction)\s*(?:no|number)[^\n:]*[:\s]+([^\n]+)']),
-            ("applicant_name", "விண்ணப்பதாரர் (Applicant Name)", [r'(?:applicant|owner)[^\n:]*[:\s]+([^\n]+)']),
-            ("plot_details", "மனை விவரம் (Plot Details)", [r'(?:plot|site)[^\n:]*[:\s]+([^\n]+)']),
-            ("built_up_area", "கட்டிய பரப்பு (Built-up Area)", [r'(?:built.?up|plinth)[^\n:]*[:\s]+([^\n]+)']),
-            ("fsi", "தள பரப்பு குறியீடு (FSI / FAR)", [r'(?:fsi|far|floor\s*area)[^\n:]*[:\s]+([^\n]+)']),
-        ]:
-            val = self._find_value(text, patterns)
-            fields[key] = {"value": val or "Not Detected", "confidence": 0.90 if val else 0.0, "label": label}
-        return fields
+        return self.extractors["building_plan"].extract(text)
 
     def _extract_rera(self, text):
         fields = {}

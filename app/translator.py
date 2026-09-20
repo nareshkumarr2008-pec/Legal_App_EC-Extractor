@@ -218,6 +218,9 @@ COMMON_NAMES = {
     "லலிதா": "Lalitha", "lalitha": "லலிதா",
     "டாக்டர்": "Dr.", "டாக்டர்.": "Dr.", "dr.": "டாக்டர்.", "dr": "டாக்டர்.", "doctor": "டாக்டர்",
     "மங்காதேவி": "Mangadevi", "mangadevi": "மங்காதேவி",
+    "குப்புசாமி": "Kuppusamy", "kuppusamy": "குப்புசாமி", "குப்பு சாமி": "Kuppusamy",
+    "ஜானிகிராமன்": "Janakiraman", "ஜானகிராமன்": "Janakiraman", "ஜானிராமன்": "Janakiraman", "ஜானி": "Janakiraman", "janakiraman": "ஜானகிராமன்", "ஜானி கிராமன்": "Janakiraman",
+    "கவிதா": "Kavitha", "kavitha": "கவிதா",
     "மங்கா தேவி": "Manga Devi", "manga devi": "மங்கா தேவி",
     "மங்கா": "Manga", "manga": "மங்கா",
     "தேவி": "Devi", "devi": "தேவி",
@@ -246,7 +249,7 @@ COMMON_NAMES = {
     # Bank, Finance & Institutional Word Mappings
     "கோட்டக்": "Kotak", "கோடக்": "Kotak", "கொட்டக்": "Kotak", "kotak": "கோட்டக்",
     "மேகந்திரா": "Mahindra", "மகிந்திரா": "Mahindra", "மகேந்திரா": "Mahindra", "mahindra": "மகிந்திரா",
-    "பாங்க்": "Bank", "பேங்க்": "Bank", "பாங்கு": "Bank", "வங்கி": "Bank", "bank": "பாங்க்",
+    "பாங்க்": "Bank", "பேங்க்": "Bank", "பாங்கு": "Bank", "வங்கி": "Bank", "bank": "வங்கி",
     "லட்சுமி": "Lakshmi", "லஷ்மி": "Lakshmi", "லட்ஸுமி": "Lakshmi", "lakshmi": "லட்சுமி",
     "ஜெனரல்": "General", "ஜெனறல்": "General", "general": "ஜெனரல்",
     "பைனான்ஸ்": "Finance", "பினான்ஸ்": "Finance", "finance": "பைனான்ஸ்",
@@ -368,6 +371,7 @@ REAL_ESTATE_TERMS = {
     "பழைய": "Old", "old": "பழைய",
     "பிளாக்": "Block", "block": "பிளாக்",
     "தெரு": "Street", "street": "தெரு",
+    "bank": "வங்கி", "வங்கி": "Bank",
     "சாலை": "Road", "road": "சாலை",
     "நகரம்": "Town", "town": "நகரம்",
     "சதுரடி": "Sq. Ft", "sqft": "சதுரடி", "sq.ft": "சதுரடி",
@@ -1326,26 +1330,47 @@ def format_bilingual_owner(raw_owner_str: str) -> str:
             results.append(f"{en_owner} ({rel_en} {en_parent}) ({ta_parent} {rel_ta} {prefix}{ta_owner})")
         return ", ".join(results)
 
-    # 2. Pure Tamil Kinship pattern: [Parent] (மகன்|மகள்|மனைவி|கணவர்) [Owner]
-    ta_pat = r'([A-Za-z\u0b80-\u0bff]+)\s+(மகன்|மகள்|மனைவி|கணவர்)\s+([A-Za-z\u0b80-\u0bff]+)'
-    ta_matches = list(re.finditer(ta_pat, clean_str))
-    if ta_matches:
-        results = []
-        for m in ta_matches:
-            ta_parent = m.group(1).strip()
-            ta_rel = m.group(2).strip()
-            ta_owner = m.group(3).strip()
+    # 2. Pure Tamil Kinship pattern: [Parent] (மகன்|மகள்|மனைவி|கணவர்) [Owner] or [Owner] (த/பெ|க/பெ) [Parent]
+    # Handles multi-word Tamil names, initials, and line/comma delimited lists
+    sub_lines = []
+    for l in clean_str.splitlines():
+        for sub_item in re.split(r'\s*,\s*(?=\d+\.|\d+\))', l):
+            if sub_item.strip():
+                sub_lines.append(sub_item.strip())
 
-            rel_en = "S/o" if ta_rel == "மகன்" else (
-                "W/o" if ta_rel == "மனைவி" else (
-                    "D/o" if ta_rel == "மகள்" else "H/o"
-                )
-            )
-            en_parent = CANONICAL_PLACES.get(ta_parent) or COMMON_NAMES.get(ta_parent) or dynamic_transliterate_tamil(ta_parent)
-            en_owner = CANONICAL_PLACES.get(ta_owner) or COMMON_NAMES.get(ta_owner) or dynamic_transliterate_tamil(ta_owner)
+    ta_results = []
+    for item in sub_lines:
+        l_clean = re.sub(r'^\d+[\.\)\s\-]+', '', item).strip()
+        l_clean = re.sub(r'[\s\-]+$', '', l_clean).strip()
+        if not l_clean or len(l_clean) < 3:
+            continue
 
-            results.append(f"{en_owner}, {rel_en} {en_parent} ({ta_parent} {ta_rel} {ta_owner})")
-        return ", ".join(results)
+        # Check Form A: "<Parent> (மகன்|மகள்|மனைவி|கணவர்) <Owner>"
+        m_a = re.search(r'([A-Za-z\u0b80-\u0bff\.\s]+?)\s+(மகன்|மகள்|மனைவி|கணவர்)\s+([A-Za-z\u0b80-\u0bff\.\s]+)', l_clean)
+        if m_a:
+            ta_parent = m_a.group(1).strip()
+            ta_rel = m_a.group(2).strip()
+            ta_owner = m_a.group(3).strip()
+            rel_en = "S/o" if ta_rel == "மகன்" else ("W/o" if ta_rel == "மனைவி" else ("D/o" if ta_rel == "மகள்" else "H/o"))
+            en_parent = COMMON_NAMES.get(ta_parent.lower()) or CANONICAL_PLACES.get(ta_parent) or dynamic_transliterate_tamil(ta_parent)
+            en_owner = COMMON_NAMES.get(ta_owner.lower()) or CANONICAL_PLACES.get(ta_owner) or dynamic_transliterate_tamil(ta_owner)
+            ta_results.append(f"{en_owner}, {rel_en} {en_parent} ({ta_parent} {ta_rel} {ta_owner})")
+            continue
+
+        # Check Form B: "<Owner> (த/பெ|க/பெ|ம/பெ) <Parent>"
+        m_b = re.search(r'([A-Za-z\u0b80-\u0bff\.\s]+?)\s+(த/பெ|க/பெ|ம/பெ)\s+([A-Za-z\u0b80-\u0bff\.\s]+)', l_clean)
+        if m_b:
+            ta_owner = m_b.group(1).strip()
+            ta_rel = m_b.group(2).strip()
+            ta_parent = m_b.group(3).strip()
+            rel_en = "S/o" if ta_rel == "த/பெ" else ("W/o" if ta_rel == "க/பெ" else "D/o")
+            en_owner = COMMON_NAMES.get(ta_owner.lower()) or CANONICAL_PLACES.get(ta_owner) or dynamic_transliterate_tamil(ta_owner)
+            en_parent = COMMON_NAMES.get(ta_parent.lower()) or CANONICAL_PLACES.get(ta_parent) or dynamic_transliterate_tamil(ta_parent)
+            ta_results.append(f"{en_owner}, {rel_en} {en_parent} ({ta_owner} {ta_rel} {ta_parent})")
+            continue
+
+    if ta_results:
+        return ", ".join(ta_results)
 
     # 3. English Kinship / Legal Heirs pattern
     en_pat = r'([A-Za-z\s]+?)\s*(?:,\s*|\s+)(?:(Son of|Wife of|Daughter of|Husband of|W/o|S/o|D/o))\s+(?:Late\s+)?([A-Za-z\s]+)'

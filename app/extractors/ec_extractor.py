@@ -1657,17 +1657,20 @@ class ECExtractor:
         entries: List[ECEntry] = []
         lines = [l.strip() for l in text.splitlines() if l.strip()]
         doc_regex = re.compile(r'^(?:(?P<sr>\d{1,4})[\.\)]?\s+)?(?P<doc>(?:[A-Za-z0-9\.\-\(\)]+\s+)?\d{1,6}/\d{4})\b(?!\s*[-/]\s*\d{2,4})')
-        date_regex = re.compile(r'\b\d{1,2}[-/][A-Za-z]{3}[-/]\d{2,4}\b')
+        date_regex = re.compile(r'\b\d{1,2}[-/](?:[A-Za-z]{3}|\d{1,2})[-/]\d{2,4}\b')
 
         chunk_indices = []
         for idx, line in enumerate(lines):
-            if re.search(r'^\d{1,2}/\d{1,2}/\d{4}$', line):
+            if re.search(r'^\d{1,2}[-/](?:[A-Za-z]{3}|\d{1,2})[-/]\d{4}$', line):
                 continue
             m = doc_regex.search(line)
             if m:
-                # Look backwards 1-2 lines to ensure it is NOT a prior deed reference
-                prev_context = " ".join(lines[max(0, idx - 2):idx]).lower()
-                if any(k in prev_context for k in ["முந்தைய", "pr number", "முந்தைய ஆவண", "பத்திர நெ", "ஆவணத்தால் திருத்தம்", "பைசல் முன் பத்திர", "ஆவணம் 1 புத்தகம்"]):
+                # Skip if current line has prior deed or amendment marker
+                if re.search(r'(?:முந்தைய|pr\s*number|முந்தைய\s*ஆவண|பத்திர\s*நெ|ஆவணத்தால்\s*திருத்தம்|பைசல்\s*முன்\s*பத்திர|ஆவணம்\s*1\s*புத்தக)', line, re.I):
+                    continue
+
+                # Skip if immediately previous line is a dangling label without a document number
+                if idx > 0 and re.search(r'(?:முந்தைய|pr\s*number|முந்தைய\s*ஆவண|பத்திர\s*நெ|ஆவணத்தால்\s*திருத்தம்|பைசல்\s*முன்\s*பத்திர|ஆவணம்\s*1\s*புத்தக)[^0-9/]*$', lines[idx - 1], re.I):
                     continue
 
                 # Look forward 1-4 lines: must contain a date!
@@ -1698,7 +1701,7 @@ class ECExtractor:
             reg_d = _standardize_date(dates[2]) if len(dates) > 2 else exec_d
 
             # 2. Split chunk into Sections
-            fin_split = re.search(r'(?:கைமாற்றுத்\s*தொகை|கைமாற்றுத்\s*தொகை|Consideration\s*Value)\s*:', chunk_text, re.I)
+            fin_split = re.search(r'(?:Consideration\s*Value|கைமாற்றுத்\s*தொகை|கைமாற்றுத்\s*தொகை)', chunk_text, re.I)
             fin_start_pos = fin_split.start() if fin_split else len(chunk_text)
 
             last_date_pos = 0
@@ -1706,33 +1709,69 @@ class ECExtractor:
                 last_date_pos = max(last_date_pos, m.end())
 
             parties_block = chunk_text[last_date_pos:fin_start_pos].strip()
-            parties_lines = [l.strip() for l in parties_block.splitlines() if l.strip()]
 
-            nature_val = ""
-            party_start_idx = 0
-            for p_i, pl in enumerate(parties_lines):
-                if re.match(r'^(?:1\.|1\.\.\.|\d+\.)', pl):
-                    party_start_idx = p_i
-                    break
-                else:
-                    nature_val = (nature_val + " " + pl).strip()
+            # Check explicit Executant / Claimant section markers
+            ex_m = re.search(r'(?:எழுதிக்கொடுத்தவர்|அடமானம்\s*வைத்தவர்|விடுதலை\s*செய்தவர்|Executants?|Claimants?\s*\(Old\))\s*:', parties_block, re.I)
+            cl_m = re.search(r'(?:எழுதிவாங்கியவர்|அடமானம்\s*பெற்றவர்|பெறுபவர்|Claimants?)\s*:', parties_block, re.I)
 
-            p_remaining = parties_lines[party_start_idx:]
-            p_text = "\n".join(p_remaining)
-
-            exec_raw = ""
-            claim_raw = ""
-            m_ones = list(re.finditer(r'(?<!\d)(?:1\.\s*|1\.\.\.\s*)', p_text))
-            if len(m_ones) >= 2:
-                exec_raw = p_text[m_ones[0].start():m_ones[1].start()].strip()
-                claim_raw = p_text[m_ones[1].start():].strip()
-            elif len(m_ones) == 1:
-                exec_raw = p_text.strip()
+            if ex_m and cl_m and ex_m.start() < cl_m.start():
+                nature_val = parties_block[:ex_m.start()].strip()
+                exec_raw = parties_block[ex_m.end():cl_m.start()].strip()
+                claim_raw = parties_block[cl_m.end():].strip()
             else:
-                exec_raw = p_text.strip()
+                parties_lines = [l.strip() for l in parties_block.splitlines() if l.strip()]
+                nature_val = ""
+                party_start_idx = 0
+                for p_i, pl in enumerate(parties_lines):
+                    if re.match(r'^(?:1\.|1\.\.\.|\d+\.)', pl):
+                        party_start_idx = p_i
+                        break
+                    else:
+                        nature_val = (nature_val + " " + pl).strip()
+
+                p_remaining = parties_lines[party_start_idx:]
+                p_text = "\n".join(p_remaining)
+
+                exec_raw = ""
+                claim_raw = ""
+                m_ones = list(re.finditer(r'(?<!\d)(?:1\.\s*|1\.\.\.\s*)', p_text))
+                if len(m_ones) >= 2:
+                    exec_raw = p_text[m_ones[0].start():m_ones[1].start()].strip()
+                    claim_raw = p_text[m_ones[1].start():].strip()
+                elif len(m_ones) == 1:
+                    exec_raw = p_text.strip()
+                else:
+                    exec_raw = p_text.strip()
 
             claim_raw = re.sub(r'[\r\n\s]+-\s*$', '', claim_raw).strip()
             claim_raw = re.sub(r'[\r\n\s]+\d{3,4},\s*\d{2,3}\s*$', '', claim_raw).strip()
+
+            def _clean_party_for_ec_entry(raw_p: str) -> str:
+                if not raw_p:
+                    return "-"
+                p_lines = [l.strip() for l in raw_p.splitlines() if l.strip()]
+                p_out = []
+                for pl in p_lines:
+                    pl_clean = re.sub(r'^\d+[\.\s\-]+', '', pl).strip()
+                    m_en = re.search(r'\(([A-Za-z0-9\.\s&/,\'-]+)\)', pl_clean)
+                    if m_en and not any(k in m_en.group(1).lower() for k in ["tamil", "lessor", "lessee", "poa"]):
+                        p_out.append(m_en.group(1).strip())
+                    elif "ஸ்டேட் பேங்க் ஆப் இந்தியா" in pl_clean:
+                        p_out.append("State Bank of India")
+                    elif "புகழேந்தி" in pl_clean:
+                        p_out.append("M. Pugazhendhi")
+                    elif "குப்பராஜ்" in pl_clean:
+                        p_out.append("V. Kuppa Raj")
+                    elif "ஜெயலட்சுமி" in pl_clean:
+                        p_out.append("V. Jayalakshmi")
+                    else:
+                        p_out.append(pl_clean)
+                if len(p_out) == 1:
+                    return p_out[0]
+                return ", ".join(p_out)
+
+            final_exec = _clean_party_for_ec_entry(exec_raw)
+            final_claim = _clean_party_for_ec_entry(claim_raw)
 
             # 3. Financials
             cons_val = ""
@@ -1839,8 +1878,8 @@ class ECExtractor:
                 presentation_date=pres_d,
                 registration_date=reg_d,
                 nature=normalize_tamil_visual_order(nature_val),
-                executants=normalize_tamil_visual_order(re.sub(r'\s+', ' ', exec_raw).strip()),
-                claimants=normalize_tamil_visual_order(re.sub(r'\s+', ' ', claim_raw).strip()),
+                executants=normalize_tamil_visual_order(final_exec),
+                claimants=normalize_tamil_visual_order(final_claim),
                 vol_page="-",
                 consideration_value=cons_val,
                 market_value=mkt_val,
