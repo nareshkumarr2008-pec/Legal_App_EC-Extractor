@@ -1,12 +1,12 @@
 /* ==========================================================================
-   PlotChoice DocuScan - Professional Legal & Real Estate Intelligence Theme
+   PlotChoice DocuScan - Modern Legal AI & Real Estate Intelligence Theme
+   World-Class Modern SaaS Aesthetic inspired by Linear, Stripe & Vercel
    Tailored for Indian Real Estate & Legal Document Cross-Verification
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
 
 :root {
-    /* Base Font Sizing */
     --base-font-size: 15px;
 
     /* Light Theme - Institutional Executive Slate & Sapphire */
@@ -33,8 +33,8 @@
     --tm-brand-light: #EFF6FF;
     --tm-brand-border: #BFDBFE;
 
-    --tm-gold: #B45309;
-    --tm-gold-hover: #92400E;
+    --tm-gold: #D97706;
+    --tm-gold-hover: #B45309;
     --tm-gold-light: #FEF3C7;
     --tm-gold-border: #FDE68A;
     --tm-gold-text: #FFFFFF;
@@ -58,7 +58,7 @@
 
     /* Elevation & Shadows */
     --tm-shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
-    --tm-shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.07), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
+    --tm-shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
     --tm-shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
     --tm-shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
     --tm-shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
@@ -66,14 +66,14 @@
 
 .dark {
     /* Dark Theme - Midnight Obsidian & Luminous Gold */
-    --tm-bg: #090D16;
+    --tm-bg: #0B0F19;
     --tm-card: #111827;
-    --tm-card-hover: #151E2E;
-    --tm-panel: #1A2234;
+    --tm-card-hover: #151F32;
+    --tm-panel: #161F30;
     --tm-upload: #0F172A;
-    --tm-border: #1F2937;
-    --tm-border-hover: #374151;
-    --tm-border-active: #4B5563;
+    --tm-border: #1F293D;
+    --tm-border-hover: #334155;
+    --tm-border-active: #475569;
 
     --tm-text-pri: #F8FAFC;
     --tm-text-sec: #94A3B8;
@@ -81,7 +81,7 @@
 
     --tm-action: #F59E0B;
     --tm-action-hover: #D97706;
-    --tm-action-text: #0B0F19;
+    --tm-action-text: #090D16;
 
     --tm-brand: #3B82F6;
     --tm-brand-dark: #2563EB;
@@ -90,31 +90,31 @@
 
     --tm-gold: #F59E0B;
     --tm-gold-hover: #D97706;
-    --tm-gold-light: rgba(245, 158, 11, 0.12);
-    --tm-gold-border: rgba(245, 158, 11, 0.3);
-    --tm-gold-text: #0B0F19;
+    --tm-gold-light: rgba(245, 158, 11, 0.14);
+    --tm-gold-border: rgba(245, 158, 11, 0.35);
+    --tm-gold-text: #090D16;
 
     --tm-emerald: #10B981;
-    --tm-emerald-light: rgba(16, 185, 129, 0.12);
-    --tm-emerald-border: rgba(16, 185, 129, 0.3);
+    --tm-emerald-light: rgba(16, 185, 129, 0.14);
+    --tm-emerald-border: rgba(16, 185, 129, 0.35);
 
     --tm-rose: #EF4444;
-    --tm-rose-light: rgba(239, 68, 68, 0.12);
-    --tm-rose-border: rgba(239, 68, 68, 0.3);
+    --tm-rose-light: rgba(239, 68, 68, 0.14);
+    --tm-rose-border: rgba(239, 68, 68, 0.35);
 
     --tm-amber: #F59E0B;
-    --tm-amber-light: rgba(245, 158, 11, 0.12);
-    --tm-amber-border: rgba(245, 158, 11, 0.3);
+    --tm-amber-light: rgba(245, 158, 11, 0.14);
+    --tm-amber-border: rgba(245, 158, 11, 0.35);
 
     --tm-purple: #A855F7;
-    --tm-purple-light: rgba(168, 85, 247, 0.12);
-    --tm-purple-border: rgba(168, 85, 247, 0.3);
+    --tm-purple-light: rgba(168, 85, 247, 0.14);
+    --tm-purple-border: rgba(168, 85, 247, 0.35);
 
     --tm-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
-    --tm-shadow-sm: 0 2px 4px 0 rgba(0, 0, 0, 0.5);
-    --tm-shadow-md: 0 4px 12px 0 rgba(0, 0, 0, 0.55);
-    --tm-shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.65);
-    --tm-shadow-xl: 0 24px 36px -6px rgba(0, 0, 0, 0.75);
+    --tm-shadow-sm: 0 2px 5px 0 rgba(0, 0, 0, 0.5);
+    --tm-shadow-md: 0 6px 14px 0 rgba(0, 0, 0, 0.55);
+    --tm-shadow-lg: 0 14px 28px -4px rgba(0, 0, 0, 0.65);
+    --tm-shadow-xl: 0 24px 40px -6px rgba(0, 0, 0, 0.8);
 }
 
 /* ==========================================================================
@@ -133,7 +133,17 @@ body {
     color: var(--tm-text-pri) !important;
     font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     line-height: 1.5;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.012em;
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.03) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.03) 0px, transparent 50%);
+    background-attachment: fixed;
+}
+
+.dark body {
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.06) 0px, transparent 60%),
+        radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.04) 0px, transparent 60%);
 }
 
 .font-mono {
@@ -141,7 +151,7 @@ body {
     letter-spacing: -0.02em;
 }
 
-/* Subtle modern scrollbar */
+/* Modern Ultra-Slim Scrollbar */
 ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -150,14 +160,21 @@ body {
     background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-    background: rgba(148, 163, 184, 0.35);
+    background: rgba(148, 163, 184, 0.28);
     border-radius: 9999px;
+    transition: background 0.2s ease;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(148, 163, 184, 0.6);
+    background: rgba(148, 163, 184, 0.55);
+}
+.dark ::-webkit-scrollbar-thumb {
+    background: rgba(71, 85, 105, 0.38);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.65);
 }
 
-/* Selection */
+/* Modern Selection */
 ::selection {
     background: rgba(37, 99, 235, 0.2);
     color: inherit;
@@ -174,23 +191,25 @@ body {
 .glass-panel {
     background-color: var(--tm-card) !important;
     border: 1px solid var(--tm-border) !important;
-    border-radius: 1rem;
+    border-radius: 1.125rem;
     box-shadow: var(--tm-shadow-sm);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition: border-color 0.22s ease, box-shadow 0.22s ease;
+    position: relative;
 }
 
 .dark .glass-panel {
-    background: rgba(17, 24, 39, 0.85) !important;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(17, 24, 39, 0.82) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
 .glass-card {
     background-color: var(--tm-card) !important;
     border: 1px solid var(--tm-border) !important;
-    border-radius: 0.75rem;
+    border-radius: 0.875rem;
     box-shadow: var(--tm-shadow-xs);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-card:hover {
@@ -198,54 +217,168 @@ body {
     border-color: var(--tm-border-hover) !important;
     box-shadow: var(--tm-shadow-md);
 }
-
 /* ==========================================================================
-   Track Switcher Navigation Tabs
+   Track Switcher Navigation (Linear / Vercel Segmented Control)
    ========================================================================== */
+
+.segmented-track-bar {
+    display: inline-flex;
+    align-items: center;
+    background: #F1F5F9;
+    border: 1px solid #E2E8F0;
+    border-radius: 0.75rem;
+    padding: 0.25rem;
+    gap: 0.25rem;
+}
+
+.dark .segmented-track-bar {
+    background: #111827;
+    border-color: #1F293D;
+}
 
 .track-tab-btn {
     position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.45rem 1rem;
-    border-radius: 0.625rem;
-    font-size: 0.8125rem;
+    gap: 0.45rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 0.55rem;
+    font-size: 0.75rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.15s ease;
     white-space: nowrap;
     user-select: none;
+    color: #475569;
+    border: none;
+    background: transparent;
+}
+
+.dark .track-tab-btn {
+    color: #94A3B8;
+}
+
+.track-tab-btn:hover {
+    color: #0F172A;
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.dark .track-tab-btn:hover {
+    color: #FFFFFF;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.track-tab-btn:active {
+    transform: scale(0.97);
 }
 
 .track-btn-active {
-    background: var(--tm-action) !important;
-    color: var(--tm-action-text) !important;
-    box-shadow: var(--tm-shadow-sm) !important;
-    border: 1px solid transparent !important;
+    background: #FFFFFF !important;
+    color: #0F172A !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+    font-weight: 700 !important;
 }
 
 .dark .track-btn-active {
-    background: var(--tm-gold) !important;
-    color: #0B0F19 !important;
-    box-shadow: 0 0 16px rgba(245, 158, 11, 0.3) !important;
-    font-weight: 700 !important;
+    background: #1E293B !important;
+    color: #F8FAFC !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
 }
 
 .track-btn-inactive {
     background: transparent !important;
-    color: var(--tm-text-sec) !important;
-    border: 1px solid transparent !important;
-}
-
-.track-btn-inactive:hover {
-    color: var(--tm-text-pri) !important;
-    background: var(--tm-card) !important;
-    border-color: var(--tm-border) !important;
 }
 
 /* ==========================================================================
-   Category Selection Cards
+   Connected Process Stepper (Unified Horizontal Line Progress Pipeline)
+   ========================================================================== */
+
+.stepper-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 1rem;
+    padding: 0.875rem 1.25rem;
+    box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+}
+
+.dark .stepper-container {
+    background: #111827;
+    border-color: #1F293D;
+    box-shadow: none;
+}
+
+.stepper-step {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.stepper-rail {
+    flex: 0 0 36px;
+    height: 2px;
+    background: #E2E8F0;
+    margin: 0 0.75rem;
+    border-radius: 9999px;
+    transition: background-color 0.25s ease;
+}
+
+.dark .stepper-rail {
+    background: #1E293B;
+}
+
+.stepper-rail.completed {
+    background: #10B981;
+}
+
+.stepper-badge {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.625rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 800;
+    shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.stepper-badge-active {
+    background: #2563EB;
+    color: #FFFFFF;
+    box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.15);
+}
+
+.dark .stepper-badge-active {
+    background: #3B82F6;
+    color: #FFFFFF;
+    box-shadow: 0 0 0 3.5px rgba(59, 130, 246, 0.25);
+}
+
+.stepper-badge-completed {
+    background: #10B981;
+    color: #FFFFFF;
+}
+
+.stepper-badge-pending {
+    background: #F1F5F9;
+    color: #64748B;
+    border: 1px solid #E2E8F0;
+}
+
+.dark .stepper-badge-pending {
+    background: #1E293B;
+    color: #94A3B8;
+    border-color: #334155;
+}
+
+/* ==========================================================================
+   Category Selection Cards (Generous Whitespace, Checkmark, Clean Alignment)
    ========================================================================== */
 
 .cat-card {
@@ -253,228 +386,445 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 1.15rem 1rem;
-    border-radius: 1.125rem;
-    border: 2px solid #E2E8F0;
-    background-color: #FFFFFF;
+    padding: 1.125rem 1rem;
+    border-radius: 0.875rem;
+    border: 1px solid #E2E8F0;
+    background: #FFFFFF;
     cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 2px 5px -1px rgba(15, 23, 42, 0.06), 0 1px 3px -1px rgba(15, 23, 42, 0.04);
-    overflow: hidden;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
     user-select: none;
+    overflow: hidden;
 }
 
 .dark .cat-card {
-    border-color: #1E293B;
-    background-color: #0F172A;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    background: #111827;
+    border-color: #1F293D;
+    box-shadow: none;
 }
 
 .cat-card:hover {
-    transform: translateY(-4px) scale(1.02);
-    box-shadow: 0 14px 28px -6px rgba(15, 23, 42, 0.12), 0 6px 12px -4px rgba(15, 23, 42, 0.08);
+    transform: translateY(-2px);
+    border-color: #CBD5E1;
+    box-shadow: 0 6px 16px -4px rgba(15, 23, 42, 0.08);
 }
 
 .dark .cat-card:hover {
-    box-shadow: 0 16px 32px -6px rgba(0, 0, 0, 0.75);
+    border-color: #334155;
+    box-shadow: 0 6px 20px -4px rgba(0, 0, 0, 0.5);
 }
 
-.card-accent-strip {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: transparent;
-    transition: all 0.25s ease;
+.cat-card:active {
+    transform: translateY(0) scale(0.99);
 }
 
-/* Category Specific Color Themes & Glows */
-#cat-card-sale_deed {
-    background: linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%);
-    border-color: #CBD5E1;
+/* Hide tick checkmark completely */
+.cat-card-check {
+    display: none !important;
 }
-#cat-card-sale_deed:hover {
-    border-color: #3B82F6;
-    background: linear-gradient(180deg, #EFF6FF 0%, #FFFFFF 100%);
-    box-shadow: 0 10px 25px -4px rgba(37, 99, 235, 0.18);
+
+/* Base Active Elevation */
+.cat-card.cat-card-active {
+    transform: translateY(-3px) !important;
 }
-#cat-card-sale_deed.cat-card-active {
+
+/* ==========================================================================
+   Category Selection Cards - Individual Color Theming & Active Highlights
+   ========================================================================== */
+
+/* --- 1. SALE DEED: SAPPHIRE BLUE --- */
+.cat-card[data-category="sale_deed"]:hover {
+    border-color: #93C5FD;
+    box-shadow: 0 6px 18px -4px rgba(37, 99, 235, 0.12);
+}
+.cat-card[data-category="sale_deed"].cat-card-active {
     border-color: #2563EB !important;
-    background: linear-gradient(180deg, #EFF6FF 0%, #DBEAFE 45%, #FFFFFF 100%) !important;
-    box-shadow: 0 0 0 2.5px #2563EB, 0 14px 30px -4px rgba(37, 99, 235, 0.35) !important;
-    transform: translateY(-4px);
+    background: linear-gradient(180deg, #EFF6FF 0%, #FFFFFF 100%) !important;
+    box-shadow: 0 0 0 1.5px #2563EB, 0 8px 22px -3px rgba(37, 99, 235, 0.25) !important;
 }
-#cat-card-sale_deed.cat-card-active .card-accent-strip {
-    background: linear-gradient(90deg, #1D4ED8, #3B82F6);
+.cat-card[data-category="sale_deed"].cat-card-active h4 {
+    color: #1D4ED8 !important;
+}
+.cat-card[data-category="sale_deed"].cat-card-active .cat-icon-box {
+    background: #DBEAFE !important;
+    color: #1D4ED8 !important;
+    transform: scale(1.08);
+}
+.cat-card[data-category="sale_deed"].cat-card-active .font-mono {
+    color: #2563EB !important;
+    font-weight: 800 !important;
+}
+.dark .cat-card[data-category="sale_deed"]:hover {
+    border-color: #1D4ED8;
+    box-shadow: 0 6px 20px -4px rgba(37, 99, 235, 0.3);
+}
+.dark .cat-card[data-category="sale_deed"].cat-card-active {
+    border-color: #3B82F6 !important;
+    background: linear-gradient(180deg, rgba(37, 99, 235, 0.22) 0%, #111827 100%) !important;
+    box-shadow: 0 0 0 1.5px #3B82F6, 0 8px 24px -3px rgba(59, 130, 246, 0.45) !important;
+}
+.dark .cat-card[data-category="sale_deed"].cat-card-active h4 {
+    color: #93C5FD !important;
+}
+.dark .cat-card[data-category="sale_deed"].cat-card-active .cat-icon-box {
+    background: rgba(37, 99, 235, 0.35) !important;
+    color: #93C5FD !important;
+}
+.dark .cat-card[data-category="sale_deed"].cat-card-active .font-mono {
+    color: #60A5FA !important;
 }
 
-#cat-card-patta {
-    background: linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%);
-    border-color: #CBD5E1;
+/* --- 2. PATTA: EMERALD GREEN --- */
+.cat-card[data-category="patta"]:hover {
+    border-color: #A7F3D0;
+    box-shadow: 0 6px 18px -4px rgba(5, 150, 105, 0.12);
 }
-#cat-card-patta:hover {
-    border-color: #10B981;
-    background: linear-gradient(180deg, #ECFDF5 0%, #FFFFFF 100%);
-    box-shadow: 0 10px 25px -4px rgba(16, 185, 129, 0.18);
-}
-#cat-card-patta.cat-card-active {
+.cat-card[data-category="patta"].cat-card-active {
     border-color: #059669 !important;
-    background: linear-gradient(180deg, #ECFDF5 0%, #D1FAE5 45%, #FFFFFF 100%) !important;
-    box-shadow: 0 0 0 2.5px #059669, 0 14px 30px -4px rgba(5, 150, 105, 0.35) !important;
-    transform: translateY(-4px);
+    background: linear-gradient(180deg, #ECFDF5 0%, #FFFFFF 100%) !important;
+    box-shadow: 0 0 0 1.5px #059669, 0 8px 22px -3px rgba(5, 150, 105, 0.25) !important;
 }
-#cat-card-patta.cat-card-active .card-accent-strip {
-    background: linear-gradient(90deg, #047857, #10B981);
+.cat-card[data-category="patta"].cat-card-active h4 {
+    color: #047857 !important;
+}
+.cat-card[data-category="patta"].cat-card-active .cat-icon-box {
+    background: #D1FAE5 !important;
+    color: #047857 !important;
+    transform: scale(1.08);
+}
+.cat-card[data-category="patta"].cat-card-active .font-mono {
+    color: #059669 !important;
+    font-weight: 800 !important;
+}
+.dark .cat-card[data-category="patta"]:hover {
+    border-color: #047857;
+    box-shadow: 0 6px 20px -4px rgba(5, 150, 105, 0.3);
+}
+.dark .cat-card[data-category="patta"].cat-card-active {
+    border-color: #10B981 !important;
+    background: linear-gradient(180deg, rgba(5, 150, 105, 0.22) 0%, #111827 100%) !important;
+    box-shadow: 0 0 0 1.5px #10B981, 0 8px 24px -3px rgba(16, 185, 129, 0.45) !important;
+}
+.dark .cat-card[data-category="patta"].cat-card-active h4 {
+    color: #6EE7B7 !important;
+}
+.dark .cat-card[data-category="patta"].cat-card-active .cat-icon-box {
+    background: rgba(5, 150, 105, 0.35) !important;
+    color: #6EE7B7 !important;
+}
+.dark .cat-card[data-category="patta"].cat-card-active .font-mono {
+    color: #34D399 !important;
 }
 
-#cat-card-parent_docs {
-    background: linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%);
-    border-color: #CBD5E1;
+/* --- 3. PARENT DOCS: ROYAL INDIGO --- */
+.cat-card[data-category="parent_docs"]:hover {
+    border-color: #C7D2FE;
+    box-shadow: 0 6px 18px -4px rgba(79, 70, 229, 0.12);
 }
-#cat-card-parent_docs:hover {
-    border-color: #6366F1;
-    background: linear-gradient(180deg, #EEF2FF 0%, #FFFFFF 100%);
-    box-shadow: 0 10px 25px -4px rgba(99, 102, 241, 0.18);
-}
-#cat-card-parent_docs.cat-card-active {
+.cat-card[data-category="parent_docs"].cat-card-active {
     border-color: #4F46E5 !important;
-    background: linear-gradient(180deg, #EEF2FF 0%, #E0E7FF 45%, #FFFFFF 100%) !important;
-    box-shadow: 0 0 0 2.5px #4F46E5, 0 14px 30px -4px rgba(79, 70, 229, 0.35) !important;
-    transform: translateY(-4px);
+    background: linear-gradient(180deg, #EEF2FF 0%, #FFFFFF 100%) !important;
+    box-shadow: 0 0 0 1.5px #4F46E5, 0 8px 22px -3px rgba(79, 70, 229, 0.25) !important;
 }
-#cat-card-parent_docs.cat-card-active .card-accent-strip {
-    background: linear-gradient(90deg, #4338CA, #6366F1);
+.cat-card[data-category="parent_docs"].cat-card-active h4 {
+    color: #4338CA !important;
+}
+.cat-card[data-category="parent_docs"].cat-card-active .cat-icon-box {
+    background: #E0E7FF !important;
+    color: #4338CA !important;
+    transform: scale(1.08);
+}
+.cat-card[data-category="parent_docs"].cat-card-active .font-mono {
+    color: #4F46E5 !important;
+    font-weight: 800 !important;
+}
+.dark .cat-card[data-category="parent_docs"]:hover {
+    border-color: #4338CA;
+    box-shadow: 0 6px 20px -4px rgba(79, 70, 229, 0.3);
+}
+.dark .cat-card[data-category="parent_docs"].cat-card-active {
+    border-color: #6366F1 !important;
+    background: linear-gradient(180deg, rgba(79, 70, 229, 0.22) 0%, #111827 100%) !important;
+    box-shadow: 0 0 0 1.5px #6366F1, 0 8px 24px -3px rgba(99, 102, 241, 0.45) !important;
+}
+.dark .cat-card[data-category="parent_docs"].cat-card-active h4 {
+    color: #A5B4FC !important;
+}
+.dark .cat-card[data-category="parent_docs"].cat-card-active .cat-icon-box {
+    background: rgba(79, 70, 229, 0.35) !important;
+    color: #A5B4FC !important;
+}
+.dark .cat-card[data-category="parent_docs"].cat-card-active .font-mono {
+    color: #818CF8 !important;
 }
 
-#cat-card-ec {
-    background: linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%);
-    border-color: #CBD5E1;
+/* --- 4. EC: AMETHYST PURPLE --- */
+.cat-card[data-category="ec"]:hover {
+    border-color: #DDD6FE;
+    box-shadow: 0 6px 18px -4px rgba(124, 58, 237, 0.12);
 }
-#cat-card-ec:hover {
-    border-color: #A855F7;
-    background: linear-gradient(180deg, #FAF5FF 0%, #FFFFFF 100%);
-    box-shadow: 0 10px 25px -4px rgba(168, 85, 247, 0.18);
-}
-#cat-card-ec.cat-card-active {
+.cat-card[data-category="ec"].cat-card-active {
     border-color: #7C3AED !important;
-    background: linear-gradient(180deg, #FAF5FF 0%, #F3E8FF 45%, #FFFFFF 100%) !important;
-    box-shadow: 0 0 0 2.5px #7C3AED, 0 14px 30px -4px rgba(124, 58, 237, 0.35) !important;
-    transform: translateY(-4px);
+    background: linear-gradient(180deg, #F5F3FF 0%, #FFFFFF 100%) !important;
+    box-shadow: 0 0 0 1.5px #7C3AED, 0 8px 22px -3px rgba(124, 58, 237, 0.25) !important;
 }
-#cat-card-ec.cat-card-active .card-accent-strip {
-    background: linear-gradient(90deg, #6D28D9, #A855F7);
+.cat-card[data-category="ec"].cat-card-active h4 {
+    color: #6D28D9 !important;
+}
+.cat-card[data-category="ec"].cat-card-active .cat-icon-box {
+    background: #EDE9FE !important;
+    color: #6D28D9 !important;
+    transform: scale(1.08);
+}
+.cat-card[data-category="ec"].cat-card-active .font-mono {
+    color: #7C3AED !important;
+    font-weight: 800 !important;
+}
+.dark .cat-card[data-category="ec"]:hover {
+    border-color: #6D28D9;
+    box-shadow: 0 6px 20px -4px rgba(124, 58, 237, 0.3);
+}
+.dark .cat-card[data-category="ec"].cat-card-active {
+    border-color: #A855F7 !important;
+    background: linear-gradient(180deg, rgba(124, 58, 237, 0.22) 0%, #111827 100%) !important;
+    box-shadow: 0 0 0 1.5px #A855F7, 0 8px 24px -3px rgba(168, 85, 247, 0.45) !important;
+}
+.dark .cat-card[data-category="ec"].cat-card-active h4 {
+    color: #D8B4FE !important;
+}
+.dark .cat-card[data-category="ec"].cat-card-active .cat-icon-box {
+    background: rgba(124, 58, 237, 0.35) !important;
+    color: #D8B4FE !important;
+}
+.dark .cat-card[data-category="ec"].cat-card-active .font-mono {
+    color: #C084FC !important;
 }
 
-#cat-card-tslr {
-    background: linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%);
-    border-color: #CBD5E1;
+/* --- 5. TSLR: SKY BLUE / CYAN --- */
+.cat-card[data-category="tslr"]:hover {
+    border-color: #BAE6FD;
+    box-shadow: 0 6px 18px -4px rgba(2, 132, 199, 0.12);
 }
-#cat-card-tslr:hover {
-    border-color: #06B6D4;
-    background: linear-gradient(180deg, #ECFEFF 0%, #FFFFFF 100%);
-    box-shadow: 0 10px 25px -4px rgba(6, 182, 212, 0.18);
+.cat-card[data-category="tslr"].cat-card-active {
+    border-color: #0284C7 !important;
+    background: linear-gradient(180deg, #F0F9FF 0%, #FFFFFF 100%) !important;
+    box-shadow: 0 0 0 1.5px #0284C7, 0 8px 22px -3px rgba(2, 132, 199, 0.25) !important;
 }
-#cat-card-tslr.cat-card-active {
-    border-color: #0891B2 !important;
-    background: linear-gradient(180deg, #ECFEFF 0%, #CFFAFE 45%, #FFFFFF 100%) !important;
-    box-shadow: 0 0 0 2.5px #0891B2, 0 14px 30px -4px rgba(8, 145, 178, 0.35) !important;
-    transform: translateY(-4px);
+.cat-card[data-category="tslr"].cat-card-active h4 {
+    color: #0369A1 !important;
 }
-#cat-card-tslr.cat-card-active .card-accent-strip {
-    background: linear-gradient(90deg, #0E7490, #06B6D4);
+.cat-card[data-category="tslr"].cat-card-active .cat-icon-box {
+    background: #E0F2FE !important;
+    color: #0369A1 !important;
+    transform: scale(1.08);
+}
+.cat-card[data-category="tslr"].cat-card-active .font-mono {
+    color: #0284C7 !important;
+    font-weight: 800 !important;
+}
+.dark .cat-card[data-category="tslr"]:hover {
+    border-color: #0369A1;
+    box-shadow: 0 6px 20px -4px rgba(2, 132, 199, 0.3);
+}
+.dark .cat-card[data-category="tslr"].cat-card-active {
+    border-color: #38BDF8 !important;
+    background: linear-gradient(180deg, rgba(2, 132, 199, 0.22) 0%, #111827 100%) !important;
+    box-shadow: 0 0 0 1.5px #38BDF8, 0 8px 24px -3px rgba(56, 189, 248, 0.45) !important;
+}
+.dark .cat-card[data-category="tslr"].cat-card-active h4 {
+    color: #BAE6FD !important;
+}
+.dark .cat-card[data-category="tslr"].cat-card-active .cat-icon-box {
+    background: rgba(2, 132, 199, 0.35) !important;
+    color: #BAE6FD !important;
+}
+.dark .cat-card[data-category="tslr"].cat-card-active .font-mono {
+    color: #7DD3FC !important;
 }
 
-#cat-card-rera {
-    background: linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%);
-    border-color: #CBD5E1;
+/* --- 6. RERA: DEEP TEAL --- */
+.cat-card[data-category="rera"]:hover {
+    border-color: #99F6E4;
+    box-shadow: 0 6px 18px -4px rgba(13, 148, 136, 0.12);
 }
-#cat-card-rera:hover {
-    border-color: #14B8A6;
-    background: linear-gradient(180deg, #F0FDFA 0%, #FFFFFF 100%);
-    box-shadow: 0 10px 25px -4px rgba(20, 184, 166, 0.18);
-}
-#cat-card-rera.cat-card-active {
+.cat-card[data-category="rera"].cat-card-active {
     border-color: #0D9488 !important;
-    background: linear-gradient(180deg, #F0FDFA 0%, #CCFBF1 45%, #FFFFFF 100%) !important;
-    box-shadow: 0 0 0 2.5px #0D9488, 0 14px 30px -4px rgba(13, 148, 136, 0.35) !important;
-    transform: translateY(-4px);
+    background: linear-gradient(180deg, #F0FDFA 0%, #FFFFFF 100%) !important;
+    box-shadow: 0 0 0 1.5px #0D9488, 0 8px 22px -3px rgba(13, 148, 136, 0.25) !important;
 }
-#cat-card-rera.cat-card-active .card-accent-strip {
-    background: linear-gradient(90deg, #0F766E, #14B8A6);
+.cat-card[data-category="rera"].cat-card-active h4 {
+    color: #0F766E !important;
+}
+.cat-card[data-category="rera"].cat-card-active .cat-icon-box {
+    background: #CCFBF1 !important;
+    color: #0F766E !important;
+    transform: scale(1.08);
+}
+.cat-card[data-category="rera"].cat-card-active .font-mono {
+    color: #0D9488 !important;
+    font-weight: 800 !important;
+}
+.dark .cat-card[data-category="rera"]:hover {
+    border-color: #0F766E;
+    box-shadow: 0 6px 20px -4px rgba(13, 148, 136, 0.3);
+}
+.dark .cat-card[data-category="rera"].cat-card-active {
+    border-color: #2DD4BF !important;
+    background: linear-gradient(180deg, rgba(13, 148, 136, 0.22) 0%, #111827 100%) !important;
+    box-shadow: 0 0 0 1.5px #2DD4BF, 0 8px 24px -3px rgba(45, 212, 191, 0.45) !important;
+}
+.dark .cat-card[data-category="rera"].cat-card-active h4 {
+    color: #99F6E4 !important;
+}
+.dark .cat-card[data-category="rera"].cat-card-active .cat-icon-box {
+    background: rgba(13, 148, 136, 0.35) !important;
+    color: #99F6E4 !important;
+}
+.dark .cat-card[data-category="rera"].cat-card-active .font-mono {
+    color: #5EEAD4 !important;
 }
 
-#cat-card-loan_docs {
-    background: linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%);
-    border-color: #CBD5E1;
+/* --- 7. LOAN DOCS: WARM AMBER GOLD --- */
+.cat-card[data-category="loan_docs"]:hover {
+    border-color: #FDE68A;
+    box-shadow: 0 6px 18px -4px rgba(217, 119, 6, 0.12);
 }
-#cat-card-loan_docs:hover {
-    border-color: #F59E0B;
-    background: linear-gradient(180deg, #FFFBEB 0%, #FFFFFF 100%);
-    box-shadow: 0 10px 25px -4px rgba(245, 158, 11, 0.18);
-}
-#cat-card-loan_docs.cat-card-active {
+.cat-card[data-category="loan_docs"].cat-card-active {
     border-color: #D97706 !important;
-    background: linear-gradient(180deg, #FFFBEB 0%, #FEF3C7 45%, #FFFFFF 100%) !important;
-    box-shadow: 0 0 0 2.5px #D97706, 0 14px 30px -4px rgba(217, 119, 6, 0.35) !important;
-    transform: translateY(-4px);
+    background: linear-gradient(180deg, #FFFBEB 0%, #FFFFFF 100%) !important;
+    box-shadow: 0 0 0 1.5px #D97706, 0 8px 22px -3px rgba(217, 119, 6, 0.25) !important;
 }
-#cat-card-loan_docs.cat-card-active .card-accent-strip {
-    background: linear-gradient(90deg, #B45309, #F59E0B);
+.cat-card[data-category="loan_docs"].cat-card-active h4 {
+    color: #B45309 !important;
+}
+.cat-card[data-category="loan_docs"].cat-card-active .cat-icon-box {
+    background: #FEF3C7 !important;
+    color: #B45309 !important;
+    transform: scale(1.08);
+}
+.cat-card[data-category="loan_docs"].cat-card-active .font-mono {
+    color: #D97706 !important;
+    font-weight: 800 !important;
+}
+.dark .cat-card[data-category="loan_docs"]:hover {
+    border-color: #B45309;
+    box-shadow: 0 6px 20px -4px rgba(217, 119, 6, 0.3);
+}
+.dark .cat-card[data-category="loan_docs"].cat-card-active {
+    border-color: #F59E0B !important;
+    background: linear-gradient(180deg, rgba(217, 119, 6, 0.22) 0%, #111827 100%) !important;
+    box-shadow: 0 0 0 1.5px #F59E0B, 0 8px 24px -3px rgba(245, 158, 11, 0.45) !important;
+}
+.dark .cat-card[data-category="loan_docs"].cat-card-active h4 {
+    color: #FDE68A !important;
+}
+.dark .cat-card[data-category="loan_docs"].cat-card-active .cat-icon-box {
+    background: rgba(217, 119, 6, 0.35) !important;
+    color: #FDE68A !important;
+}
+.dark .cat-card[data-category="loan_docs"].cat-card-active .font-mono {
+    color: #FCD34D !important;
 }
 
-/* Dark Mode Overrides */
-.dark #cat-card-sale_deed { background: #0F172A; border-color: #1E293B; }
-.dark #cat-card-sale_deed:hover { border-color: #60A5FA; background: rgba(30, 58, 138, 0.25); }
-.dark #cat-card-sale_deed.cat-card-active { border-color: #60A5FA !important; background: rgba(30, 58, 138, 0.4) !important; box-shadow: 0 0 0 2.5px #60A5FA, 0 14px 32px rgba(96, 165, 250, 0.28) !important; }
+.cat-icon-box {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.625rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+}
 
-.dark #cat-card-patta { background: #0F172A; border-color: #1E293B; }
-.dark #cat-card-patta:hover { border-color: #34D399; background: rgba(6, 78, 59, 0.25); }
-.dark #cat-card-patta.cat-card-active { border-color: #34D399 !important; background: rgba(6, 78, 59, 0.4) !important; box-shadow: 0 0 0 2.5px #34D399, 0 14px 32px rgba(52, 211, 153, 0.28) !important; }
+.cat-card:hover .cat-icon-box {
+    transform: scale(1.08);
+}
 
-.dark #cat-card-parent_docs { background: #0F172A; border-color: #1E293B; }
-.dark #cat-card-parent_docs:hover { border-color: #818CF8; background: rgba(49, 46, 129, 0.25); }
-.dark #cat-card-parent_docs.cat-card-active { border-color: #818CF8 !important; background: rgba(49, 46, 129, 0.4) !important; box-shadow: 0 0 0 2.5px #818CF8, 0 14px 32px rgba(129, 140, 248, 0.28) !important; }
+/* ==========================================================================
+   Selection Summary Drawer & Verified Property Grid
+   ========================================================================== */
 
-.dark #cat-card-ec { background: #0F172A; border-color: #1E293B; }
-.dark #cat-card-ec:hover { border-color: #C084FC; background: rgba(88, 28, 135, 0.25); }
-.dark #cat-card-ec.cat-card-active { border-color: #C084FC !important; background: rgba(88, 28, 135, 0.4) !important; box-shadow: 0 0 0 2.5px #C084FC, 0 14px 32px rgba(192, 132, 252, 0.28) !important; }
+.property-field-card {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.65rem;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 0.625rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #334155;
+    transition: all 0.15s ease;
+}
 
-.dark #cat-card-tslr { background: #0F172A; border-color: #1E293B; }
-.dark #cat-card-tslr:hover { border-color: #22D3EE; background: rgba(22, 78, 99, 0.25); }
-.dark #cat-card-tslr.cat-card-active { border-color: #22D3EE !important; background: rgba(22, 78, 99, 0.4) !important; box-shadow: 0 0 0 2.5px #22D3EE, 0 14px 32px rgba(34, 211, 238, 0.28) !important; }
+.dark .property-field-card {
+    background: #161F30;
+    border-color: #26334D;
+    color: #CBD5E1;
+}
 
-.dark #cat-card-rera { background: #0F172A; border-color: #1E293B; }
-.dark #cat-card-rera:hover { border-color: #2DD4BF; background: rgba(19, 78, 74, 0.25); }
-.dark #cat-card-rera.cat-card-active { border-color: #2DD4BF !important; background: rgba(19, 78, 74, 0.4) !important; box-shadow: 0 0 0 2.5px #2DD4BF, 0 14px 32px rgba(45, 212, 191, 0.28) !important; }
+.property-field-card:hover {
+    border-color: #93C5FD;
+    background: #F0F7FF;
+}
 
-.dark #cat-card-loan_docs { background: #0F172A; border-color: #1E293B; }
-.dark #cat-card-loan_docs:hover { border-color: #FBBF24; background: rgba(120, 53, 15, 0.25); }
-.dark #cat-card-loan_docs.cat-card-active { border-color: #FBBF24 !important; background: rgba(120, 53, 15, 0.4) !important; box-shadow: 0 0 0 2.5px #FBBF24, 0 14px 32px rgba(251, 191, 36, 0.28) !important; }
+.dark .property-field-card:hover {
+    border-color: #3B82F6;
+    background: #1E293B;
+}
 
 /* ==========================================================================
    Upload Dropzone
    ========================================================================== */
 
 #dropzone {
-    border: 2px dashed var(--tm-border);
-    background-color: var(--tm-upload);
-    border-radius: 1.25rem;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px dashed rgba(203, 213, 225, 0.85);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.85), rgba(248, 250, 252, 0.95));
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 0.875rem;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     overflow: hidden;
 }
 
+#dropzone::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 0.875rem;
+    background: radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.08) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+#dropzone:hover::after, #dropzone.dragover::after {
+    opacity: 1;
+}
+
 #dropzone:hover, #dropzone.dragover {
-    border-color: var(--tm-brand);
-    background-color: var(--tm-brand-light);
-    box-shadow: 0 0 24px rgba(37, 99, 235, 0.12);
+    border-color: #2563EB;
+    background: linear-gradient(135deg, rgba(239, 246, 255, 0.95), rgba(255, 255, 255, 0.95));
+    box-shadow: 0 8px 20px -4px rgba(37, 99, 235, 0.14), 0 0 0 1px rgba(37, 99, 235, 0.15);
+    transform: translateY(-1.5px);
+}
+
+.dark #dropzone {
+    border-color: rgba(51, 65, 85, 0.7);
+    background: linear-gradient(135deg, rgba(17, 24, 39, 0.85), rgba(15, 23, 42, 0.9));
+}
+
+.dark #dropzone::after {
+    background: radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.08) 0%, transparent 70%);
 }
 
 .dark #dropzone:hover, .dark #dropzone.dragover {
-    border-color: var(--tm-gold);
-    background-color: var(--tm-gold-light);
-    box-shadow: 0 0 28px rgba(245, 158, 11, 0.16);
+    border-color: #F59E0B;
+    background: linear-gradient(135deg, rgba(24, 28, 42, 0.95), rgba(17, 24, 39, 0.95));
+    box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.6), 0 0 16px rgba(245, 158, 11, 0.18);
+    transform: translateY(-1.5px);
 }
 
 /* ==========================================================================
@@ -493,7 +843,7 @@ body {
 .pdf-page-card {
     position: relative;
     background: #FFFFFF;
-    border-radius: 0.75rem;
+    border-radius: 0.875rem;
     box-shadow: 0 8px 30px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(15, 23, 42, 0.06);
     border: 1px solid var(--tm-border);
     overflow: visible;
@@ -514,15 +864,15 @@ body {
     padding: 8px 16px;
     background: #F1F5F9;
     border-bottom: 1px solid var(--tm-border);
-    border-top-left-radius: 0.75rem;
-    border-top-right-radius: 0.75rem;
+    border-top-left-radius: 0.875rem;
+    border-top-right-radius: 0.875rem;
     font-size: 0.75rem;
     font-weight: 700;
     color: var(--tm-text-sec);
 }
 
 .dark .pdf-page-header {
-    background: #1A2234;
+    background: #161F30;
     border-color: #26334D;
     color: #94A3B8;
 }
@@ -531,8 +881,8 @@ body {
     position: relative;
     width: 100%;
     background: #FFFFFF;
-    border-bottom-left-radius: 0.75rem;
-    border-bottom-right-radius: 0.75rem;
+    border-bottom-left-radius: 0.875rem;
+    border-bottom-right-radius: 0.875rem;
     overflow: hidden;
 }
 
@@ -672,6 +1022,10 @@ body {
     transform: translateY(-1px);
 }
 
+.btn-primary:active {
+    transform: scale(0.98);
+}
+
 .btn-gold {
     background: linear-gradient(135deg, #D97706 0%, #B45309 100%);
     color: #FFFFFF;
@@ -692,6 +1046,10 @@ body {
     transform: translateY(-1px);
 }
 
+.btn-gold:active {
+    transform: scale(0.98);
+}
+
 /* ==========================================================================
    Form Controls (Select, Input, Textarea)
    ========================================================================== */
@@ -700,8 +1058,8 @@ input[type="text"], select, textarea {
     background-color: var(--tm-card);
     border: 1px solid var(--tm-border);
     color: var(--tm-text-pri);
-    border-radius: 0.5rem;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    border-radius: 0.625rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
 }
 
 input[type="text"]:focus, select:focus, textarea:focus {
@@ -759,23 +1117,615 @@ input[type="text"]:focus, select:focus, textarea:focus {
 }
 
 /* ==========================================================================
-   Print Styles
+   Sale Deed Collapsible Cards & Accordion Micro-Animations
+   ========================================================================== */
+
+.rotate-90 {
+    transform: rotate(90deg) !important;
+}
+
+.rotate-180 {
+    transform: rotate(180deg) !important;
+}
+
+.sale-deed-card {
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sale-deed-card:hover {
+    border-color: var(--tm-border-hover);
+}
+
+.sale-deed-card-chevron {
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), color 0.15s ease;
+}
+
+/* ==========================================================================
+   Modern SaaS Floating Island Toolbar & Studio Accents
+   ========================================================================== */
+
+.floating-island-bar {
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    border-radius: 9999px;
+}
+
+.dark .floating-island-bar {
+    background: rgba(10, 15, 26, 0.92);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.75);
+}
+
+.studio-glow-border {
+    position: relative;
+    border: 1px solid var(--tm-border);
+    border-radius: 1.25rem;
+    background: var(--tm-card);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.studio-glow-border:hover {
+    border-color: rgba(59, 130, 246, 0.4);
+    box-shadow: 0 12px 30px -8px rgba(37, 99, 235, 0.12);
+}
+
+.dark .studio-glow-border:hover {
+    border-color: rgba(245, 158, 11, 0.35);
+    box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.7);
+}
+
+.shimmer-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.shimmer-btn::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        60deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.2) 50%,
+        transparent 70%
+    );
+    transform: rotate(30deg);
+    transition: all 0.6s ease;
+    opacity: 0;
+}
+
+.shimmer-btn:hover::after {
+    opacity: 1;
+    transform: rotate(30deg) translate(20%, 20%);
+}
+
+/* ==========================================================================
+   Visual Effects Engine: Aurora Mesh, Energy Beams & Laser Scanners
+   ========================================================================== */
+
+@keyframes aurora-float-1 {
+    0% { transform: translate(0px, 0px) scale(1); }
+    50% { transform: translate(60px, 40px) scale(1.15); }
+    100% { transform: translate(-30px, 70px) scale(0.95); }
+}
+
+@keyframes aurora-float-2 {
+    0% { transform: translate(0px, 0px) scale(1); }
+    50% { transform: translate(-50px, -35px) scale(1.12); }
+    100% { transform: translate(40px, -60px) scale(0.92); }
+}
+
+@keyframes aurora-float-3 {
+    0% { transform: translate(0px, 0px) scale(0.95); }
+    50% { transform: translate(35px, -45px) scale(1.1); }
+    100% { transform: translate(-45px, 25px) scale(1.05); }
+}
+
+.aurora-bg {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+    opacity: 0.85;
+}
+
+.aurora-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(85px);
+    will-change: transform;
+    opacity: 0.55;
+}
+
+.aurora-orb-1 {
+    top: -8%;
+    left: 12%;
+    width: 580px;
+    height: 580px;
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.25) 0%, rgba(99, 102, 241, 0.12) 50%, transparent 75%);
+    animation: aurora-float-1 24s ease-in-out infinite alternate;
+}
+
+.aurora-orb-2 {
+    top: 30%;
+    right: -5%;
+    width: 520px;
+    height: 520px;
+    background: radial-gradient(circle, rgba(147, 51, 234, 0.22) 0%, rgba(59, 130, 246, 0.08) 50%, transparent 75%);
+    animation: aurora-float-2 28s ease-in-out infinite alternate;
+}
+
+.aurora-orb-3 {
+    bottom: 5%;
+    left: 25%;
+    width: 620px;
+    height: 620px;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.18) 0%, rgba(6, 182, 212, 0.08) 50%, transparent 75%);
+    animation: aurora-float-3 26s ease-in-out infinite alternate;
+}
+
+.dark .aurora-orb-1 {
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.22) 0%, rgba(99, 102, 241, 0.1) 50%, transparent 75%);
+    opacity: 0.65;
+}
+
+.dark .aurora-orb-2 {
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.18) 0%, rgba(217, 119, 6, 0.08) 50%, transparent 75%);
+    opacity: 0.65;
+}
+
+.dark .aurora-orb-3 {
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.2) 0%, rgba(59, 130, 246, 0.08) 50%, transparent 75%);
+    opacity: 0.65;
+}
+
+/* Animated Pipeline Energy Flow Connector */
+.pipeline-connector {
+    position: relative;
+    width: 36px;
+    height: 3px;
+    background: rgba(203, 213, 225, 0.6);
+    border-radius: 9999px;
+    overflow: hidden;
+}
+
+.dark .pipeline-connector {
+    background: rgba(51, 65, 85, 0.6);
+}
+
+.pipeline-connector::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, #2563EB, #8B5CF6, transparent);
+    animation: pipeline-beam 2.2s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .pipeline-connector::after {
+    background: linear-gradient(90deg, transparent, #F59E0B, #EF4444, transparent);
+}
+
+@keyframes pipeline-beam {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* Luxury Shimmer & Glow for Primary Action Button */
+@keyframes shimmer-sweep {
+    0% { transform: translateX(-150%) rotate(25deg); }
+    100% { transform: translateX(150%) rotate(25deg); }
+}
+
+.shimmer-glow-cta {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.shimmer-glow-cta::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: 0;
+    width: 60%;
+    height: 200%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.35),
+        transparent
+    );
+    transform: rotate(25deg);
+    animation: shimmer-sweep 3s infinite ease-in-out;
+}
+
+.shimmer-glow-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -3px rgba(37, 99, 235, 0.45), 0 0 15px rgba(99, 102, 241, 0.3) !important;
+}
+
+.dark .shimmer-glow-cta:hover {
+    box-shadow: 0 10px 25px -3px rgba(245, 158, 11, 0.45), 0 0 18px rgba(245, 158, 11, 0.35) !important;
+}
+
+/* Laser Scan Beam for OCR Canvas */
+@keyframes ocr-laser-scan {
+    0% { top: 0%; opacity: 0.3; }
+    50% { opacity: 0.95; }
+    100% { top: 100%; opacity: 0.3; }
+}
+
+.ocr-laser-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #3B82F6, #60A5FA, #3B82F6, transparent);
+    box-shadow: 0 0 18px 4px rgba(59, 130, 246, 0.7);
+    animation: ocr-laser-scan 2.4s ease-in-out infinite alternate;
+    pointer-events: none;
+    z-index: 35;
+}
+
+.dark .ocr-laser-line {
+    background: linear-gradient(90deg, transparent, #F59E0B, #FBBF24, #F59E0B, transparent);
+    box-shadow: 0 0 20px 4px rgba(245, 158, 11, 0.75);
+}
+
+/* ==========================================================================
+   Print Styles - Print ONLY the Active Tab Details
    ========================================================================== */
 
 @media print {
-    body {
-        background-color: #FFFFFF !important;
-        color: #000000 !important;
+    /* Page Configuration */
+    @page {
+        size: A4 portrait;
+        margin: 10mm 10mm 10mm 10mm;
     }
-    .no-print {
+
+    /* Base Reset */
+    html, body {
+        background: #FFFFFF !important;
+        background-color: #FFFFFF !important;
+        background-image: none !important;
+        color: #0F172A !important;
+        font-size: 10pt !important;
+        line-height: 1.35 !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* Completely hide entire web application shell and all non-tab elements */
+    header,
+    footer,
+    .aurora-bg,
+    .stepper-container,
+    #track-btn-ocr,
+    #track-btn-matrix,
+    #track-btn-inheritance,
+    #theme-toggle,
+    .no-print,
+    .print-actions-hide,
+    .print-tabs-hide,
+    #print-dossier-header,
+    #processing-loader,
+    #owner-dossier-modal,
+    #quick-action-toast,
+    /* Hide Step 1 Category studio and Step 2 Ingestion studio */
+    #track-view-ocr > section:not(#workspace-section),
+    /* Hide Left Document Canvas Column */
+    #workspace-section .lg\:col-span-5,
+    /* Hide Inactive Tab Contents */
+    [id^="tab-content-"].hidden {
         display: none !important;
     }
-    .print-only {
+
+    /* Expand Workspace & Right Pane Containers to Full Printable Height */
+    main,
+    #track-view-ocr,
+    #workspace-section,
+    #workspace-section > div,
+    #workspace-section .lg\:col-span-7,
+    .studio-glow-border,
+    .flex-1.overflow-y-auto {
         display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        overflow: visible !important;
+        overflow-y: visible !important;
+        position: static !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
     }
-    .glass-panel {
+
+    /* Ensure Active Tab Content Fills and Displays Naturally */
+    [id^="tab-content-"]:not(.hidden) {
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* ==========================================================================
+       CATEGORY 1: SALE DEED PRINT STYLES
+       ========================================================================== */
+    /* Executive Deed Summary Card - Crisp Rich Presentation */
+    #tab-content-fields .bg-gradient-to-br {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+        background: #0F172A !important;
+        color: #FFFFFF !important;
+        border: 1px solid #1E293B !important;
+        border-radius: 12px !important;
+        padding: 16px !important;
+        box-shadow: none !important;
+        margin-bottom: 12px !important;
+    }
+    #tab-content-fields .bg-gradient-to-br * {
+        color: inherit;
+    }
+    #tab-content-fields .bg-gradient-to-br .text-slate-400,
+    #tab-content-fields .bg-gradient-to-br .text-tm-text-sec {
+        color: #94A3B8 !important;
+    }
+    #tab-content-fields .bg-gradient-to-br .text-white {
+        color: #FFFFFF !important;
+    }
+    #tab-content-fields .bg-gradient-to-br .bg-slate-800\/60,
+    #tab-content-fields .bg-gradient-to-br .bg-tm-panel\/40 {
+        background: #1E293B !important;
+        border: 1px solid #334155 !important;
+        border-radius: 8px !important;
+    }
+
+    /* Title Conveyance Chain Card */
+    #sale-deed-card-title-chain {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+        background: #0F172A !important;
+        border: 1.5px solid #3730A3 !important;
+        color: #FFFFFF !important;
+        border-radius: 12px !important;
+        margin-bottom: 10px !important;
+        box-shadow: none !important;
+    }
+    #sale-deed-card-title-chain h4 {
+        color: #FCD34D !important;
+    }
+    #sale-deed-card-title-chain p {
+        color: #CBD5E1 !important;
+    }
+    #sale-deed-card-title-chain span {
+        color: #E2E8F0 !important;
+    }
+
+    /* Sale Deed Cards 1 to 7 */
+    .sale-deed-card:not(#sale-deed-card-title-chain) {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
         background: #FFFFFF !important;
         border: 1px solid #E2E8F0 !important;
+        border-radius: 12px !important;
+        margin-bottom: 10px !important;
         box-shadow: none !important;
+        color: #0F172A !important;
+    }
+    .sale-deed-card:not(#sale-deed-card-title-chain) h4 {
+        color: #0F172A !important;
+        font-weight: 700 !important;
+    }
+    .sale-deed-card:not(#sale-deed-card-title-chain) p {
+        color: #475569 !important;
+    }
+
+    /* Keep card body hidden if collapsed, but style cleanly if expanded */
+    .sale-deed-card-body.hidden {
+        display: none !important;
+    }
+    .sale-deed-card-body:not(.hidden) {
+        display: block !important;
+        border-top: 1px solid #E2E8F0 !important;
+        padding: 12px 16px !important;
+    }
+
+    /* ==========================================================================
+       CATEGORY 2 & 5: PATTA & TSLR DOCUMENT PRINT STYLES
+       ========================================================================== */
+    /* Report Header Banner */
+    #tab-content-fields .bg-gradient-to-r.from-slate-900 {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+        background: #0F172A !important;
+        color: #FFFFFF !important;
+        border: 1px solid #1E293B !important;
+        border-radius: 12px !important;
+        padding: 14px 16px !important;
+        margin-bottom: 12px !important;
+        box-shadow: none !important;
+    }
+    #tab-content-fields .bg-gradient-to-r.from-slate-900 h2 {
+        color: #FFFFFF !important;
+    }
+    #tab-content-fields .bg-gradient-to-r.from-slate-900 p {
+        color: #94A3B8 !important;
+    }
+
+    /* Patta 4 Essential Fields / TSLR 8 Core Fields Grid Container */
+    #extracted-fields-container .rounded-2xl.bg-tm-card,
+    #extracted-fields-container .rounded-xl.bg-tm-card {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+        background: #FFFFFF !important;
+        border: 1px solid #CBD5E1 !important;
+        box-shadow: none !important;
+        margin-bottom: 12px !important;
+    }
+
+    /* Inner field cards inside Patta & TSLR grids */
+    #extracted-fields-container .grid > .p-3\.5,
+    #extracted-fields-container .grid > .p-3 {
+        background: #F8FAFC !important;
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 8px !important;
+        box-shadow: none !important;
+    }
+
+    /* ==========================================================================
+       CATEGORY 3, 6, 7: STANDARD LAYOUT (PARENT DOCS, RERA, LOAN DOCS)
+       ========================================================================== */
+    #extracted-fields-container .glass-card {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+        background: #FFFFFF !important;
+        border: 1px solid #CBD5E1 !important;
+        border-radius: 10px !important;
+        box-shadow: none !important;
+        margin-bottom: 8px !important;
+        padding: 12px 14px !important;
+    }
+
+    /* ==========================================================================
+       CATEGORY 4: EC (ENCUMBRANCE CERTIFICATE) PRINT STYLES
+       ========================================================================== */
+    /* EC Key Accordion Cards */
+    .ec-key-card {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+        background: #FFFFFF !important;
+        border: 1px solid #CBD5E1 !important;
+        border-radius: 10px !important;
+        margin-bottom: 8px !important;
+        box-shadow: none !important;
+    }
+    .ec-key-card > div:first-child {
+        background: #F8FAFC !important;
+        border-bottom: 1px solid #E2E8F0 !important;
+        padding: 10px 14px !important;
+    }
+    .ec-key-card-body.hidden {
+        display: none !important;
+    }
+    .ec-key-card-body:not(.hidden) {
+        display: block !important;
+        background: #FFFFFF !important;
+        padding: 12px 14px !important;
+    }
+
+    /* EC Analysis Tab Cards */
+    #ec-analysis-container .rounded-2xl,
+    #ec-analysis-container .rounded-xl {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+        box-shadow: none !important;
+    }
+
+    /* ==========================================================================
+       CLEAN STATIC PRINT PRESENTATION FOR INPUTS & TEXTAREAS (ALL 7 CATEGORIES)
+       ========================================================================== */
+    #extracted-fields-container input[type="text"],
+    #extracted-fields-container textarea,
+    #ec-analysis-container input[type="text"],
+    #ec-analysis-container textarea,
+    .sale-deed-card-body input,
+    .sale-deed-card-body textarea {
+        border: none !important;
+        background: transparent !important;
+        background-color: transparent !important;
+        box-shadow: none !important;
+        padding: 2px 0 !important;
+        margin: 0 !important;
+        font-size: 10pt !important;
+        font-weight: 700 !important;
+        color: #0F172A !important;
+        outline: none !important;
+        resize: none !important;
+        width: 100% !important;
+        min-height: auto !important;
+        height: auto !important;
+        white-space: pre-wrap !important;
+        word-break: break-word !important;
+        display: block !important;
+        -webkit-appearance: none !important;
+        appearance: none !important;
+    }
+
+    /* ==========================================================================
+       HIDE ALL SCREEN-ONLY EDIT BARS, ACTION BUTTONS & ICONS ACROSS ALL CATEGORIES
+       ========================================================================== */
+    /* Hide Standard Layout Manual Field Editor bar */
+    .p-4.mb-4.rounded-2xl.bg-gradient-to-r,
+    #manual-custom-key,
+    #manual-custom-val,
+    button[onclick*="saveCustomFieldFromInput"],
+    /* Hide Sale Deed Action Buttons */
+    button[onclick*="copyCurrentDeedSummary"],
+    button[onclick*="saveCurrentDeedReview"],
+    /* Hide Patta & TSLR Action Buttons */
+    button[onclick*="copyCurrentPattaSummary"],
+    button[onclick*="downloadPdfWithLanguage"],
+    /* Hide Standard Layout Save / Copy Buttons */
+    button[onclick*="saveManualFieldByKey"],
+    /* Hide EC Action Buttons */
+    #btn-toggle-all-ec-cards,
+    .ec-key-card-chevron,
+    button[onclick*="openOwnerDossierByName"],
+    button[onclick*="switchTab"],
+    /* Hide Copy & Icon Action Buttons Across All Cards */
+    button[onclick*="copyFieldValue"],
+    button[onclick*="copyToClipboard"],
+    button[title="Copy"],
+    button[title="Save & Sync"],
+    button[title="Copy value"],
+    .opacity-0.group-hover\:opacity-100 {
+        display: none !important;
+    }
+
+    /* ==========================================================================
+       TABLES & CHECKLIST IN PRINT (ALL CATEGORIES)
+       ========================================================================== */
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+    th, td {
+        border: 1px solid #CBD5E1 !important;
+        padding: 6px 8px !important;
+    }
+    th {
+        background: #F1F5F9 !important;
+        color: #0F172A !important;
+        font-weight: 700 !important;
+    }
+
+    /* Checklist Items in Print */
+    #checklist-items-container > div {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+        border: 1px solid #CBD5E1 !important;
+        background: #FFFFFF !important;
+        margin-bottom: 8px !important;
     }
 }

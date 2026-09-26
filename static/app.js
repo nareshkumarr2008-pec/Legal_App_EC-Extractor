@@ -1,14 +1,14 @@
 const DEFAULT_CATEGORIES = [
-    {"id": "sale_deed", "name": "Sale deed / title deed", "tamil_name": "கிரையப் பத்திரம் / தாய் பத்திரம்", "key_fields": ["Vendor Details", "Purchaser Details", "History / Previous Owner Details", "Schedule of Property", "Survey Number / S No", "Land Extent", "Building Built-Up Area", "Apartment UDS & Floor", "Boundary", "SRO Details"]},
-    {"id": "patta", "name": "Patta document", "tamil_name": "பட்டா ஆவணம் (கிராமம் & நகரம் TSLR)", "key_fields": ["Patta Number", "Pattadhar / Owner Name", "Survey Number / S No", "Extent", "Village / Taluk / District", "TSLR Town Survey No", "TSLR Ward + Block", "TSLR Town"]},
-    {"id": "parent_docs", "name": "Parent docs / mother copy", "tamil_name": "முந்தைய மூல ஆவணங்கள் (Mother Copy)", "key_fields": ["Previous Owner / Vendor", "Purchaser / Claimant", "Parent Document No & Year", "Survey Number / S No", "Extent Transferred", "Last 5 Years Validation"]},
-    {"id": "ec", "name": "EC", "tamil_name": "வில்லங்கச் சான்றிதழ் (Encumbrance Certificate)", "key_fields": ["Search Period (30-Year Min)", "Form Type (Form 15 vs 16)", "Survey Number & Village", "SRO Details", "Registered Entries Table", "Encumbrance Status"]},
-    {"id": "tslr", "name": "TSLR document (Town Survey Land Record)", "tamil_name": "நகர நில அளவை ஆவணம் (TSLR)", "key_fields": ["District", "Taluk", "Town", "Ward", "Name", "Survey Number / S.No", "Extent", "Ward + Block", "Land classification", "Current land use", "Tenure type", "Assessment (Rs.)", "Remarks"]},
-    {"id": "rera", "name": "Rera certificate approval certificate (if applicable)", "tamil_name": "RERA பதிவு சான்றிதழ்", "key_fields": ["TNRERA Registration Number", "Project Name & Type", "Promoter / Developer Name", "Project Survey Numbers & Location", "Validity & Completion Expiry"]},
-    {"id": "loan_docs", "name": "Loan documents (MODT/NOC)", "tamil_name": "வங்கிக் கடன் ஆவணம்", "key_fields": ["Bank / Institution Name", "Borrower / Mortgagor Name", "Loan Account Number", "Mortgage Type (MODT)", "Outstanding Amount", "NOC Clearance Status"]}
+    {"id": "sale_deed", "name": "Sale deed / title deed", "tamil_name": "கிரையப் பத்திரம்", "key_fields": ["Vendor Details", "Purchaser Details", "History / Previous Owner Details", "Schedule of Property", "Survey Number / S No", "Land Extent", "Building Built-Up Area", "Apartment UDS & Floor", "Boundary", "SRO Details"]},
+    {"id": "patta", "name": "Patta document", "tamil_name": "பட்டா ஆவணம்", "key_fields": ["Patta Number", "Pattadhar / Owner Name", "Survey Number / S No", "Extent", "Village / Taluk / District", "TSLR Town Survey No", "TSLR Ward + Block", "TSLR Town"]},
+    {"id": "parent_docs", "name": "Parent docs / mother copy", "tamil_name": "தாய் பத்திரம்", "key_fields": ["Previous Owner / Vendor", "Purchaser / Claimant", "Parent Document No & Year", "Survey Number / S No", "Extent Transferred", "Last 5 Years Validation"]},
+    {"id": "ec", "name": "EC", "tamil_name": "வில்லங்கச் சான்றிதழ்", "key_fields": ["Search Period (30-Year Min)", "Form Type (Form 15 vs 16)", "Survey Number & Village", "SRO Details", "Registered Entries Table", "Encumbrance Status"]},
+    {"id": "tslr", "name": "TSLR document (Town Survey Land Record)", "tamil_name": "நகர நில அளவை", "key_fields": ["District", "Taluk", "Town", "Ward", "Name", "Survey Number / S.No", "Extent", "Ward + Block", "Land classification", "Current land use", "Tenure type"]},
+    {"id": "rera", "name": "Rera certificate approval certificate (if applicable)", "tamil_name": "TNRERA சான்றிதழ்", "key_fields": ["TNRERA Registration Number", "Project Name & Type", "Promoter / Developer Name", "Project Survey Numbers & Location", "Validity & Completion Expiry"]},
+    {"id": "loan_docs", "name": "Loan documents (MODT/NOC)", "tamil_name": "MODT / NOC வங்கி ஆவணம்", "key_fields": ["Bank / Institution Name", "Borrower / Mortgagor Name", "Loan Account Number", "Mortgage Type (MODT)", "Outstanding Amount", "NOC Clearance Status"]}
 ];
 
-// PlotChoice DocuScan OCR & Cross-Verification Platform
+// PlotChoice Legal App - Enterprise Real Estate & Legal Document Intelligence Platform
 
 let state = {
     currentTrack: "ocr",
@@ -26,6 +26,7 @@ let state = {
 // Initialize Application
 document.addEventListener("DOMContentLoaded", async () => {
     lucide.createIcons();
+    updateCategoryInfo(state.selectedCategoryId);
     await checkServerHealth();
     await fetchCategories();
     await checkLLMStatus();
@@ -157,25 +158,30 @@ async function fetchCategories() {
 
 function renderCategoriesGrid() {
     const grid = document.getElementById("category-grid");
+    if (!grid) return;
     grid.innerHTML = "";
 
-    state.categories.forEach(cat => {
+    state.categories.forEach((cat, idx) => {
         const isActive = cat.id === state.selectedCategoryId;
         const card = document.createElement("div");
         card.id = `cat-card-${cat.id}`;
         card.onclick = () => selectCategory(cat.id, true);
-        card.className = `cat-card ${isActive ? "cat-card-active" : ""}`;
+        card.className = `cat-card ${isActive ? "cat-card-active" : ""} group`;
+        card.setAttribute("data-category", cat.id);
+
+        const numStr = String(idx + 1).padStart(2, "0");
+        const iconName = cat.icon || (cat.id === "sale_deed" ? "file-text" : cat.id === "patta" ? "award" : cat.id === "parent_docs" ? "files" : cat.id === "ec" ? "shield-check" : cat.id === "tslr" ? "map-pin" : cat.id === "rera" ? "check-circle" : "landmark");
 
         card.innerHTML = `
             <div class="flex items-start justify-between mb-2">
-                <div class="cat-icon-box w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-amber-400 flex items-center justify-center">
-                    <i data-lucide="${cat.icon || 'file-text'}" class="w-4 h-4"></i>
+                <div class="cat-icon-box bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400">
+                    <i data-lucide="${iconName}" class="w-4 h-4"></i>
                 </div>
-                <span class="text-[9px] font-bold text-tm-text-muted">#${cat.id.toUpperCase().slice(0, 4)}</span>
+                <span class="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500">#${numStr}</span>
             </div>
             <div>
-                <h4 class="text-xs font-bold text-tm-text-pri leading-snug">${cat.name}</h4>
-                <p class="text-[10px] text-tm-text-sec line-clamp-1 mt-0.5">${cat.tamil_name}</p>
+                <h4 class="text-xs font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight">${cat.name}</h4>
+                <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1 truncate">${cat.tamil_name}</p>
             </div>
         `;
         grid.appendChild(card);
@@ -216,24 +222,97 @@ function selectCategory(catId, loadDoc = true) {
 }
 
 function updateStepPills(step) {
-    const p1 = document.getElementById("step-pill-1");
-    const p2 = document.getElementById("step-pill-2");
-    const p3 = document.getElementById("step-pill-3");
-    if (!p1 || !p2 || !p3) return;
+    const b1 = document.getElementById("step-badge-1");
+    const b2 = document.getElementById("step-badge-2");
+    const b3 = document.getElementById("step-badge-3");
+    const s1 = document.getElementById("step-status-1");
+    const s2 = document.getElementById("step-status-2");
+    const s3 = document.getElementById("step-status-3");
+    const r1 = document.getElementById("step-rail-1");
+    const r2 = document.getElementById("step-rail-2");
+
+    if (!b1 || !b2 || !b3) return;
 
     if (step === 1) {
-        p1.className = "flex-1 flex items-center gap-3 p-2.5 rounded-xl bg-white/95 dark:bg-slate-800/90 border border-blue-400 dark:border-amber-400/50 shadow-xs transition-all";
-        p2.className = "flex-1 flex items-center gap-3 p-2.5 rounded-xl bg-white/60 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:bg-white/90 dark:hover:bg-slate-800 transition-all";
-        p3.className = "flex-1 flex items-center gap-3 p-2.5 rounded-xl bg-white/60 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:bg-white/90 dark:hover:bg-slate-800 transition-all";
+        // Step 1: Active
+        b1.className = "stepper-badge stepper-badge-active";
+        b1.innerHTML = "01";
+        if (s1) {
+            s1.textContent = "ACTIVE";
+            s1.className = "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800";
+        }
+        if (r1) r1.className = "stepper-rail";
+
+        // Step 2: Ready / Pending
+        b2.className = "stepper-badge stepper-badge-pending";
+        b2.innerHTML = "02";
+        if (s2) {
+            s2.textContent = "READY";
+            s2.className = "text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400";
+        }
+        if (r2) r2.className = "stepper-rail";
+
+        // Step 3: Inspect / Pending
+        b3.className = "stepper-badge stepper-badge-pending";
+        b3.innerHTML = "03";
+        if (s3) {
+            s3.textContent = "INSPECT";
+            s3.className = "text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400";
+        }
     } else if (step === 2) {
-        p1.className = "flex-1 flex items-center gap-3 p-2.5 rounded-xl bg-white/70 dark:bg-slate-800/60 border border-emerald-300 dark:border-emerald-600/40 shadow-2xs transition-all";
-        p2.className = "flex-1 flex items-center gap-3 p-2.5 rounded-xl bg-white/95 dark:bg-slate-800/90 border border-blue-400 dark:border-amber-400/50 shadow-xs transition-all";
-        p3.className = "flex-1 flex items-center gap-3 p-2.5 rounded-xl bg-white/60 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:bg-white/90 dark:hover:bg-slate-800 transition-all";
+        // Step 1: Completed
+        b1.className = "stepper-badge stepper-badge-completed";
+        b1.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5"></i>`;
+        if (s1) {
+            s1.textContent = "DONE";
+            s1.className = "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800";
+        }
+        if (r1) r1.className = "stepper-rail completed";
+
+        // Step 2: Active
+        b2.className = "stepper-badge stepper-badge-active";
+        b2.innerHTML = "02";
+        if (s2) {
+            s2.textContent = "ACTIVE";
+            s2.className = "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800";
+        }
+        if (r2) r2.className = "stepper-rail";
+
+        // Step 3: Inspect / Pending
+        b3.className = "stepper-badge stepper-badge-pending";
+        b3.innerHTML = "03";
+        if (s3) {
+            s3.textContent = "INSPECT";
+            s3.className = "text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400";
+        }
     } else if (step === 3) {
-        p1.className = "flex-1 flex items-center gap-3 p-2.5 rounded-xl bg-white/70 dark:bg-slate-800/60 border border-emerald-300 dark:border-emerald-600/40 shadow-2xs transition-all";
-        p2.className = "flex-1 flex items-center gap-3 p-2.5 rounded-xl bg-white/70 dark:bg-slate-800/60 border border-emerald-300 dark:border-emerald-600/40 shadow-2xs transition-all";
-        p3.className = "flex-1 flex items-center gap-3 p-2.5 rounded-xl bg-white/95 dark:bg-slate-800/90 border border-blue-400 dark:border-amber-400/50 shadow-xs transition-all";
+        // Step 1: Completed
+        b1.className = "stepper-badge stepper-badge-completed";
+        b1.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5"></i>`;
+        if (s1) {
+            s1.textContent = "DONE";
+            s1.className = "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800";
+        }
+        if (r1) r1.className = "stepper-rail completed";
+
+        // Step 2: Completed
+        b2.className = "stepper-badge stepper-badge-completed";
+        b2.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5"></i>`;
+        if (s2) {
+            s2.textContent = "DONE";
+            s2.className = "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800";
+        }
+        if (r2) r2.className = "stepper-rail completed";
+
+        // Step 3: Active
+        b3.className = "stepper-badge stepper-badge-active";
+        b3.innerHTML = "03";
+        if (s3) {
+            s3.textContent = "ACTIVE";
+            s3.className = "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800";
+        }
     }
+    lucide.createIcons();
 }
 
 window.quickLaunch = async function(catId) {
@@ -248,22 +327,27 @@ window.quickLaunch = async function(catId) {
 };
 
 function updateCategoryInfo(catId) {
+    const titleEl = document.getElementById("selected-cat-title");
+    const tagsContainer = document.getElementById("selected-cat-tags");
+    if (!titleEl && !tagsContainer) return;
+
     const cat = state.categories.find(c => c.id === catId);
     if (!cat) return;
 
-    const titleEl = document.getElementById("selected-cat-title");
     const tamilEl = document.getElementById("selected-cat-tamil");
     if (titleEl) titleEl.textContent = `Selected: ${cat.name}`;
     if (tamilEl) tamilEl.textContent = cat.tamil_name;
 
-    const tagsContainer = document.getElementById("selected-cat-tags");
     if (tagsContainer) {
         tagsContainer.innerHTML = "";
-        (cat.key_fields || []).slice(0, 6).forEach(f => {
-            const span = document.createElement("span");
-            span.className = "px-2.5 py-1 bg-white/90 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-lg border border-slate-200/90 dark:border-slate-700 text-xs font-semibold shadow-2xs";
-            span.textContent = f;
-            tagsContainer.appendChild(span);
+        (cat.key_fields || []).slice(0, 6).forEach((f, idx) => {
+            const card = document.createElement("div");
+            card.className = "property-field-card";
+            card.innerHTML = `
+                <span class="w-4 h-4 rounded-full bg-blue-50 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 text-[10px] font-mono font-bold flex items-center justify-center shrink-0 border border-blue-200 dark:border-blue-800">${idx + 1}</span>
+                <span class="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate" title="${f}">${f}</span>
+            `;
+            tagsContainer.appendChild(card);
         });
     }
 }
@@ -387,15 +471,22 @@ function handleFileSelected(file) {
     const inner = document.getElementById("dropzone-inner");
     if (inner) {
         inner.innerHTML = `
-            <div class="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-2 shadow-2xs">
-                <i data-lucide="file-check" class="w-6 h-6"></i>
+            <div class="flex items-center space-x-2 min-w-0 text-left">
+                <div class="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-200 dark:border-emerald-800">
+                    <i data-lucide="file-check-2" class="w-3.5 h-3.5"></i>
+                </div>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-xs font-bold text-tm-text-pri truncate max-w-[140px] sm:max-w-[180px]" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</span>
+                        <span class="px-1.5 py-0.2 text-[9px] font-bold rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0">Ingested</span>
+                    </div>
+                    <span class="text-[10px] text-tm-text-sec block leading-tight">${sizeStr} MB &bull; ${file.type || 'PDF'}</span>
+                </div>
             </div>
-            <h3 class="text-sm font-bold text-tm-text-pri">${escapeHtml(file.name)}</h3>
-            <p class="text-xs text-tm-text-sec">${sizeStr} MB • ${file.type || 'PDF Document'}</p>
-            <div class="mt-2 flex items-center space-x-2">
-                <span class="px-2.5 py-1 text-[11px] font-semibold rounded-md bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">File Ingested</span>
-                <button type="button" onclick="triggerBrowseFile(event)" class="text-xs text-blue-600 dark:text-amber-400 font-semibold underline hover:text-blue-800 cursor-pointer">Change File</button>
-            </div>
+            <button type="button" onclick="triggerBrowseFile(event)" class="px-2 py-1 text-[11px] font-semibold text-blue-600 dark:text-amber-400 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded border border-blue-200 dark:border-blue-800/60 transition-colors shrink-0 cursor-pointer flex items-center gap-1">
+                <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+                <span>Change</span>
+            </button>
         `;
         if (window.lucide) lucide.createIcons();
     }
@@ -410,16 +501,24 @@ function resetDropzoneUI() {
     const inner = document.getElementById("dropzone-inner");
     if (inner) {
         inner.innerHTML = `
-            <div class="w-12 h-12 rounded-full bg-blue-100 text-tm-gold flex items-center justify-center mb-3 shadow-2xs">
-                <i data-lucide="upload-cloud" class="w-6 h-6"></i>
+            <div class="flex items-center space-x-2 min-w-0 text-left">
+                <div class="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-blue-100 dark:border-blue-800/80 group-hover:scale-105 transition-all">
+                    <i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i>
+                </div>
+                <div class="min-w-0 truncate">
+                    <span class="text-xs font-bold text-tm-text-pri group-hover:text-blue-600 dark:group-hover:text-amber-400 transition-colors truncate block leading-tight">
+                        Upload Deed / Drag & Drop
+                    </span>
+                    <span class="text-[10px] text-tm-text-muted truncate block leading-tight">PDF, TIFF, PNG, JPG, WebP</span>
+                </div>
             </div>
-            <h3 class="text-lg font-semibold text-tm-text-pri mb-1">Click to Upload or Drag & Drop Document</h3>
-            <p class="text-sm text-tm-text-sec mt-2 mb-2">Supports PDF, PNG, JPG, TIFF, WebP, BMP (Multi-page supported)</p>
-            <span class="mt-1 px-4 py-1.5 text-xs font-semibold rounded-lg bg-tm-card border border-tm-gold text-tm-gold hover:bg-blue-50 dark:bg-blue-900/20 shadow-2xs inline-block">
-                Browse Document File...
-            </span>
+            <button type="button" onclick="triggerBrowseFile(event)"
+                class="px-2.5 py-1 text-xs font-bold rounded-lg bg-blue-600 hover:bg-blue-700 dark:bg-amber-500 dark:hover:bg-amber-600 dark:text-slate-950 text-white shadow-xs cursor-pointer active:scale-95 shrink-0 flex items-center gap-1 transition-transform">
+                <i data-lucide="file-up" class="w-3 h-3"></i>
+                <span>Browse</span>
+            </button>
         `;
-        lucide.createIcons();
+        if (window.lucide) lucide.createIcons();
     }
 }
 
@@ -464,8 +563,103 @@ function toggleCustomPageRange(val) {
 }
 
 // 4. Trigger OCR and Extraction Process
+let ocrTimerInterval = null;
+let ocrStartTime = 0;
+
+function startOcrProgressTimer(docTypeName = "Legal Document", pagesScope = "all") {
+    stopOcrProgressTimer();
+    ocrStartTime = Date.now();
+    showLoader(true);
+    const statusTextEl = document.getElementById("processing-status-text");
+
+    const scopeNote = pagesScope === "first_3" ? " (First 3 Pages)" : (pagesScope === "first_5" ? " (First 5 Pages)" : "");
+    const stages = [
+        { afterSec: 0, text: `Analyzing ${docTypeName}${scopeNote} & verifying text layers...` },
+        { afterSec: 3, text: `Reading native digital PDF & mapping spatial geometry...` },
+        { afterSec: 8, text: `Parsing registered entries, transaction schedules & legal parties...` },
+        { afterSec: 16, text: `Tracing legal title continuity, parent deeds & current owner...` },
+        { afterSec: 25, text: `Verifying financial encumbrances, bank mortgages & court decrees...` },
+        { afterSec: 35, text: `Synthesizing 12-point legal audit & title dossier...` },
+        { afterSec: 48, text: `Finalizing structured intelligence & interactive document canvas...` }
+    ];
+
+    const updateMsg = () => {
+        const elapsed = Math.floor((Date.now() - ocrStartTime) / 1000);
+        let stageText = stages[0].text;
+        for (const s of stages) {
+            if (elapsed >= s.afterSec) stageText = s.text;
+        }
+        if (statusTextEl) {
+            statusTextEl.innerHTML = `
+                <span class="inline-flex items-center gap-2 flex-wrap justify-center">
+                    <span class="px-2 py-0.5 rounded-md bg-amber-500/20 text-tm-gold font-mono font-bold text-[11px] border border-amber-500/30 shadow-2xs">${elapsed}s elapsed</span>
+                    <span class="text-tm-text-pri font-medium">${stageText}</span>
+                    <span class="text-slate-400 text-[10px] font-mono">(In Progress)</span>
+                </span>
+            `;
+        }
+    };
+
+    updateMsg();
+    ocrTimerInterval = setInterval(updateMsg, 1000);
+}
+
+function stopOcrProgressTimer() {
+    if (ocrTimerInterval) {
+        clearInterval(ocrTimerInterval);
+        ocrTimerInterval = null;
+    }
+}
+
+function scrollToWorkspace() {
+    const ws = document.getElementById("workspace-section");
+    if (ws) {
+        ws.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+}
+window.scrollToWorkspace = scrollToWorkspace;
+
+function showStep2CompletionNotice(data) {
+    const banner = document.getElementById("step-2-completion-banner");
+    if (!banner) return;
+    const totalPages = data.total_pages || (data.pages ? data.pages.length : 1);
+    const extraction = data.extraction || {};
+    const fields = extraction.fields || {};
+    const txList = (fields.transactions_table && Array.isArray(fields.transactions_table.value)) ? fields.transactions_table.value : [];
+    const txCount = txList.length;
+
+    let subMsg = `${totalPages} page(s) analyzed with high-precision legal extraction.`;
+    if (txCount > 0) subMsg += ` ${txCount} registered transactions verified.`;
+
+    banner.innerHTML = `
+        <div class="p-3.5 sm:p-4 rounded-xl bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-blue-500/10 border border-emerald-500/40 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Analysis Complete & Ready</span>
+                        <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300">${totalPages} Pages</span>
+                    </div>
+                    <p class="text-xs font-semibold text-slate-800 dark:text-slate-200 mt-0.5">${subMsg}</p>
+                </div>
+            </div>
+            <button type="button" onclick="scrollToWorkspace()" class="px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all shrink-0">
+                <span>View Results in Step 3</span>
+                <span>&darr;</span>
+            </button>
+        </div>
+    `;
+    banner.classList.remove("hidden");
+    if (window.lucide && lucide.createIcons) lucide.createIcons();
+}
+
 async function runOcrProcess() {
     dismissOcrError();
+    const compBanner = document.getElementById("step-2-completion-banner");
+    if (compBanner) compBanner.classList.add("hidden");
+
     if (!state.currentFile) {
         const fileInput = document.getElementById("file-input");
         if (fileInput) {
@@ -490,7 +684,7 @@ async function runOcrProcess() {
         const lang = document.getElementById("ocr-lang-select").value;
         const docType = state.selectedCategoryId;
         const useLlmEl = document.getElementById("toggle-use-llm");
-        const useLlm = useLlmEl ? useLlmEl.checked : true;
+        const useLlm = useLlmEl ? useLlmEl.checked : false;
 
         const pagesScopeEl = document.getElementById("ocr-pages-select");
         const pagesScope = pagesScopeEl ? pagesScopeEl.value : "all";
@@ -506,11 +700,9 @@ async function runOcrProcess() {
             if (customVal) pageRangeParam = customVal;
         }
 
-        const scopeMsg = maxPagesParam ? ` (First ${maxPagesParam} pages)` : (pageRangeParam ? ` (Pages: ${pageRangeParam})` : "");
-        const initialMsg = useLlm 
-            ? `Running OCR & Qwen 2.5 7B AI Extraction${scopeMsg}...` 
-            : `Running Dual-Pipeline OCR & Extracting Entities${scopeMsg}...`;
-        showLoader(true, initialMsg);
+        const catObj = (state.categories || []).find(c => c.id === docType) || { name: "Legal Document" };
+        const docTitle = catObj.name || "Legal Document";
+        startOcrProgressTimer(docTitle, pagesScope);
 
         const maxRetries = 1;
         let attempt = 0;
@@ -546,16 +738,24 @@ async function runOcrProcess() {
                     throw new Error(detail);
                 }
                 const data = await res.json();
+                stopOcrProgressTimer();
+                showLoader(false);
+
                 state.currentResult = data;
                 state.currentPageIndex = 0;
-                renderDocumentResult();
-                showLoader(false);
                 updateServerStatus(true);
                 updateStepPills(3);
-                const workspace = document.getElementById("workspace-section");
-                if (workspace) {
-                    workspace.scrollIntoView({ behavior: "smooth", block: "start" });
+                showStep2CompletionNotice(data);
+
+                try {
+                    renderDocumentResult();
+                } catch (renderErr) {
+                    console.error("renderDocumentResult encountered an error:", renderErr);
                 }
+
+                setTimeout(() => {
+                    scrollToWorkspace();
+                }, 80);
                 return;
             } catch (err) {
                 clearTimeout(timeoutId);
@@ -587,11 +787,14 @@ async function runOcrProcess() {
             }
         }
 
+        stopOcrProgressTimer();
         showLoader(false);
         updateServerStatus(false, "Offline");
         console.error("OCR Processing Final Error:", lastError);
         showOcrConnectionModal(lastError);
     } finally {
+        stopOcrProgressTimer();
+        showLoader(false);
         state.isProcessing = false;
         if (btnProcess) {
             btnProcess.disabled = false;
@@ -642,14 +845,20 @@ function renderDocumentResult() {
         }
     }
 
-    renderAllDocumentPages(pages, extraction);
-    renderECAnalysisTab(extraction);
-    renderFieldsTab(extraction.fields || {});
-    renderOwnersTab(extraction);
-    renderPropertyFilterTab(extraction);
-    renderChecklistTab(extraction.checklist || []);
-    renderOCRTextTab(res.aggregated_text || currentPage.full_text || "");
-    renderTableTab(extraction);
+    const safeRun = (name, fn) => {
+        try {
+            fn();
+        } catch (e) {
+            console.error(`[UI] Error rendering tab/view [${name}]:`, e);
+        }
+    };
+    safeRun("pages", () => renderAllDocumentPages(pages, extraction));
+    safeRun("ec-analysis", () => renderECAnalysisTab(extraction));
+    safeRun("fields", () => renderFieldsTab(extraction.fields || {}));
+    safeRun("owners", () => renderOwnersTab(extraction));
+    safeRun("property-filter", () => renderPropertyFilterTab(extraction));
+    safeRun("ocr-text", () => renderOCRTextTab(res.aggregated_text || currentPage.full_text || ""));
+    safeRun("table", () => renderTableTab(extraction));
 
     const isECDoc = (extraction.document_type_id === "ec") || 
                     (extraction.fields && ("form_type" in extraction.fields || "transactions_table" in extraction.fields || "ec_report" in extraction.fields));
@@ -685,7 +894,77 @@ function jumpToPage(targetIdx) {
         if (targetCard) {
             targetCard.scrollIntoView({ behavior: "smooth", block: "start" });
         }
+
+        const targetOverlay = document.getElementById(`bbox-layer-${idx}`);
+        if (targetOverlay && targetOverlay._pendingWords) {
+            renderWordBoxesForPage(targetOverlay, targetOverlay._pendingWords, targetOverlay._pIdx, targetOverlay._lines);
+            delete targetOverlay._pendingWords;
+            delete targetOverlay._lines;
+        }
     }
+}
+
+function renderWordBoxesForPage(bboxOverlay, words, pIdx, lines = []) {
+    if (!bboxOverlay || bboxOverlay.dataset.wordsRendered === "true") return;
+    bboxOverlay.dataset.wordsRendered = "true";
+
+    const frag = document.createDocumentFragment();
+
+    if (words && words.length > 0) {
+        words.forEach((word, wIdx) => {
+            if (!word || !word.w_pct || !word.h_pct) return;
+            const wordBoxEl = document.createElement("div");
+            wordBoxEl.className = "word-bbox";
+            wordBoxEl.id = `word-p${pIdx}-w${wIdx}`;
+            wordBoxEl.style.left = `${word.x_pct}%`;
+            wordBoxEl.style.top = `${word.y_pct}%`;
+            wordBoxEl.style.width = `${word.w_pct}%`;
+            wordBoxEl.style.height = `${word.h_pct}%`;
+
+            const isTop = word.y_pct < 5.5;
+            const tooltipCls = isTop ? "word-bbox-tooltip tooltip-bottom" : "word-bbox-tooltip";
+            const transText = word.translation ? word.translation : "";
+            const confPct = Math.round((word.confidence || 0.98) * 100);
+
+            wordBoxEl.innerHTML = `
+                <div class="${tooltipCls}">
+                    <div class="word-tooltip-orig">${escapeHtml(word.text)}</div>
+                    ${transText ? `<div class="word-tooltip-trans"><span class="text-tm-text-sec font-normal mr-1">Trans:</span>${escapeHtml(transText)}</div>` : ''}
+                    <div class="word-tooltip-conf">Conf: ${confPct}%</div>
+                </div>
+            `;
+
+            wordBoxEl.onclick = (e) => {
+                e.stopPropagation();
+                showWordInspector(word, pIdx + 1);
+            };
+
+            frag.appendChild(wordBoxEl);
+        });
+    } else if (lines && lines.length > 0) {
+        // Fallback to line bounding boxes if no words are available
+        lines.forEach((line, lineIdx) => {
+            const rect = line.rect || {};
+            const boxEl = document.createElement("div");
+            boxEl.className = "ocr-bbox";
+            boxEl.id = `bbox-p${pIdx}-l${lineIdx}`;
+            boxEl.style.left = `${rect.x_pct || 0}%`;
+            boxEl.style.top = `${rect.y_pct || 0}%`;
+            boxEl.style.width = `${rect.w_pct || 0}%`;
+            boxEl.style.height = `${rect.h_pct || 0}%`;
+
+            boxEl.innerHTML = `
+                <div class="ocr-bbox-tooltip">
+                    <span class="font-bold">${escapeHtml(line.text || "")}</span>
+                    <span class="text-blue-300 text-[10px] block">Confidence: ${((line.confidence || 0.95) * 100).toFixed(1)}%</span>
+                </div>
+            `;
+            boxEl.onclick = () => highlightLineInText(line.text);
+            frag.appendChild(boxEl);
+        });
+    }
+
+    bboxOverlay.appendChild(frag);
 }
 
 function renderAllDocumentPages(pages, extraction) {
@@ -790,59 +1069,30 @@ function renderAllDocumentPages(pages, extraction) {
                 ? pageData.words
                 : (pageData.lines || []).flatMap(l => l.words || []);
 
-            if (words && words.length > 0) {
-                words.forEach((word, wIdx) => {
-                    if (!word || !word.w_pct || !word.h_pct) return;
-                    const wordBoxEl = document.createElement("div");
-                    wordBoxEl.className = "word-bbox";
-                    wordBoxEl.id = `word-p${pIdx}-w${wIdx}`;
-                    wordBoxEl.style.left = `${word.x_pct}%`;
-                    wordBoxEl.style.top = `${word.y_pct}%`;
-                    wordBoxEl.style.width = `${word.w_pct}%`;
-                    wordBoxEl.style.height = `${word.h_pct}%`;
-
-                    const isTop = word.y_pct < 5.5;
-                    const tooltipCls = isTop ? "word-bbox-tooltip tooltip-bottom" : "word-bbox-tooltip";
-                    const transText = word.translation ? word.translation : "";
-                    const confPct = Math.round((word.confidence || 0.98) * 100);
-
-                    wordBoxEl.innerHTML = `
-                        <div class="${tooltipCls}">
-                            <div class="word-tooltip-orig">${escapeHtml(word.text)}</div>
-                            ${transText ? `<div class="word-tooltip-trans"><span class="text-tm-text-sec font-normal mr-1">Trans:</span>${escapeHtml(transText)}</div>` : ''}
-                            <div class="word-tooltip-conf">Conf: ${confPct}%</div>
-                        </div>
-                    `;
-
-                    wordBoxEl.onclick = (e) => {
-                        e.stopPropagation();
-                        showWordInspector(word, pIdx + 1);
-                    };
-
-                    bboxOverlay.appendChild(wordBoxEl);
-                });
+            // For multi-page documents (>3 pages), render page 0 / active page immediately,
+            // and lazy-render subsequent pages when viewed or scrolled into view
+            if (total <= 3 || pIdx === state.currentPageIndex || pIdx === 0) {
+                renderWordBoxesForPage(bboxOverlay, words, pIdx, pageData.lines);
             } else {
-                // Fallback to line bounding boxes if no words are available
-                const lines = pageData.lines || [];
-                lines.forEach((line, lineIdx) => {
-                    const rect = line.rect || {};
-                    const boxEl = document.createElement("div");
-                    boxEl.className = "ocr-bbox";
-                    boxEl.id = `bbox-p${pIdx}-l${lineIdx}`;
-                    boxEl.style.left = `${rect.x_pct}%`;
-                    boxEl.style.top = `${rect.y_pct}%`;
-                    boxEl.style.width = `${rect.w_pct}%`;
-                    boxEl.style.height = `${rect.h_pct}%`;
-
-                    boxEl.innerHTML = `
-                        <div class="ocr-bbox-tooltip">
-                            <span class="font-bold">${escapeHtml(line.text)}</span>
-                            <span class="text-blue-300 text-[10px] block">Confidence: ${(line.confidence * 100).toFixed(1)}%</span>
-                        </div>
-                    `;
-                    boxEl.onclick = () => highlightLineInText(line.text);
-                    bboxOverlay.appendChild(boxEl);
-                });
+                bboxOverlay._pendingWords = words;
+                bboxOverlay._pIdx = pIdx;
+                bboxOverlay._lines = pageData.lines || [];
+                if (window.IntersectionObserver) {
+                    const observer = new IntersectionObserver((entries, obs) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                const overlay = entry.target;
+                                if (overlay._pendingWords) {
+                                    renderWordBoxesForPage(overlay, overlay._pendingWords, overlay._pIdx, overlay._lines);
+                                    delete overlay._pendingWords;
+                                    delete overlay._lines;
+                                }
+                                obs.unobserve(overlay);
+                            }
+                        });
+                    }, { rootMargin: "250px" });
+                    observer.observe(bboxOverlay);
+                }
             }
 
             pageBody.appendChild(bboxOverlay);
@@ -2127,6 +2377,7 @@ function renderPattaFieldsLayout(fields, container) {
         {
             sl: "1",
             survey_no: "128/7",
+            old_survey_no: "128",
             land_type: "ரயத்துவாரி மனை (Residential Site / Manai)",
             extent_ha: "0.00.06 Hectares",
             sq_meters: "6 Sq.M",
@@ -2134,39 +2385,6 @@ function renderPattaFieldsLayout(fields, container) {
             tax: "Rs. 2.00"
         }
     ]);
-
-    const checklist = (fields.checklist && Array.isArray(fields.checklist)) ? fields.checklist : [
-        {
-            title: `Patta Number Validation (பட்டா எண்: ${pattaNo})`,
-            status: "PASSED",
-            detail: `Valid Patta number ${pattaNo} extracted and verified in Form 10(1) revenue heading.`
-        },
-        {
-            title: "Owner & Kinship Authentication (பட்டாதாரர் & உறவுமுறை)",
-            status: "PASSED",
-            detail: `Registered Pattadhar authenticated: ${ownerName}`
-        },
-        {
-            title: `Survey Numbers Schedule (புல எண்கள்: ${surveys})`,
-            status: "PASSED",
-            detail: `All 1 cadastral survey number(s) identified (${surveys}) in revenue table.`
-        },
-        {
-            title: "Extent & Revenue Balance (பரப்பளவு & தீர்வை சரிபார்ப்பு)",
-            status: "PASSED",
-            detail: `Land area (${extentAresSqFt}) and cumulative totals verified mathematically across revenue table.`
-        },
-        {
-            title: "Digital Signature & Authenticity (மின்கையொப்பம்)",
-            status: "PASSED",
-            detail: `Authorized Government Digital Signature confirmed: ${signatory} [${sigTs}].`
-        },
-        {
-            title: `TN e-Services Portal Verification (Ref: ${portalRef})`,
-            status: "PASSED",
-            detail: `Online verification reference ${portalRef} active on official portal ${portalUrl}.`
-        }
-    ];
 
     const filename = (state.currentResult && state.currentResult.filename) || "patta tst 1.pdf";
     const totalPages = (state.currentResult && state.currentResult.page_count) || 2;
@@ -2193,9 +2411,7 @@ function renderPattaFieldsLayout(fields, container) {
     const textRepresentation = `REAL ESTATE DOCUMENT OCR & INTELLIGENCE REPORT\nDocument Category: Patta document • பட்டா ஆவணம் (Patta Document)\n\nDOCUMENT FILE: ${filename} | TOTAL PAGES: ${totalPages} | PROCESSED DATE: ${processedDate} | STATUS: High Confidence (98%)\n\n1. Extracted Key Legal Fields\n=======================================================\n` +
         pattaFieldsList.map(f => `${f.label.padEnd(45, ' ')} : ${f.val}`).join('\n') +
         `\n\n2. Cadastral Survey Schedule & Area Normalization\n=======================================================\n` +
-        cadastralList.map(c => `Sl ${c.sl || 1} | S.No ${c.survey_no || c.survey_number || '-'} | ${c.land_type || '-'} | ${c.extent_ha || '-'} | ${c.sq_meters || '-'} | ${c.sq_feet || '-'} | Tax: ${c.tax || '-'}`).join('\n') +
-        `\n\n3. Document Verification Checklist\n=======================================================\n` +
-        checklist.map(chk => `[PASSED] ${chk.title || chk.rule_name || chk.item} - ${chk.detail || chk.details || ''}`).join('\n');
+        cadastralList.map(c => `Sl ${c.sl || 1} | S.No ${c.survey_no || c.survey_number || '-'} | ${c.land_type || '-'} | ${c.extent_ha || '-'} | ${c.sq_meters || '-'} | ${c.sq_feet || '-'} | Tax: ${c.tax || '-'}`).join('\n');
 
     const isNatham = nature.toLowerCase().includes("manai") || nature.includes("மனை") || (surveys && surveys.includes("/"));
     const docBadge = isNatham ? "Natham Patta (நத்தம் பட்டா)" : "Patta Form 10(1)";
@@ -2385,49 +2601,13 @@ function renderPattaFieldsLayout(fields, container) {
                                 <td class="py-2 px-3 text-center text-tm-text-sec font-bold">${escapeHtml(String(r.sl || idx + 1))}</td>
                                 <td class="py-2 px-3 font-bold text-tm-gold">
                                     ${escapeHtml(String(r.survey_no || r.survey_number || '-'))}
-                                    ${r.old_survey_no && r.old_survey_no !== r.survey_no ? `<span class="text-[10px] text-tm-text-sec font-normal ml-1">(Old: ${escapeHtml(String(r.old_survey_no))})</span>` : ''}
+                                    ${r.old_survey_no && r.old_survey_no !== r.survey_no ? `<span class="text-[10px] text-tm-text-sec font-normal ml-1">(Old S.No: ${escapeHtml(String(r.old_survey_no))})</span>` : ''}
                                 </td>
                                 <td class="py-2 px-3 text-tm-text-sec">${escapeHtml(String(r.land_type || r.nature_of_land || '-'))}</td>
                                 <td class="py-2 px-3 font-semibold text-tm-text-pri">${escapeHtml(String(r.extent_ha || r.extent_str || '-'))}</td>
                                 <td class="py-2 px-3 text-tm-text-sec">${escapeHtml(String(r.sq_meters || '-'))}</td>
                                 <td class="py-2 px-3 text-tm-text-sec">${escapeHtml(String(r.sq_feet || '-'))}</td>
                                 <td class="py-2 px-3 font-bold text-tm-text-pri text-right">${escapeHtml(String(r.tax || (r.tax_rs ? `Rs. ${r.tax_rs}` : '-')))}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Section 3: Document Verification Checklist -->
-        <div class="bg-tm-card rounded-xl border border-tm-border shadow-2xs overflow-hidden">
-            <div class="px-4 py-3 bg-tm-upload border-b border-tm-border flex items-center justify-between">
-                <h3 class="text-xs font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-2">
-                    <i data-lucide="check-square" class="w-4 h-4 text-emerald-700"></i>
-                    <span>3. Document Verification Checklist</span>
-                </h3>
-                <span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">6 / 6 Passed</span>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs border-collapse">
-                    <thead>
-                        <tr class="bg-tm-bg text-tm-text-sec font-bold border-b border-tm-border">
-                            <th class="py-2.5 px-4 w-1/3">Verification Item</th>
-                            <th class="py-2.5 px-4 w-24 text-center">Status</th>
-                            <th class="py-2.5 px-4">Details / Assessment</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        ${checklist.map((c, idx) => `
-                            <tr class="hover:bg-emerald-50/30 transition-colors ${idx % 2 === 1 ? 'bg-tm-bg/40' : ''}">
-                                <td class="py-2.5 px-4 font-bold text-tm-text-pri align-top">${escapeHtml(c.title || c.rule_name || c.item)}</td>
-                                <td class="py-2.5 px-4 text-center align-top">
-                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                                        <i data-lucide="check" class="w-3 h-3"></i> PASSED
-                                    </span>
-                                </td>
-                                <td class="py-2.5 px-4 text-tm-text-sec leading-relaxed align-top">${escapeHtml(c.detail || c.details || '')}</td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -2493,48 +2673,8 @@ function renderTSLRFieldsLayout(fields, container) {
         { key: "tenure_type", label: "Tenure Type (நில உரிமை முறை)", val: tenureType, conf: 98 },
         { key: "land_classification", label: "Land Classification (மனை வகைப்பாடு)", val: landClass, conf: 98 },
         { key: "current_land_use", label: "Current Land Use (தற்போதைய பயன்பாடு)", val: landUse, conf: 90 },
-        { key: "assessment", label: "Assessment (தீர்வை / வரி)", val: assessment, conf: 95 },
         { key: "digital_signature_authority", label: "Digital Signature Authority (மின் கையொப்பம்)", val: digSigAuth, conf: 98 },
-        { key: "signature_date", label: "Signature Date (கையொப்ப நாள்)", val: sigDate, conf: 98 },
-        { key: "portal_reference", label: "eServices Verification Ref No", val: portalRef, conf: 99 },
-        { key: "verification_portal", label: "Verification Portal", val: portalUrl, conf: 99, isLink: true },
-        { key: "remarks", label: "Remarks (குறிப்புகள்)", val: remarks, conf: 98 },
-        { key: "multi_page_audit", label: "Multi-Page & Survey Map Audit", val: multiPageAudit, conf: 99 }
-    ];
-
-    const checklist = (fields.checklist && Array.isArray(fields.checklist)) ? fields.checklist : [
-        {
-            title: "Adangal Holding & Owner Verification (உரிமையாளர் சரிபார்ப்பு)",
-            status: "PASSED",
-            detail: (tenureType.includes("Government") || tenureType.includes("சர்க்கார்"))
-                ? "Government Poramboke Land (சர்க்கார் புறம்போக்கு). Vested with Government of Tamil Nadu; private Adangal holding not applicable."
-                : `Registered owner authenticated in Adangal records: ${ownerName}`
-        },
-        {
-            title: "Town Survey & Old Revenue Survey Correlation (புல எண் இணைப்பு)",
-            status: "PASSED",
-            detail: `Town Survey No: ${surveyNo}, Old Revenue Survey No: ${oldSurveyNo}.`
-        },
-        {
-            title: "Tenure Type Verification (நில உரிமை உறுதி)",
-            status: "PASSED",
-            detail: `Tenure: ${tenureType}.`
-        },
-        {
-            title: "Land Classification & Use (மனை வகைப்பாடு)",
-            status: "PASSED",
-            detail: `Classification: '${landClass}', Use: '${landUse}'.`
-        },
-        {
-            title: "Digital Signature & eServices Validity (மின் கையொப்பம்)",
-            status: "PASSED",
-            detail: `Signed by ${digSigAuth.split("—")[0].trim()} on ${sigDate}. Ref: ${portalRef}.`
-        },
-        {
-            title: "Multi-Page & Survey Map Audit (பக்க & வரைபட சரிபார்ப்பு)",
-            status: "PASSED",
-            detail: multiPageAudit
-        }
+        { key: "signature_date", label: "Signature Date (கையொப்ப நாள்)", val: sigDate, conf: 98 }
     ];
 
     const filename = (state.currentResult && state.currentResult.filename) || "TSLR tst 2.pdf";
@@ -2542,9 +2682,7 @@ function renderTSLRFieldsLayout(fields, container) {
     const processedDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) + ", " + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
     const textRepresentation = `REAL ESTATE DOCUMENT OCR & INTELLIGENCE REPORT\nDocument Category: TSLR document (Town Survey Land Record) • நகர நில அளவை ஆவணம் (TSLR)\n\nDOCUMENT FILE: ${filename} | TOTAL PAGES: ${totalPages} | PROCESSED DATE: ${processedDate} | STATUS: High Confidence (98%)\n\n1. Extracted Key Legal Fields\n=======================================================\n` +
-        tslrFieldsList.map(f => `${f.label.padEnd(50, ' ')} : ${f.val}`).join('\n') +
-        `\n\n2. Document Verification Checklist\n=======================================================\n` +
-        checklist.map(chk => `[PASSED] ${chk.title || chk.rule_name || chk.item} - ${chk.detail || chk.details || ''}`).join('\n');
+        tslrFieldsList.map(f => `${f.label.padEnd(50, ' ')} : ${f.val}`).join('\n');
 
     const wrapper = document.createElement("div");
     wrapper.className = "space-y-6 font-sans";
@@ -2703,7 +2841,7 @@ function renderTSLRFieldsLayout(fields, container) {
                     <i data-lucide="layers" class="w-4 h-4 text-indigo-700"></i>
                     <span>1. Extracted Key Legal Fields</span>
                 </h3>
-                <span class="text-[11px] text-tm-text-sec font-medium">20 Fields Verified</span>
+                <span class="text-[11px] text-tm-text-sec font-medium">${tslrFieldsList.length} Fields Verified</span>
             </div>
 
             <div class="overflow-x-auto">
@@ -2734,40 +2872,6 @@ function renderTSLRFieldsLayout(fields, container) {
                                         ${f.conf}%
                                     </span>
                                 </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        <!-- Section 2: Document Verification Checklist -->
-        <div class="bg-tm-card rounded-xl border border-tm-border shadow-2xs overflow-hidden">
-            <div class="px-4 py-3 bg-tm-upload border-b border-tm-border flex items-center justify-between">
-                <h3 class="text-xs font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-2">
-                    <i data-lucide="check-square" class="w-4 h-4 text-emerald-700"></i>
-                    <span>2. Document Verification Checklist</span>
-                </h3>
-                <span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">5 / 5 Passed</span>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs border-collapse">
-                    <thead>
-                        <tr class="bg-tm-bg text-tm-text-sec font-bold border-b border-tm-border">
-                            <th class="py-2.5 px-4 w-1/3">Verification Item</th>
-                            <th class="py-2.5 px-4 w-24 text-center">Status</th>
-                            <th class="py-2.5 px-4">Details / Assessment</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        ${checklist.map((c, idx) => `
-                            <tr class="hover:bg-emerald-50/30 transition-colors ${idx % 2 === 1 ? 'bg-tm-bg/40' : ''}">
-                                <td class="py-2.5 px-4 font-bold text-tm-text-pri align-top">${escapeHtml(c.title || c.rule_name || c.item)}</td>
-                                <td class="py-2.5 px-4 text-center align-top">
-                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                                        <i data-lucide="check" class="w-3 h-3"></i> PASSED
-                                    </span>
-                                </td>
-                                <td class="py-2.5 px-4 text-tm-text-sec leading-relaxed align-top">${escapeHtml(c.detail || c.details || '')}</td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -3012,110 +3116,144 @@ function renderSaleDeedFieldsLayout(fields, container) {
             </div>
         </div>
 
-        <!-- 1. IMPORTANT DETAIL: TITLE CONVEYANCE CHAIN (PAST OWNER C -> PRESENT OWNER D) -->
-        <div class="w-full max-w-full overflow-hidden p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 border border-indigo-800/40 text-white shadow-sm space-y-3.5">
-            <div class="flex items-center justify-between gap-2 border-b border-white/10 pb-2.5">
+        <!-- Master Header / Quick Expand Bar -->
+        <div class="flex items-center justify-between gap-3 px-1 pt-1 pb-0.5">
+            <div class="flex items-center gap-2 min-w-0">
+                <i data-lucide="layers" class="w-4 h-4 text-blue-600 dark:text-amber-400 shrink-0"></i>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-tm-text-pri truncate">
+                    Title Conveyance Chain & Property Schedule (உரிமை வழித்தொடர் & சொத்து விவரங்கள்)
+                </h3>
+            </div>
+            <button type="button" onclick="window.toggleAllSaleDeedCards()" class="px-3 py-1.5 text-xs rounded-xl bg-tm-card hover:bg-tm-bg border border-tm-border/90 text-tm-text-pri font-semibold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer shrink-0">
+                <span id="sale-deed-toggle-all-text">Expand All Details</span>
+                <i data-lucide="chevron-down" id="sale-deed-toggle-all-chevron" class="w-3.5 h-3.5 transition-transform duration-200"></i>
+            </button>
+        </div>
+
+        <!-- 0. TITLE CONVEYANCE CHAIN (PAST OWNER C -> PRESENT OWNER D) -->
+        <div id="sale-deed-card-title-chain" class="sale-deed-card rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 border border-indigo-800/50 text-white shadow-sm overflow-hidden transition-all">
+            <div onclick="window.toggleSaleDeedCard('sale-deed-card-title-chain')" class="p-3.5 sm:p-4 hover:bg-white/5 cursor-pointer flex items-center justify-between gap-3 transition-colors select-none">
                 <div class="flex items-center gap-2.5 min-w-0">
-                    <div class="w-7 h-7 rounded-lg bg-amber-400/20 text-amber-300 flex items-center justify-center font-bold text-xs shrink-0">
+                    <div class="w-8 h-8 rounded-xl bg-amber-400/20 text-amber-300 border border-amber-400/30 flex items-center justify-center font-bold text-xs shrink-0">
                         <i data-lucide="git-commit" class="w-4 h-4"></i>
                     </div>
                     <div class="min-w-0">
-                        <h4 class="text-xs font-extrabold uppercase tracking-wider text-amber-300 truncate">Title Conveyance Chain (உரிமை வழித்தொடர்)</h4>
-                        <p class="text-[11px] text-slate-300 truncate">Sequential transfer of legal title: Past Owner (C) ➔ Present Owner (D)</p>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h4 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-amber-300 truncate">Title Conveyance Chain (உரிமை வழித்தொடர்)</h4>
+                            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">Verified Chain</span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 truncate max-w-xl">
+                            ${escapeHtml(cleanPrevOwnerName ? cleanPrevOwnerName.split(',')[0].trim() : (prevOwnerVal || 'Past Owner (C)'))} ➔ ${escapeHtml(cleanPresName ? cleanPresName.split(',')[0].trim() : (purchaserVal.split(',')[0].trim() || 'Present Owner (D)'))}
+                        </p>
                     </div>
                 </div>
-                <span class="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">Verified Chain</span>
+                <div class="flex items-center gap-2 shrink-0">
+                    <span class="text-[11px] font-semibold text-amber-300/80 hidden sm:inline">View Chain</span>
+                    <i data-lucide="chevron-right" id="sale-deed-card-title-chain-chevron" class="sale-deed-card-chevron w-4 h-4 text-slate-400 transition-transform duration-200"></i>
+                </div>
             </div>
 
-            <!-- Controlled Grid Container to ensure neither node expands out of the box -->
-            <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr),auto,minmax(0,1fr)] items-stretch gap-3.5 w-full max-w-full min-w-0 text-xs">
-                <!-- Past Owner Node (C) -->
-                <div class="w-full min-w-0 max-w-full p-4 rounded-xl bg-white/5 border border-white/10 space-y-2.5 overflow-hidden flex flex-col justify-between shadow-2xs">
-                    <div class="space-y-1.5 min-w-0">
-                        <div class="flex items-center justify-between gap-2">
-                            <span class="text-[10px] font-extrabold text-amber-400 uppercase tracking-wider flex items-center gap-1.5 shrink-0">
-                                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
-                                Past Owner (C)
-                            </span>
-                            <span class="text-[9px] font-semibold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 shrink-0">Prior Conveyance</span>
-                        </div>
-                        <div class="font-extrabold text-white text-sm leading-snug break-words">
-                            ${escapeHtml(cleanPrevOwnerName || prevOwnerVal || 'Prior Owner Record')}
-                        </div>
-                    </div>
-                    
-                    <div class="pt-2.5 border-t border-white/10 space-y-1.5 text-[11px] min-w-0">
-                        <div class="flex items-start gap-1.5 text-slate-300 break-words">
-                            <span class="text-slate-400 font-medium shrink-0">Mother Deed:</span>
-                            <span class="font-mono font-bold text-emerald-300 break-all">${escapeHtml(cleanMotherDeed || 'Recorded in Deed')}</span>
-                        </div>
-                        <div class="flex items-start gap-1.5 text-slate-300 break-words">
-                            <span class="text-slate-400 font-medium shrink-0">POA Agent:</span>
-                            <span class="text-amber-200/90 font-medium break-words">${prevPoaVal ? escapeHtml(prevPoaVal) : 'Direct Execution / Self'}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Directional Connector -->
-                <div class="flex items-center justify-center py-1 lg:py-0 px-1 shrink-0 self-center">
-                    <div class="flex lg:flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl bg-amber-400/15 border border-amber-400/30 text-amber-300 shadow-2xs">
-                        <i data-lucide="arrow-right" class="w-4 h-4 hidden lg:block"></i>
-                        <i data-lucide="arrow-down" class="w-4 h-4 block lg:hidden"></i>
-                        <span class="text-[9px] font-extrabold tracking-wider uppercase whitespace-nowrap">Title Deed</span>
-                    </div>
-                </div>
-
-                <!-- Present Owner Node (D) -->
-                <div class="w-full min-w-0 max-w-full p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/40 space-y-2.5 overflow-hidden flex flex-col justify-between shadow-2xs">
-                    <div class="space-y-1.5 min-w-0">
-                        <div class="flex items-center justify-between gap-2">
-                            <span class="text-[10px] font-extrabold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5 shrink-0">
-                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                                Present Owner (D)
-                            </span>
-                            <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 shrink-0">Current Title</span>
-                        </div>
-                        <div class="font-extrabold text-white text-sm leading-snug break-words">
-                            ${escapeHtml(cleanPresName || purchaserVal.split(',')[0].trim() || 'Mr. M.G. NAAGESH')}
-                        </div>
-                        ${presSubtitle ? `
-                            <div class="text-[11px] text-slate-300 break-words">
-                                ${escapeHtml(presSubtitle)}
+            <!-- Implicit Details Body -->
+            <div id="sale-deed-card-title-chain-body" class="sale-deed-card-body hidden p-4 sm:p-5 border-t border-white/10 space-y-3.5">
+                <p class="text-[11px] text-slate-300">Sequential transfer of legal title: Past Owner (C) ➔ Present Owner (D)</p>
+                <!-- Controlled Grid Container to ensure neither node expands out of the box -->
+                <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr),auto,minmax(0,1fr)] items-stretch gap-3.5 w-full max-w-full min-w-0 text-xs">
+                    <!-- Past Owner Node (C) -->
+                    <div class="w-full min-w-0 max-w-full p-4 rounded-xl bg-white/5 border border-white/10 space-y-2.5 overflow-hidden flex flex-col justify-between shadow-2xs">
+                        <div class="space-y-1.5 min-w-0">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-[10px] font-extrabold text-amber-400 uppercase tracking-wider flex items-center gap-1.5 shrink-0">
+                                    <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                                    Past Owner (C)
+                                </span>
+                                <span class="text-[9px] font-semibold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 shrink-0">Prior Conveyance</span>
                             </div>
-                        ` : ''}
+                            <div class="font-extrabold text-white text-sm leading-snug break-words">
+                                ${escapeHtml(cleanPrevOwnerName || prevOwnerVal || 'Prior Owner Record')}
+                            </div>
+                        </div>
+                        
+                        <div class="pt-2.5 border-t border-white/10 space-y-1.5 text-[11px] min-w-0">
+                            <div class="flex items-start gap-1.5 text-slate-300 break-words">
+                                <span class="text-slate-400 font-medium shrink-0">Mother Deed:</span>
+                                <span class="font-mono font-bold text-emerald-300 break-all">${escapeHtml(cleanMotherDeed || 'Recorded in Deed')}</span>
+                            </div>
+                            <div class="flex items-start gap-1.5 text-slate-300 break-words">
+                                <span class="text-slate-400 font-medium shrink-0">POA Agent:</span>
+                                <span class="text-amber-200/90 font-medium break-words">${prevPoaVal ? escapeHtml(prevPoaVal) : 'Direct Execution / Self'}</span>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="pt-2.5 border-t border-emerald-500/20 space-y-1.5 text-[11px] min-w-0">
-                        <div class="flex items-start gap-1.5 text-slate-300 break-words">
-                            <span class="text-slate-400 font-medium shrink-0">Registered Doc:</span>
-                            <span class="font-mono font-bold text-emerald-300 break-all">${escapeHtml(docNo)}</span>
+                    <!-- Directional Connector -->
+                    <div class="flex items-center justify-center py-1 lg:py-0 px-1 shrink-0 self-center">
+                        <div class="flex lg:flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl bg-amber-400/15 border border-amber-400/30 text-amber-300 shadow-2xs">
+                            <i data-lucide="arrow-right" class="w-4 h-4 hidden lg:block"></i>
+                            <i data-lucide="arrow-down" class="w-4 h-4 block lg:hidden"></i>
+                            <span class="text-[9px] font-extrabold tracking-wider uppercase whitespace-nowrap">Title Deed</span>
                         </div>
-                        <div class="flex items-start gap-1.5 text-slate-300 break-words">
-                            <span class="text-slate-400 font-medium shrink-0">POA Agent:</span>
-                            <span class="text-emerald-200/90 font-medium break-words">${poaVal ? escapeHtml(poaVal) : 'Direct Execution (Self)'}</span>
+                    </div>
+
+                    <!-- Present Owner Node (D) -->
+                    <div class="w-full min-w-0 max-w-full p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/40 space-y-2.5 overflow-hidden flex flex-col justify-between shadow-2xs">
+                        <div class="space-y-1.5 min-w-0">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-[10px] font-extrabold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5 shrink-0">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                    Present Owner (D)
+                                </span>
+                                <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 shrink-0">Current Title</span>
+                            </div>
+                            <div class="font-extrabold text-white text-sm leading-snug break-words">
+                                ${escapeHtml(cleanPresName || purchaserVal.split(',')[0].trim() || 'Mr. M.G. NAAGESH')}
+                            </div>
+                            ${presSubtitle ? `
+                                <div class="text-[11px] text-slate-300 break-words">
+                                    ${escapeHtml(presSubtitle)}
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <div class="pt-2.5 border-t border-emerald-500/20 space-y-1.5 text-[11px] min-w-0">
+                            <div class="flex items-start gap-1.5 text-slate-300 break-words">
+                                <span class="text-slate-400 font-medium shrink-0">Registered Doc:</span>
+                                <span class="font-mono font-bold text-emerald-300 break-all">${escapeHtml(docNo)}</span>
+                            </div>
+                            <div class="flex items-start gap-1.5 text-slate-300 break-words">
+                                <span class="text-slate-400 font-medium shrink-0">POA Agent:</span>
+                                <span class="text-emerald-200/90 font-medium break-words">${poaVal ? escapeHtml(poaVal) : 'Direct Execution (Self)'}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 1. DETAILED PARTIES: PRESENT OWNER (D) & PREVIOUS OWNER (C) -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <!-- Present Owner / Purchaser Card (D) -->
-            <div class="rounded-2xl bg-tm-card border border-tm-border/90 p-4 sm:p-5 shadow-sm space-y-3">
-                <div class="flex items-center justify-between border-b border-slate-100 dark:border-[#222822] pb-2.5">
-                    <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 flex items-center justify-center text-emerald-600">
-                            <i data-lucide="user-check" class="w-4 h-4"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-bold text-tm-text-pri">Present Owner (D) / Purchaser (வாங்குபவர்)</h3>
-                            <p class="text-[11px] text-tm-text-sec">Current legal title holder acquired via Document No. ${escapeHtml(docNo)}</p>
-                        </div>
+        <!-- 1. PRESENT OWNER (D) / PURCHASER -->
+        <div id="sale-deed-card-purchaser" class="sale-deed-card rounded-2xl bg-tm-card border border-tm-border/90 shadow-2xs transition-all overflow-hidden">
+            <div onclick="window.toggleSaleDeedCard('sale-deed-card-purchaser')" class="p-3.5 sm:p-4 hover:bg-tm-bg cursor-pointer flex items-center justify-between gap-3 transition-colors select-none">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 flex items-center justify-center text-emerald-600 shrink-0">
+                        <i data-lucide="user-check" class="w-4 h-4"></i>
                     </div>
-                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 border border-emerald-200 dark:border-emerald-800">Present Owner</span>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h3 class="text-xs sm:text-sm font-bold text-tm-text-pri truncate">1. Present Owner (D) / Purchaser (வாங்குபவர்)</h3>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 border border-emerald-200 dark:border-emerald-800 shrink-0">Present Owner</span>
+                        </div>
+                        <p class="text-[11px] text-tm-text-sec truncate max-w-xl">
+                            ${escapeHtml(cleanPresName || 'Purchaser')} • ${escapeHtml(presSubtitle || ('Doc No. ' + docNo))}
+                        </p>
+                    </div>
                 </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <i data-lucide="chevron-right" id="sale-deed-card-purchaser-chevron" class="sale-deed-card-chevron w-4 h-4 text-tm-text-sec transition-transform duration-200"></i>
+                </div>
+            </div>
 
+            <!-- Implicit Details Body -->
+            <div id="sale-deed-card-purchaser-body" class="sale-deed-card-body hidden p-4 sm:p-5 border-t border-tm-border/80 bg-tm-card/60 space-y-3">
+                <p class="text-[11px] text-tm-text-sec">Current legal title holder acquired via Document No. ${escapeHtml(docNo)}</p>
                 ${makeEditableField('purchaser_details', 'Present Owner Full Name & Recital', purchaserVal, 'Name & Capacity', 3)}
 
                 <!-- Clean POA Agent Details (No Personal Address) -->
@@ -3134,213 +3272,400 @@ function renderSaleDeedFieldsLayout(fields, container) {
                     </div>
                 `}
             </div>
+        </div>
 
-            <!-- Previous Owner (C) / Mother Deed Card -->
-            <div class="rounded-2xl bg-tm-card border border-tm-border/90 p-4 sm:p-5 shadow-sm space-y-3">
-                <div class="flex items-center justify-between border-b border-slate-100 dark:border-[#222822] pb-2.5">
-                    <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 flex items-center justify-center text-blue-600">
-                            <i data-lucide="history" class="w-4 h-4"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-bold text-tm-text-pri">Previous Owner (C) & Mother Deed (முந்தைய ஆவணம்)</h3>
-                            <p class="text-[11px] text-tm-text-sec">Prior transferor & parent registration conveyance (Book 1)</p>
-                        </div>
+        <!-- 2. PREVIOUS OWNER (C) & MOTHER DEED -->
+        <div id="sale-deed-card-prev-owner" class="sale-deed-card rounded-2xl bg-tm-card border border-tm-border/90 shadow-2xs transition-all overflow-hidden">
+            <div onclick="window.toggleSaleDeedCard('sale-deed-card-prev-owner')" class="p-3.5 sm:p-4 hover:bg-tm-bg cursor-pointer flex items-center justify-between gap-3 transition-colors select-none">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 flex items-center justify-center text-blue-600 shrink-0">
+                        <i data-lucide="history" class="w-4 h-4"></i>
                     </div>
-                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-900/20 text-blue-700 border border-blue-200 dark:border-blue-800">Past Owner</span>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h3 class="text-xs sm:text-sm font-bold text-tm-text-pri truncate">2. Previous Owner (C) & Mother Deed (முந்தைய ஆவணம்)</h3>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-900/20 text-blue-700 border border-blue-200 dark:border-blue-800 shrink-0">Past Owner</span>
+                        </div>
+                        <p class="text-[11px] text-tm-text-sec truncate max-w-xl">
+                            ${escapeHtml(cleanPrevOwnerName || 'Prior Owner')} • Mother Deed: ${escapeHtml(cleanMotherDeed.split('|')[0].trim() || 'Parent Title Deed')}
+                        </p>
+                    </div>
                 </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <i data-lucide="chevron-right" id="sale-deed-card-prev-owner-chevron" class="sale-deed-card-chevron w-4 h-4 text-tm-text-sec transition-transform duration-200"></i>
+                </div>
+            </div>
 
+            <!-- Implicit Details Body -->
+            <div id="sale-deed-card-prev-owner-body" class="sale-deed-card-body hidden p-4 sm:p-5 border-t border-tm-border/80 bg-tm-card/60 space-y-3">
+                <p class="text-[11px] text-tm-text-sec">Prior transferor & parent registration conveyance (Book 1)</p>
                 ${makeEditableField('history_previous_owner', 'Previous Owner(s) / Prior Transferor', prevOwnerVal, 'Historical Owner & Representation', 2)}
                 ${makeEditableField('previous_doc_reference', 'Mother Deed Document Number & SRO (Book 1)', prevDocRef, 'Prior Registered Title Deed')}
                 ${makeEditableField('vendor_details', 'Executing Vendor (விற்பவர்)', vendorVal, 'Conveying Party Recital', 2)}
             </div>
         </div>
 
-        <!-- 2. IMPORTANT DETAIL: SURVEY NUMBER & REVENUE JURISDICTION -->
-        <div class="rounded-2xl bg-tm-card border border-tm-border/90 p-4 sm:p-5 shadow-sm space-y-3">
-            <div class="flex items-center justify-between border-b border-slate-100 dark:border-[#222822] pb-2.5">
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 flex items-center justify-center text-indigo-600">
+        <!-- 3. SURVEY NUMBER & REVENUE JURISDICTION -->
+        <div id="sale-deed-card-survey" class="sale-deed-card rounded-2xl bg-tm-card border border-tm-border/90 shadow-2xs transition-all overflow-hidden">
+            <div onclick="window.toggleSaleDeedCard('sale-deed-card-survey')" class="p-3.5 sm:p-4 hover:bg-tm-bg cursor-pointer flex items-center justify-between gap-3 transition-colors select-none">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 flex items-center justify-center text-indigo-600 shrink-0">
                         <i data-lucide="map" class="w-4 h-4"></i>
                     </div>
-                    <div>
-                        <h3 class="text-sm font-bold text-tm-text-pri">Survey Number & Revenue Jurisdiction (புல எண் & வருவாய் விவரம்)</h3>
-                        <p class="text-[11px] text-tm-text-sec">Cadastral Survey Numbers, Village, Taluk, and District revenue hierarchy</p>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h3 class="text-xs sm:text-sm font-bold text-tm-text-pri truncate">3. Survey Number & Revenue Jurisdiction (புல எண் & வருவாய் விவரம்)</h3>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 border border-indigo-200 dark:border-indigo-800 shrink-0">Cadastral</span>
+                        </div>
+                        <p class="text-[11px] text-tm-text-sec truncate max-w-xl">
+                            S.No: <span class="font-mono font-semibold text-tm-text-pri">${escapeHtml(surveyVal)}</span> • ${escapeHtml(vtdVal.split('/')[0].trim())}
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <i data-lucide="chevron-right" id="sale-deed-card-survey-chevron" class="sale-deed-card-chevron w-4 h-4 text-tm-text-sec transition-transform duration-200"></i>
+                </div>
+            </div>
+
+            <!-- Implicit Details Body -->
+            <div id="sale-deed-card-survey-body" class="sale-deed-card-body hidden p-4 sm:p-5 border-t border-tm-border/80 bg-tm-card/60 space-y-3">
+                <p class="text-[11px] text-tm-text-sec">Cadastral Survey Numbers, Village, Taluk, and District revenue hierarchy</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    ${makeEditableField('survey_number', 'Survey Number / S.No (புல எண்)', surveyVal, 'New S.No / Block / Town Survey')}
+                    ${makeEditableField('village_taluk_district', 'Village / Taluk / District (கிராமம் / வட்டம் / மாவட்டம்)', vtdVal, 'Revenue Jurisdiction', 2)}
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. EXTENT & PROPERTY AREA -->
+        <div id="sale-deed-card-extent" class="sale-deed-card rounded-2xl bg-tm-card border border-tm-border/90 shadow-2xs transition-all overflow-hidden">
+            <div onclick="window.toggleSaleDeedCard('sale-deed-card-extent')" class="p-3.5 sm:p-4 hover:bg-tm-bg cursor-pointer flex items-center justify-between gap-3 transition-colors select-none">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 flex items-center justify-center text-purple-600 shrink-0">
+                        <i data-lucide="maximize-2" class="w-4 h-4"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h3 class="text-xs sm:text-sm font-bold text-tm-text-pri truncate">4. Extent & Property Area (மொத்த பரப்பளவு, UDS & Built-Up)</h3>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 dark:bg-purple-900/20 text-purple-700 border border-purple-200 dark:border-purple-800 shrink-0">Area Breakdown</span>
+                        </div>
+                        <p class="text-[11px] text-tm-text-sec truncate max-w-xl">
+                            Parent: <span class="font-semibold text-tm-text-pri">${escapeHtml(extentVal)}</span> • UDS: <span class="font-semibold text-tm-text-pri">${escapeHtml(udsVal.split('|')[0].replace('UDS:', '').trim())}</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <i data-lucide="chevron-right" id="sale-deed-card-extent-chevron" class="sale-deed-card-chevron w-4 h-4 text-tm-text-sec transition-transform duration-200"></i>
+                </div>
+            </div>
+
+            <!-- Implicit Details Body -->
+            <div id="sale-deed-card-extent-body" class="sale-deed-card-body hidden p-4 sm:p-5 border-t border-tm-border/80 bg-tm-card/60 space-y-3">
+                <p class="text-[11px] text-tm-text-sec">Total land area, undivided share (UDS), and constructed building dimensions</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Total Parent Site Area -->
+                    <div class="rounded-2xl bg-gradient-to-br from-blue-50/10 via-white dark:via-[#182235] to-blue-50/5 border border-blue-200/80 dark:border-blue-900/50 p-4 shadow-2xs space-y-2">
+                        <div class="flex items-center justify-between text-blue-600 dark:text-blue-400 text-xs font-bold">
+                            <span class="flex items-center gap-1.5"><i data-lucide="maximize-2" class="w-4 h-4"></i>Total Parent Site Area</span>
+                            <span class="text-[10px] bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded-full font-extrabold">Parent Site</span>
+                        </div>
+                        <div class="text-lg font-extrabold text-tm-text-pri font-mono tracking-tight">${escapeHtml(extentVal)}</div>
+                        <p class="text-[11px] text-tm-text-sec leading-tight">Total ground site area on which property is developed.</p>
+                        <div class="pt-1">
+                            ${makeEditableField('land_extent', 'Extend (Land) / Total Parent Site Area', extentVal, 'sq.ft / Grounds')}
+                        </div>
+                    </div>
+
+                    <!-- Undivided Share (UDS) -->
+                    <div class="rounded-2xl bg-gradient-to-br from-purple-50/10 via-white dark:via-[#182235] to-purple-50/5 border border-purple-200/80 dark:border-purple-900/50 p-4 shadow-2xs space-y-2">
+                        <div class="flex items-center justify-between text-purple-700 dark:text-purple-400 text-xs font-bold">
+                            <span class="flex items-center gap-1.5"><i data-lucide="pie-chart" class="w-4 h-4"></i>Undivided Share (UDS)</span>
+                            <span class="text-[10px] bg-purple-100 dark:bg-purple-900/40 px-2 py-0.5 rounded-full font-extrabold">Co-Ownership</span>
+                        </div>
+                        <div class="text-lg font-extrabold text-tm-text-pri font-mono tracking-tight">${escapeHtml(udsVal.split('|')[0].replace('UDS:', '').trim())}</div>
+                        <p class="text-[11px] text-tm-text-sec leading-tight">Purchaser's proportionate undivided land share conveyed.</p>
+                        <div class="pt-1">
+                            ${makeEditableField('apartment_uds_floor', 'Building UDS & Share Details', udsVal, 'UDS & Floor Details', 2)}
+                        </div>
+                    </div>
+
+                    <!-- Built-Up Area -->
+                    <div class="rounded-2xl bg-gradient-to-br from-emerald-50/10 via-white dark:via-[#182235] to-emerald-50/5 border border-emerald-200 dark:border-emerald-800/80 p-4 shadow-2xs space-y-2">
+                        <div class="flex items-center justify-between text-emerald-700 dark:text-emerald-400 text-xs font-bold">
+                            <span class="flex items-center gap-1.5"><i data-lucide="home" class="w-4 h-4"></i>Building Built-Up Area</span>
+                            <span class="text-[10px] bg-emerald-100 dark:bg-emerald-900/40 px-2 py-0.5 rounded-full font-extrabold">Constructed</span>
+                        </div>
+                        <div class="text-lg font-extrabold text-tm-text-pri font-mono tracking-tight">${escapeHtml(udsVal.includes('Built-up Area:') ? udsVal.split('Built-up Area:')[1].split('|')[0].trim() : (flatVal || 'Built-up Area Specified'))}</div>
+                        <p class="text-[11px] text-tm-text-sec leading-tight">Constructed building carpet & super built-up area.</p>
+                        <div class="pt-1">
+                            ${makeEditableField('flat_details', 'Building Built-Up Specifics', flatVal, 'Flat & Floor')}
+                        </div>
                     </div>
                 </div>
             </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                ${makeEditableField('survey_number', 'Survey Number / S.No (புல எண்)', surveyVal, 'New S.No / Block / Town Survey')}
-                ${makeEditableField('village_taluk_district', 'Village / Taluk / District (கிராமம் / வட்டம் / மாவட்டம்)', vtdVal, 'Revenue Jurisdiction', 2)}
-            </div>
         </div>
 
-        <!-- 3. IMPORTANT DETAIL: EXTENT (LAND) / TOTAL PARENT SITE AREA / BUILDING (UDS & BUILT-UP AREA) -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <!-- Total Parent Site Area -->
-            <div class="rounded-2xl bg-gradient-to-br from-blue-50/10 via-white dark:via-[#182235] to-blue-50/5 border border-blue-200/80 dark:border-blue-900/50 p-4 shadow-2xs space-y-2">
-                <div class="flex items-center justify-between text-blue-600 dark:text-blue-400 text-xs font-bold">
-                    <span class="flex items-center gap-1.5"><i data-lucide="maximize-2" class="w-4 h-4"></i>Total Parent Site Area</span>
-                    <span class="text-[10px] bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded-full font-extrabold">Parent Site</span>
-                </div>
-                <div class="text-lg font-extrabold text-tm-text-pri font-mono tracking-tight">${escapeHtml(extentVal)}</div>
-                <p class="text-[11px] text-tm-text-sec leading-tight">Total ground site area on which property is developed.</p>
-                <div class="pt-1">
-                    ${makeEditableField('land_extent', 'Extend (Land) / Total Parent Site Area', extentVal, 'sq.ft / Grounds')}
-                </div>
-            </div>
-
-            <!-- Undivided Share (UDS) -->
-            <div class="rounded-2xl bg-gradient-to-br from-purple-50/10 via-white dark:via-[#182235] to-purple-50/5 border border-purple-200/80 dark:border-purple-900/50 p-4 shadow-2xs space-y-2">
-                <div class="flex items-center justify-between text-purple-700 dark:text-purple-400 text-xs font-bold">
-                    <span class="flex items-center gap-1.5"><i data-lucide="pie-chart" class="w-4 h-4"></i>Undivided Share (UDS)</span>
-                    <span class="text-[10px] bg-purple-100 dark:bg-purple-900/40 px-2 py-0.5 rounded-full font-extrabold">Co-Ownership</span>
-                </div>
-                <div class="text-lg font-extrabold text-tm-text-pri font-mono tracking-tight">${escapeHtml(udsVal.split('|')[0].replace('UDS:', '').trim())}</div>
-                <p class="text-[11px] text-tm-text-sec leading-tight">Purchaser's proportionate undivided land share conveyed.</p>
-                <div class="pt-1">
-                    ${makeEditableField('apartment_uds_floor', 'Building UDS & Share Details', udsVal, 'UDS & Floor Details', 2)}
-                </div>
-            </div>
-
-            <!-- Built-Up Area -->
-            <div class="rounded-2xl bg-gradient-to-br from-emerald-50/10 via-white dark:via-[#182235] to-emerald-50/5 border border-emerald-200 dark:border-emerald-800/80 p-4 shadow-2xs space-y-2">
-                <div class="flex items-center justify-between text-emerald-700 dark:text-emerald-400 text-xs font-bold">
-                    <span class="flex items-center gap-1.5"><i data-lucide="home" class="w-4 h-4"></i>Building Built-Up Area</span>
-                    <span class="text-[10px] bg-emerald-100 dark:bg-emerald-900/40 px-2 py-0.5 rounded-full font-extrabold">Constructed</span>
-                </div>
-                <div class="text-lg font-extrabold text-tm-text-pri font-mono tracking-tight">${escapeHtml(udsVal.includes('Built-up Area:') ? udsVal.split('Built-up Area:')[1].split('|')[0].trim() : (flatVal || 'Built-up Area Specified'))}</div>
-                <p class="text-[11px] text-tm-text-sec leading-tight">Constructed building carpet & super built-up area.</p>
-                <div class="pt-1">
-                    ${makeEditableField('flat_details', 'Building Built-Up Specifics', flatVal, 'Flat & Floor')}
-                </div>
-            </div>
-        </div>
-
-        <!-- 4. IMPORTANT DETAIL: FLAT NUMBER & FLOOR / TYPE OF LAND -->
-        <div class="rounded-2xl bg-tm-card border border-tm-border/90 p-4 sm:p-5 shadow-sm space-y-3">
-            <div class="flex items-center justify-between border-b border-slate-100 dark:border-[#222822] pb-2.5">
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-xl bg-teal-50 dark:bg-teal-900/20 border border-teal-100 dark:border-teal-800 flex items-center justify-center text-teal-600">
+        <!-- 5. FLAT DETAILS & LAND CLASSIFICATION -->
+        <div id="sale-deed-card-flat" class="sale-deed-card rounded-2xl bg-tm-card border border-tm-border/90 shadow-2xs transition-all overflow-hidden">
+            <div onclick="window.toggleSaleDeedCard('sale-deed-card-flat')" class="p-3.5 sm:p-4 hover:bg-tm-bg cursor-pointer flex items-center justify-between gap-3 transition-colors select-none">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-xl bg-teal-50 dark:bg-teal-900/20 border border-teal-100 dark:border-teal-800 flex items-center justify-center text-teal-600 shrink-0">
                         <i data-lucide="building" class="w-4 h-4"></i>
                     </div>
-                    <div>
-                        <h3 class="text-sm font-bold text-tm-text-pri">Flat Details & Land Classification (பிளாட் & நில வகை)</h3>
-                        <p class="text-[11px] text-tm-text-sec">Flat number, floor designation, and statutory land classification</p>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h3 class="text-xs sm:text-sm font-bold text-tm-text-pri truncate">5. Flat Details & Land Classification (பிளாட் & நில வகை)</h3>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 dark:bg-teal-900/20 text-teal-700 border border-teal-200 dark:border-teal-800 shrink-0">Unit & Land</span>
+                        </div>
+                        <p class="text-[11px] text-tm-text-sec truncate max-w-xl">
+                            ${escapeHtml(flatVal.split(',')[0].trim() || 'Apartment / Unit')} • ${escapeHtml(classVal)}
+                        </p>
                     </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <i data-lucide="chevron-right" id="sale-deed-card-flat-chevron" class="sale-deed-card-chevron w-4 h-4 text-tm-text-sec transition-transform duration-200"></i>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                ${makeEditableField('flat_details', 'Flat Number and Floor (only for apartment)', flatVal, 'Flat No, Floor, Building Name', 2)}
-                ${makeEditableField('land_classification', 'Type of Land / Classification (வகைப்பாடு)', classVal, 'House Site / Wet / Dry / Residential')}
-                ${makeEditableField('schedule_property_type', 'Property Schedule Nature', schedType, 'Apartment / Land / Site')}
-                ${makeEditableField('corporation_division', 'Local Body Division / Ward', corpDivVal, 'Corporation Ward')}
+            <!-- Implicit Details Body -->
+            <div id="sale-deed-card-flat-body" class="sale-deed-card-body hidden p-4 sm:p-5 border-t border-tm-border/80 bg-tm-card/60 space-y-3">
+                <p class="text-[11px] text-tm-text-sec">Flat number, floor designation, and statutory land classification</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    ${makeEditableField('flat_details', 'Flat Number and Floor (only for apartment)', flatVal, 'Flat No, Floor, Building Name', 2)}
+                    ${makeEditableField('land_classification', 'Type of Land / Classification (வகைப்பாடு)', classVal, 'House Site / Wet / Dry / Residential')}
+                    ${makeEditableField('schedule_property_type', 'Property Schedule Nature', schedType, 'Apartment / Land / Site')}
+                    ${makeEditableField('corporation_division', 'Local Body Division / Ward', corpDivVal, 'Corporation Ward')}
+                </div>
             </div>
         </div>
 
-        <!-- 5. IMPORTANT DETAIL: FOUR BOUNDARIES (NORTH, SOUTH, EAST, WEST) -->
-        <div class="rounded-2xl bg-tm-card border border-tm-border/90 p-4 sm:p-5 shadow-sm space-y-3">
-            <div class="flex items-center justify-between border-b border-slate-100 dark:border-[#222822] pb-2.5">
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 flex items-center justify-center text-amber-600">
+        <!-- 6. FOUR BOUNDARIES -->
+        <div id="sale-deed-card-boundaries" class="sale-deed-card rounded-2xl bg-tm-card border border-tm-border/90 shadow-2xs transition-all overflow-hidden">
+            <div onclick="window.toggleSaleDeedCard('sale-deed-card-boundaries')" class="p-3.5 sm:p-4 hover:bg-tm-bg cursor-pointer flex items-center justify-between gap-3 transition-colors select-none">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 flex items-center justify-center text-amber-600 shrink-0">
                         <i data-lucide="compass" class="w-4 h-4"></i>
                     </div>
-                    <div>
-                        <h3 class="text-sm font-bold text-tm-text-pri">Boundaries (நான்கு எல்லைகள்)</h3>
-                        <p class="text-[11px] text-tm-text-sec">Compass directional demarcation of property</p>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h3 class="text-xs sm:text-sm font-bold text-tm-text-pri truncate">6. Boundaries (நான்கு எல்லைகள்)</h3>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-900/20 text-amber-700 border border-amber-200 dark:border-amber-800 shrink-0">4 Directions</span>
+                        </div>
+                        <p class="text-[11px] text-tm-text-sec truncate max-w-xl">
+                            N: <span class="font-medium text-tm-text-pri">${escapeHtml(bNorth || '-')}</span> • S: <span class="font-medium text-tm-text-pri">${escapeHtml(bSouth || '-')}</span> • E: <span class="font-medium text-tm-text-pri">${escapeHtml(bEast || '-')}</span> • W: <span class="font-medium text-tm-text-pri">${escapeHtml(bWest || '-')}</span>
+                        </p>
                     </div>
                 </div>
-                <button onclick="copyToClipboard('North: ${bNorth}\\nSouth: ${bSouth}\\nEast: ${bEast}\\nWest: ${bWest}')" class="px-2.5 py-1 text-xs rounded-lg bg-tm-upload text-tm-text-sec flex items-center gap-1 hover:text-tm-text-pri">
-                    <i data-lucide="copy" class="w-3 h-3"></i>
-                    <span>Copy Boundaries</span>
-                </button>
+                <div class="flex items-center gap-2 shrink-0">
+                    <i data-lucide="chevron-right" id="sale-deed-card-boundaries-chevron" class="sale-deed-card-chevron w-4 h-4 text-tm-text-sec transition-transform duration-200"></i>
+                </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <!-- North -->
-                <div class="p-3 rounded-xl bg-tm-bg/80 border-t-2 border-t-blue-500 border-x border-b border-tm-border/90 space-y-1">
-                    <div class="flex items-center justify-between text-xs font-bold text-blue-600 dark:text-blue-400">
-                        <span class="flex items-center gap-1.5"><i data-lucide="arrow-up-circle" class="w-4 h-4"></i>NORTH (வடக்கு)</span>
-                        <span class="text-[10px] uppercase font-bold text-blue-500">North</span>
-                    </div>
-                    <input 
-                        type="text" 
-                        value="${escapeHtml(bNorth)}" 
-                        onchange="window.updateSaleDeedBoundary('north', this.value)"
-                        placeholder="Fill North Boundary..." 
-                        class="w-full text-xs font-semibold text-tm-text-pri bg-tm-card border border-tm-border rounded-lg px-2.5 py-1.5 font-sans" />
+            <!-- Implicit Details Body -->
+            <div id="sale-deed-card-boundaries-body" class="sale-deed-card-body hidden p-4 sm:p-5 border-t border-tm-border/80 bg-tm-card/60 space-y-3">
+                <div class="flex items-center justify-between pb-1">
+                    <p class="text-[11px] text-tm-text-sec">Compass directional demarcation of property</p>
+                    <button onclick="event.stopPropagation(); copyToClipboard('North: ${bNorth}\\nSouth: ${bSouth}\\nEast: ${bEast}\\nWest: ${bWest}')" class="px-2.5 py-1 text-xs rounded-lg bg-tm-upload text-tm-text-sec flex items-center gap-1 hover:text-tm-text-pri border border-tm-border/80 transition-colors shadow-2xs">
+                        <i data-lucide="copy" class="w-3 h-3"></i>
+                        <span>Copy Boundaries</span>
+                    </button>
                 </div>
 
-                <!-- South -->
-                <div class="p-3 rounded-xl bg-tm-bg/80 border-t-2 border-t-amber-500 border-x border-b border-tm-border/90 space-y-1">
-                    <div class="flex items-center justify-between text-xs font-bold text-amber-600 dark:text-amber-400">
-                        <span class="flex items-center gap-1.5"><i data-lucide="arrow-down-circle" class="w-4 h-4"></i>SOUTH (தெற்கு)</span>
-                        <span class="text-[10px] uppercase font-bold text-amber-500">South</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- North -->
+                    <div class="p-3 rounded-xl bg-tm-bg/80 border-t-2 border-t-blue-500 border-x border-b border-tm-border/90 space-y-1">
+                        <div class="flex items-center justify-between text-xs font-bold text-blue-600 dark:text-blue-400">
+                            <span class="flex items-center gap-1.5"><i data-lucide="arrow-up-circle" class="w-4 h-4"></i>NORTH (வடக்கு)</span>
+                            <span class="text-[10px] uppercase font-bold text-blue-500">North</span>
+                        </div>
+                        <input 
+                            type="text" 
+                            value="${escapeHtml(bNorth)}" 
+                            onchange="window.updateSaleDeedBoundary('north', this.value)"
+                            placeholder="Fill North Boundary..." 
+                            class="w-full text-xs font-semibold text-tm-text-pri bg-tm-card border border-tm-border rounded-lg px-2.5 py-1.5 font-sans" />
                     </div>
-                    <input 
-                        type="text" 
-                        value="${escapeHtml(bSouth)}" 
-                        onchange="window.updateSaleDeedBoundary('south', this.value)"
-                        placeholder="Fill South Boundary..." 
-                        class="w-full text-xs font-semibold text-tm-text-pri bg-tm-card border border-tm-border rounded-lg px-2.5 py-1.5 font-sans" />
-                </div>
 
-                <!-- East -->
-                <div class="p-3 rounded-xl bg-tm-bg/80 border-t-2 border-t-emerald-500 border-x border-b border-tm-border/90 space-y-1">
-                    <div class="flex items-center justify-between text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                        <span class="flex items-center gap-1.5"><i data-lucide="arrow-right-circle" class="w-4 h-4"></i>EAST (கிழக்கு)</span>
-                        <span class="text-[10px] uppercase font-bold text-emerald-500">East</span>
+                    <!-- South -->
+                    <div class="p-3 rounded-xl bg-tm-bg/80 border-t-2 border-t-amber-500 border-x border-b border-tm-border/90 space-y-1">
+                        <div class="flex items-center justify-between text-xs font-bold text-amber-600 dark:text-amber-400">
+                            <span class="flex items-center gap-1.5"><i data-lucide="arrow-down-circle" class="w-4 h-4"></i>SOUTH (தெற்கு)</span>
+                            <span class="text-[10px] uppercase font-bold text-amber-500">South</span>
+                        </div>
+                        <input 
+                            type="text" 
+                            value="${escapeHtml(bSouth)}" 
+                            onchange="window.updateSaleDeedBoundary('south', this.value)"
+                            placeholder="Fill South Boundary..." 
+                            class="w-full text-xs font-semibold text-tm-text-pri bg-tm-card border border-tm-border rounded-lg px-2.5 py-1.5 font-sans" />
                     </div>
-                    <input 
-                        type="text" 
-                        value="${escapeHtml(bEast)}" 
-                        onchange="window.updateSaleDeedBoundary('east', this.value)"
-                        placeholder="Fill East Boundary..." 
-                        class="w-full text-xs font-semibold text-tm-text-pri bg-tm-card border border-tm-border rounded-lg px-2.5 py-1.5 font-sans" />
-                </div>
 
-                <!-- West -->
-                <div class="p-3 rounded-xl bg-tm-bg/80 border-t-2 border-t-purple-500 border-x border-b border-tm-border/90 space-y-1">
-                    <div class="flex items-center justify-between text-xs font-bold text-purple-600 dark:text-purple-400">
-                        <span class="flex items-center gap-1.5"><i data-lucide="arrow-left-circle" class="w-4 h-4"></i>WEST (மேற்கு)</span>
-                        <span class="text-[10px] uppercase font-bold text-purple-500">West</span>
+                    <!-- East -->
+                    <div class="p-3 rounded-xl bg-tm-bg/80 border-t-2 border-t-emerald-500 border-x border-b border-tm-border/90 space-y-1">
+                        <div class="flex items-center justify-between text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                            <span class="flex items-center gap-1.5"><i data-lucide="arrow-right-circle" class="w-4 h-4"></i>EAST (கிழக்கு)</span>
+                            <span class="text-[10px] uppercase font-bold text-emerald-500">East</span>
+                        </div>
+                        <input 
+                            type="text" 
+                            value="${escapeHtml(bEast)}" 
+                            onchange="window.updateSaleDeedBoundary('east', this.value)"
+                            placeholder="Fill East Boundary..." 
+                            class="w-full text-xs font-semibold text-tm-text-pri bg-tm-card border border-tm-border rounded-lg px-2.5 py-1.5 font-sans" />
                     </div>
-                    <input 
-                        type="text" 
-                        value="${escapeHtml(bWest)}" 
-                        onchange="window.updateSaleDeedBoundary('west', this.value)"
-                        placeholder="Fill West Boundary..." 
-                        class="w-full text-xs font-semibold text-tm-text-pri bg-tm-card border border-tm-border rounded-lg px-2.5 py-1.5 font-sans" />
+
+                    <!-- West -->
+                    <div class="p-3 rounded-xl bg-tm-bg/80 border-t-2 border-t-purple-500 border-x border-b border-tm-border/90 space-y-1">
+                        <div class="flex items-center justify-between text-xs font-bold text-purple-600 dark:text-purple-400">
+                            <span class="flex items-center gap-1.5"><i data-lucide="arrow-left-circle" class="w-4 h-4"></i>WEST (மேற்கு)</span>
+                            <span class="text-[10px] uppercase font-bold text-purple-500">West</span>
+                        </div>
+                        <input 
+                            type="text" 
+                            value="${escapeHtml(bWest)}" 
+                            onchange="window.updateSaleDeedBoundary('west', this.value)"
+                            placeholder="Fill West Boundary..." 
+                            class="w-full text-xs font-semibold text-tm-text-pri bg-tm-card border border-tm-border rounded-lg px-2.5 py-1.5 font-sans" />
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- 6. IMPORTANT DETAIL: SRO DETAILS & REGISTRATION -->
-        <div class="rounded-2xl bg-tm-card border border-tm-border/90 p-4 sm:p-5 shadow-sm space-y-3">
-            <div class="flex items-center justify-between border-b border-slate-100 dark:border-[#222822] pb-2.5">
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800 flex items-center justify-center text-rose-600">
+        <!-- 7. SRO DETAILS & REGISTRATION -->
+        <div id="sale-deed-card-sro" class="sale-deed-card rounded-2xl bg-tm-card border border-tm-border/90 shadow-2xs transition-all overflow-hidden">
+            <div onclick="window.toggleSaleDeedCard('sale-deed-card-sro')" class="p-3.5 sm:p-4 hover:bg-tm-bg cursor-pointer flex items-center justify-between gap-3 transition-colors select-none">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800 flex items-center justify-center text-rose-600 shrink-0">
                         <i data-lucide="landmark" class="w-4 h-4"></i>
                     </div>
-                    <div>
-                        <h3 class="text-sm font-bold text-tm-text-pri">SRO Details & Registration (பதிவாளர் அலுவலகம்)</h3>
-                        <p class="text-[11px] text-tm-text-sec">Sub-Registrar Office jurisdiction, registered date, and official deed number</p>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h3 class="text-xs sm:text-sm font-bold text-tm-text-pri truncate">7. SRO Details & Registration (பதிவாளர் அலுவலகம்)</h3>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 dark:bg-rose-900/20 text-rose-700 border border-rose-200 dark:border-rose-800 shrink-0">Registration</span>
+                        </div>
+                        <p class="text-[11px] text-tm-text-sec truncate max-w-xl">
+                            ${escapeHtml(sroVal)} • Date: ${escapeHtml(regDate)} • ${escapeHtml(docNo)}
+                        </p>
                     </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <i data-lucide="chevron-right" id="sale-deed-card-sro-chevron" class="sale-deed-card-chevron w-4 h-4 text-tm-text-sec transition-transform duration-200"></i>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                ${makeEditableField('sro_details', 'SRO Details (சார் பதிவாளர் அலுவலகம்)', sroVal, 'Registration Office')}
-                ${makeEditableField('registration_date', 'Registration Date (பதிவு நாள்)', regDate, 'Date of Execution')}
-                ${makeEditableField('document_number', 'Document Number (Book 1)', docNo, 'Registered Deed Reference')}
+            <!-- Implicit Details Body -->
+            <div id="sale-deed-card-sro-body" class="sale-deed-card-body hidden p-4 sm:p-5 border-t border-tm-border/80 bg-tm-card/60 space-y-3">
+                <p class="text-[11px] text-tm-text-sec">Sub-Registrar Office jurisdiction, registered date, and official deed number</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    ${makeEditableField('sro_details', 'SRO Details (சார் பதிவாளர் அலுவலகம்)', sroVal, 'Registration Office')}
+                    ${makeEditableField('registration_date', 'Registration Date (பதிவு நாள்)', regDate, 'Date of Execution')}
+                    ${makeEditableField('document_number', 'Document Number (Book 1)', docNo, 'Registered Deed Reference')}
+                </div>
             </div>
         </div>
     `;
 
     container.appendChild(wrapper);
+    if (window.lucide && lucide.createIcons) lucide.createIcons();
 }
+
+// Global Sale Deed accordion togglers
+window.toggleSaleDeedCard = function(cardId) {
+    const body = document.getElementById(`${cardId}-body`);
+    const chevron = document.getElementById(`${cardId}-chevron`);
+    const card = document.getElementById(cardId);
+    if (!body) return;
+    const isHidden = body.classList.contains("hidden");
+    const isTitleChain = (cardId === "sale-deed-card-title-chain");
+
+    if (isHidden) {
+        body.classList.remove("hidden");
+        if (chevron) {
+            chevron.classList.add("rotate-90");
+            chevron.classList.remove("text-tm-text-sec", "text-slate-400");
+            chevron.classList.add(isTitleChain ? "text-amber-300" : "text-blue-600", "dark:text-amber-400");
+        }
+        if (card) {
+            if (isTitleChain) {
+                card.classList.add("border-amber-400/50", "ring-1", "ring-amber-400/30");
+            } else {
+                card.classList.add("border-blue-500/40", "ring-1", "ring-blue-100", "dark:ring-amber-400/20");
+            }
+        }
+    } else {
+        body.classList.add("hidden");
+        if (chevron) {
+            chevron.classList.remove("rotate-90");
+            chevron.classList.remove("text-blue-600", "text-amber-300", "dark:text-amber-400");
+            chevron.classList.add(isTitleChain ? "text-slate-400" : "text-tm-text-sec");
+        }
+        if (card) {
+            if (isTitleChain) {
+                card.classList.remove("border-amber-400/50", "ring-1", "ring-amber-400/30");
+            } else {
+                card.classList.remove("border-blue-500/40", "ring-1", "ring-blue-100", "dark:ring-amber-400/20");
+            }
+        }
+    }
+
+    // Sync master toggle button state
+    const bodies = document.querySelectorAll(".sale-deed-card-body");
+    const anyHidden = Array.from(bodies).some(b => b.classList.contains("hidden"));
+    const toggleAllText = document.getElementById("sale-deed-toggle-all-text");
+    const toggleAllChevron = document.getElementById("sale-deed-toggle-all-chevron");
+    if (toggleAllText) {
+        toggleAllText.textContent = anyHidden ? "Expand All Details" : "Collapse All Details";
+    }
+    if (toggleAllChevron) {
+        if (!anyHidden) toggleAllChevron.classList.add("rotate-180");
+        else toggleAllChevron.classList.remove("rotate-180");
+    }
+};
+
+window.toggleAllSaleDeedCards = function() {
+    const bodies = document.querySelectorAll(".sale-deed-card-body");
+    const anyHidden = Array.from(bodies).some(b => b.classList.contains("hidden"));
+    const cards = document.querySelectorAll(".sale-deed-card");
+
+    cards.forEach(card => {
+        const id = card.id;
+        const body = document.getElementById(`${id}-body`);
+        const chevron = document.getElementById(`${id}-chevron`);
+        const isTitleChain = (id === "sale-deed-card-title-chain");
+        if (!body) return;
+
+        if (anyHidden) {
+            body.classList.remove("hidden");
+            if (chevron) {
+                chevron.classList.add("rotate-90");
+                chevron.classList.remove("text-tm-text-sec", "text-slate-400");
+                chevron.classList.add(isTitleChain ? "text-amber-300" : "text-blue-600", "dark:text-amber-400");
+            }
+            if (isTitleChain) card.classList.add("border-amber-400/50", "ring-1", "ring-amber-400/30");
+            else card.classList.add("border-blue-500/40", "ring-1", "ring-blue-100", "dark:ring-amber-400/20");
+        } else {
+            body.classList.add("hidden");
+            if (chevron) {
+                chevron.classList.remove("rotate-90");
+                chevron.classList.remove("text-blue-600", "text-amber-300", "dark:text-amber-400");
+                chevron.classList.add(isTitleChain ? "text-slate-400" : "text-tm-text-sec");
+            }
+            if (isTitleChain) card.classList.remove("border-amber-400/50", "ring-1", "ring-amber-400/30");
+            else card.classList.remove("border-blue-500/40", "ring-1", "ring-blue-100", "dark:ring-amber-400/20");
+        }
+    });
+
+    const toggleAllText = document.getElementById("sale-deed-toggle-all-text");
+    const toggleAllChevron = document.getElementById("sale-deed-toggle-all-chevron");
+    if (toggleAllText) {
+        toggleAllText.textContent = anyHidden ? "Collapse All Details" : "Expand All Details";
+    }
+    if (toggleAllChevron) {
+        if (anyHidden) toggleAllChevron.classList.add("rotate-180");
+        else toggleAllChevron.classList.remove("rotate-180");
+    }
+};
+
 
 // Universal Toast Notification
 function showToastNotification(msg) {
@@ -4582,16 +4907,21 @@ function clearPropertyFilter() {
 async function runPropertyFilter() {
     if (!state.currentResult || !state.currentResult.extraction) return;
 
+    const getVal = (id) => {
+        const el = document.getElementById(id);
+        return (el && typeof el.value === "string") ? el.value.trim() : "";
+    };
+
     const criteria = {
-        survey_no: document.getElementById("prop-in-survey") ? document.getElementById("prop-in-survey").value.trim() : "",
-        taluk: document.getElementById("prop-in-taluk") ? document.getElementById("prop-in-taluk").value.trim() : "",
-        city_village: document.getElementById("prop-in-city") ? document.getElementById("prop-in-city").value.trim() : "",
-        district: document.getElementById("prop-in-district") ? document.getElementById("prop-in-district").value.trim() : "",
-        extent: document.getElementById("prop-in-extent") ? document.getElementById("prop-in-extent").value.trim() : "",
-        boundary: document.getElementById("prop-in-boundary") ? document.getElementById("prop-in-boundary").value.trim() : "",
-        flat_name: document.getElementById("prop-in-flat") ? document.getElementById("prop-in-flat").value.trim() : "",
-        door_no: document.getElementById("prop-in-door") ? document.getElementById("prop-in-door").value.trim() : "",
-        owner_name: document.getElementById("prop-in-owner") ? document.getElementById("prop-in-owner").value.trim() : ""
+        survey_no: getVal("prop-in-survey"),
+        taluk: getVal("prop-in-taluk"),
+        city_village: getVal("prop-in-city"),
+        district: getVal("prop-in-district"),
+        extent: getVal("prop-in-extent"),
+        boundary: getVal("prop-in-boundary"),
+        flat_name: getVal("prop-in-flat"),
+        door_no: getVal("prop-in-door"),
+        owner_name: getVal("prop-in-owner")
     };
 
     const resultsContainer = document.getElementById("property-filter-results");
@@ -5196,14 +5526,13 @@ function getDocTypeContext() {
 
     let allowedTabs = [];
     if (isSaleDeedDoc) {
-        // As requested: show ONLY the sale deed details and verification checklist
-        allowedTabs = ["fields", "checklist"];
+        allowedTabs = ["fields"];
     } else if (isECDoc) {
-        // Retain 100% full suite of tabs for EC
-        allowedTabs = ["ec-analysis", "fields", "owners", "property-filter", "checklist", "table", "ocr"];
+        // Retain full suite of tabs for EC
+        allowedTabs = ["ec-analysis", "fields", "owners", "property-filter", "table", "ocr"];
     } else {
         // General documents
-        allowedTabs = ["fields", "checklist", "ocr"];
+        allowedTabs = ["fields", "ocr"];
     }
 
     return { isSaleDeedDoc, isECDoc, allowedTabs };
@@ -5227,7 +5556,7 @@ function switchTab(tabName) {
     }
     state.activeTab = tabName;
 
-    const allTabs = ["ec-analysis", "fields", "owners", "property-filter", "checklist", "table", "ocr"];
+    const allTabs = ["ec-analysis", "fields", "owners", "property-filter", "table", "ocr"];
     allTabs.forEach(t => {
         const btn = document.getElementById(`tab-btn-${t}`);
         const content = document.getElementById(`tab-content-${t}`);
@@ -5300,6 +5629,11 @@ function toggleBBoxes() {
     const bboxLayers = document.querySelectorAll(".pdf-page-bbox-layer, #bbox-overlay-layer");
     bboxLayers.forEach(layer => {
         layer.style.display = state.showBBoxes ? "block" : "none";
+        if (state.showBBoxes && layer._pendingWords) {
+            renderWordBoxesForPage(layer, layer._pendingWords, layer._pIdx, layer._lines);
+            delete layer._pendingWords;
+            delete layer._lines;
+        }
     });
     const btn = document.getElementById("btn-toggle-bbox");
     if (btn) {
@@ -5317,6 +5651,16 @@ function toggleBBoxes() {
 function searchInDocument(query) {
     const q = query.trim().toLowerCase();
     const countEl = document.getElementById("search-match-count");
+
+    // Hydrate all pending word boxes before searching across the document
+    document.querySelectorAll(".pdf-page-bbox-layer").forEach(layer => {
+        if (layer._pendingWords) {
+            renderWordBoxesForPage(layer, layer._pendingWords, layer._pIdx, layer._lines);
+            delete layer._pendingWords;
+            delete layer._lines;
+        }
+    });
+
     const bboxes = document.querySelectorAll(".word-bbox, .ocr-bbox");
 
     if (!q) {
@@ -5406,7 +5750,7 @@ async function exportResult(format) {
         total_pages: res_data.total_pages || 1,
         extraction: extraction,
         fields: extraction.fields || {},
-        checklist: extraction.checklist || [],
+        checklist: [],
         lang: pdfLang
     };
 
@@ -5457,7 +5801,15 @@ function showQuickNotification(msg, type = "success") {
     }, 2500);
 }
 
-function printReport() { window.print(); }
+function printReport() {
+    lucide.createIcons();
+    // Auto-fit textareas so multiline extracted values are not truncated on printed pages
+    document.querySelectorAll('#extracted-fields-container textarea, #tab-content-fields textarea, #tab-content-ec-analysis textarea').forEach(ta => {
+        ta.style.height = 'auto';
+        ta.style.height = (ta.scrollHeight + 4) + 'px';
+    });
+    window.print();
+}
 function copyToClipboard(text) { 
     if (!text || text === "-" || text === "Not Detected") return;
     navigator.clipboard.writeText(text);
@@ -5602,7 +5954,10 @@ function resetWorkspace() {
 
     lucide.createIcons();
 
-    // 11. Highlight dropzone area
+    // 11. Reset Stepper to Step 1
+    updateStepPills(1);
+
+    // 12. Highlight dropzone area
     const dropzone = document.getElementById("dropzone");
     if (dropzone) {
         dropzone.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -5613,9 +5968,11 @@ function resetWorkspace() {
 function showLoader(show, text = "") {
     const loader = document.getElementById("processing-loader");
     if (show) {
-        document.getElementById("processing-status-text").textContent = text;
-        loader.classList.remove("hidden");
+        const textEl = document.getElementById("processing-status-text");
+        if (textEl && text) textEl.textContent = text;
+        if (loader) loader.classList.remove("hidden");
     } else {
-        loader.classList.add("hidden");
+        if (loader) loader.classList.add("hidden");
+        stopOcrProgressTimer();
     }
 }

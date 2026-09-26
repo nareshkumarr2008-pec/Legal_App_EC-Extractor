@@ -20,7 +20,7 @@ DOCUMENT_CATEGORIES = [
     {
         "id": "patta",
         "name": "Patta document",
-        "tamil_name": "பட்டா ஆவணம் (Patta Document)",
+        "tamil_name": "பட்டா ஆவணம்",
         "icon": "award",
         "color": "blue",
         "description": "Tamil Nadu Revenue Record: Patta Number, Owner Name, Survey Number, and Extent in Ares with automated Sq.Ft conversion.",
@@ -31,7 +31,7 @@ DOCUMENT_CATEGORIES = [
     {
         "id": "parent_docs",
         "name": "Parent docs / mother copy",
-        "tamil_name": "முந்தைய மூல ஆவணங்கள் (Mother Copy)",
+        "tamil_name": "தாய் பத்திரம்",
         "icon": "layers",
         "color": "slate",
         "description": "Historical chain of title documents with mandatory 5-year continuity validation, prior vendor/purchaser, and survey extent trace.",
@@ -119,7 +119,7 @@ DOCUMENT_CATEGORIES = [
     {
         "id": "tslr",
         "name": "TSLR document (Town Survey Land Record)",
-        "tamil_name": "நகர நில அளவை ஆவணம் (TSLR)",
+        "tamil_name": "நகர நில அளவை",
         "icon": "map-pinned",
         "color": "cyan",
         "description": "Tamil Nadu Urban Land Records: Town Survey Land Register extract with Town Survey No, Old Survey No, Ward & Block, Extent, Land classification, Current land use, Tenure type, Assessment, and Mutation remarks.",
@@ -372,49 +372,12 @@ https://eservices.tn.gov.in""",
                 {
                     "sl": "1",
                     "survey_no": "128/7",
+                    "old_survey_no": "128",
                     "land_type": "ரயத்துவாரி மனை (Residential Site / Manai)",
                     "extent_ha": "0.00.06 Hectares",
                     "sq_meters": "6 Sq.M",
                     "sq_feet": "65 Sq.Ft",
                     "tax": "Rs. 2.00"
-                }
-            ],
-            "checklist": [
-                {
-                    "item": "Patta Number Validation",
-                    "title": "Patta Number Validation (பட்டா எண்: 242)",
-                    "status": "PASSED",
-                    "detail": "Valid Patta number 242 extracted and verified in Form 10(1) revenue heading."
-                },
-                {
-                    "item": "Owner & Kinship Authentication",
-                    "title": "Owner & Kinship Authentication (பட்டாதாரர் & உறவுமுறை)",
-                    "status": "PASSED",
-                    "detail": "Registered Pattadhar authenticated: Ranganathan, S/o Chinnakannu (சின்னக்கண்ணு மகன் ரங்கநாதன்)"
-                },
-                {
-                    "item": "Survey Numbers Schedule",
-                    "title": "Survey Numbers Schedule (புல எண்கள்: 128/7)",
-                    "status": "PASSED",
-                    "detail": "All 1 cadastral survey number(s) identified (128/7) in revenue table."
-                },
-                {
-                    "item": "Extent & Revenue Balance",
-                    "title": "Extent & Revenue Balance (பரப்பளவு & தீர்வை சரிபார்ப்பு)",
-                    "status": "PASSED",
-                    "detail": "Land area (0.40.00 Hectares = 4,000 Sq.M) and cumulative totals verified mathematically across revenue table."
-                },
-                {
-                    "item": "Digital Signature & Authenticity",
-                    "title": "Digital Signature & Authenticity (மின்கையொப்பம்)",
-                    "status": "PASSED",
-                    "detail": "Authorized Government Digital Signature confirmed: Kavitha S (Tahsildar) [22/01/2024 at 05:47:27 PM]."
-                },
-                {
-                    "item": "TN e-Services Portal Verification",
-                    "title": "TN e-Services Portal Verification (Ref: S/NA/35/05/128/00242/20878)",
-                    "status": "PASSED",
-                    "detail": "Online verification reference S/NA/35/05/128/00242/20878 active on official portal https://eservices.tn.gov.in."
                 }
             ]
         }
@@ -958,20 +921,10 @@ https://eservices.tn.gov.in""",
                 "confidence": 0.98,
                 "label": "Signature Date (கையொப்ப நாள்)"
             },
-            "portal_reference": {
-                "value": "URB/35/05/003/003/0027/2/0",
-                "confidence": 0.99,
-                "label": "eServices Verification Ref No (சரிபார்ப்பு குறிப்பு எண்)"
-            },
             "certificate_printed_date": {
                 "value": "16-09-2026 at 08:05:24 AM",
                 "confidence": 0.95,
                 "label": "Certificate Print Date & Time (அச்சிடப்பட்ட நாள்)"
-            },
-            "verification_portal": {
-                "value": "https://eservices.tn.gov.in",
-                "confidence": 0.99,
-                "label": "Verification Portal (சரிபார்ப்பு இணையதளம்)"
             },
             "serial_no": {
                 "value": "1",
@@ -1033,64 +986,11 @@ https://eservices.tn.gov.in""",
                 "confidence": 0.98,
                 "label": "Extent By Town Survey (நில விஸ்தீரணம்: Hectare, Ares, Sq.Meter)"
             },
-            "assessment": {
-                "value": "Municipal=-, Govt=0.00",
-                "confidence": 0.95,
-                "label": "Assessment (தீர்வை / நில வரி: Municipal, Govt.)"
-            },
             "municipal_register": {
                 "value": "Not Recorded (-)",
                 "confidence": 0.90,
                 "label": "Municipal Register (நகராட்சி பதிவேடு)"
-            },
-            "remarks": {
-                "value": "TR DT: 21-01-2020",
-                "confidence": 0.98,
-                "label": "Remarks (குறிப்புகள் / மாறுதல் உத்தரவு)"
-            },
-            "multi_page_audit": {
-                "value": "2 Pages Total — Page 2 Verified — eServices Official 2D Barcode & Portal Attestation (Reference: URB/35/05/003/003/0027/2/0)",
-                "confidence": 0.99,
-                "label": "Multi-Page & Survey Map Audit (பக்க & வரைபட சரிபார்ப்பு)"
-            },
-            "checklist": [
-                {
-                    "item": "Adangal Holding & Owner Verification",
-                    "title": "Adangal Holding & Owner Verification (உரிமையாளர் சரிபார்ப்பு)",
-                    "status": "PASSED",
-                    "detail": "Government Poramboke Land (சர்க்கார் புறம்போக்கு). Vested with Government of Tamil Nadu; private Adangal holding not applicable."
-                },
-                {
-                    "item": "Town Survey & Old Revenue Survey Correlation",
-                    "title": "Town Survey & Old Revenue Survey Correlation (புல எண் இணைப்பு)",
-                    "status": "PASSED",
-                    "detail": "Town Survey No: 2/0, Old Revenue Survey No: 357/A,B-/358/A,B-359A,361/364/366/368/1,2-3691-2,370/1-357/1A-1B/358/1A1B,393/394/395/396/397."
-                },
-                {
-                    "item": "Tenure Type Verification",
-                    "title": "Tenure Type Verification (நில உரிமை உறுதி)",
-                    "status": "PASSED",
-                    "detail": "Tenure: Government (சர்க்கார் / அரசு)."
-                },
-                {
-                    "item": "Land Classification & Use",
-                    "title": "Land Classification & Use (மனை வகைப்பாடு)",
-                    "status": "PASSED",
-                    "detail": "Classification: 'Government Poramboke (புறம்போக்கு)', Use: 'Not Recorded (-)'."
-                },
-                {
-                    "item": "Digital Signature & eServices Validity",
-                    "title": "Digital Signature & eServices Validity (மின் கையொப்பம்)",
-                    "status": "PASSED",
-                    "detail": "Signed by SARAVANNAN V on 21-01-2020. Ref: URB/35/05/003/003/0027/2/0."
-                },
-                {
-                    "item": "Multi-Page & Survey Map Audit",
-                    "title": "Multi-Page & Survey Map Audit (பக்க & வரைபட சரிபார்ப்பு)",
-                    "status": "PASSED",
-                    "detail": "2 Pages Total — Page 2 Verified — eServices Official 2D Barcode & Portal Attestation (Reference: URB/35/05/003/003/0027/2/0)."
-                }
-            ]
+            }
         }
     }
 }

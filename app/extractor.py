@@ -412,8 +412,9 @@ class DocumentExtractor:
             handler = getattr(self, f"_extract_{doc_type}", self._extract_generic)
             fields = handler(text)
 
-        # Dynamic checklist from specialized extractor, or evaluate generic checklist
-        checklist = fields.get("checklist") or self._evaluate_checklist(doc_type, fields, text)
+        # Dynamic checklist removed as requested
+        fields.pop("checklist", None)
+        checklist = []
         verification_flags = fields.get("verification_flags", {})
 
         # Dynamically assign bounding boxes and bilingual representations
@@ -779,44 +780,5 @@ class DocumentExtractor:
     # ═══════════════════════════════════════════════════════════════════
 
     def _evaluate_checklist(self, doc_type, fields, text):
-        checklist = []
-
-        def _detected(field_key):
-            f = fields.get(field_key, {})
-            return isinstance(f, dict) and f.get("value") and f.get("value") != "Not Detected"
-
-        if doc_type == "sale_deed":
-            sd_cl = fields.get("checklist")
-            if sd_cl:
-                checklist = sd_cl
-            else:
-                sd_res = self.extractors["sale_deed"].extract(text)
-                checklist = sd_res.get("checklist", [])
-        elif doc_type == "patta":
-            if hasattr(self.extractors["patta"], "evaluate_checklist"):
-                return self.extractors["patta"].evaluate_checklist(fields, text)
-            p_val = fields.get("patta_number", {}).get("value", "")
-            p_str = f": {p_val}" if p_val and p_val != "Not Detected" else ""
-            checklist.append({"title": f"பட்டா எண் பதிவு (Patta Number Recorded{p_str})", "is_valid": _detected("patta_number")})
-            checklist.append({"title": "உரிமையாளர் பெயர் பதிவு (Owner Name(s) Verified)", "is_valid": _detected("owner_name")})
-            checklist.append({"title": "புல எண்கள் மற்றும் உட்பிரிவு சரிபார்ப்பு (Survey Numbers & Sub-division Verified)", "is_valid": _detected("survey_numbers")})
-            checklist.append({"title": "வருவாய் கிராமம் / வட்டம் / மாவட்டம் (Revenue Village / Taluk / District Verified)", "is_valid": _detected("village") and _detected("taluk") and _detected("district")})
-            checklist.append({"title": "பரப்பளவு மற்றும் நில வகைப்பாடு (Land Extent & Classification Verified)", "is_valid": _detected("extent_details") and _detected("nature_of_land")})
-        elif doc_type == "tslr":
-            if hasattr(self.extractors["tslr"], "evaluate_checklist"):
-                return self.extractors["tslr"].evaluate_checklist(fields, text)
-        elif doc_type == "ec":
-            checklist.append({"title": "30 ஆண்டு தேடல் காலம் சரிபார்ப்பு (30-Year Search Period Verified)", "is_valid": _detected("search_period")})
-            checklist.append({"title": "படிவம் 15 / 16 வகைப்பாடு (Form 15/16 Classification Verified)", "is_valid": _detected("form_type")})
-            checklist.append({"title": "சார் பதிவாளர் & கிராம எல்லை சரிபார்ப்பு (SRO & Village Jurisdiction Verified)", "is_valid": _detected("sro_office") and _detected("village")})
-            checklist.append({"title": "புல எண்கள் மற்றும் உட்பிரிவு சரிபார்ப்பு (Survey Numbers Verified)", "is_valid": _detected("survey_numbers")})
-            checklist.append({"title": "வில்லங்கப் பதிவுகள் ஆய்வு (Encumbrance Transactions Register Analyzed)", "is_valid": _detected("total_transactions") or _detected("encumbrance_status")})
-        elif doc_type == "death_legal_heir":
-            checklist.append({"title": "இறந்தவர் பெயர் உரிமை பதிவுடன் ஒத்துவருகிறது (Deceased Name Matches Title)", "is_valid": _detected("deceased_name")})
-            checklist.append({"title": "அனைத்து வாரிசுகளும் கையெழுத்திட்டுள்ளனர் (100% Heirs Signed)", "is_valid": _detected("legal_heirs")})
-            checklist.append({"title": "பட்டா மாற்றம் நிறைவு (Patta Mutation Complete - TN Act 1983)", "is_valid": _detected("patta_mutation_status")})
-        else:
-            checklist.append({"title": "ஆவண ஒருமைப்பாடு சரிபார்ப்பு (Document Integrity Verified)", "is_valid": True})
-            checklist.append({"title": "சட்டப்பூர்வ அதிகாரம் உறுதிசெய்யப்பட்டது (Statutory Authority Confirmed)", "is_valid": True})
-
-        return checklist
+        """Document Verification Checklist removed across all categories."""
+        return []

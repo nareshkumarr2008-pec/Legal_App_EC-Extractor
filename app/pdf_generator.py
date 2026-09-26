@@ -1362,6 +1362,7 @@ def generate_ocr_pdf_report(data: Dict[str, Any], lang: str = "en") -> bytes:
         "transactions_table", "checklist", "verification_flags",
         "confidence_summary", "ec_report", "below_30yr_standard",
         "search_window_years", "owners_registry", "schedule", "cadastral_schedule",
+        "old_survey_no",
     }
 
     _SALE_DEED_EXCLUDED_KEYS = {
@@ -1437,9 +1438,15 @@ def generate_ocr_pdf_report(data: Dict[str, Any], lang: str = "en") -> bytes:
         ]]
         for item in cadastral_schedule:
             if isinstance(item, dict):
+                s_val = str(item.get("survey_no") or item.get("survey_number") or "-")
+                old_s = item.get("old_survey_no")
+                if old_s and str(old_s) != s_val:
+                    s_disp = f"<b>{s_val}</b> <font size='7' color='#64748b'>(Old S.No: {old_s})</font>"
+                else:
+                    s_disp = B(s_val)
                 cad_rows.append([
                     Paragraph(str(item.get("sl", "1")), meta_val_style),
-                    Paragraph(B(item.get("survey_no") or item.get("survey_number") or "-"), meta_val_style),
+                    Paragraph(s_disp, meta_val_style),
                     Paragraph(B(item.get("land_type") or item.get("nature_of_land") or "-"), meta_val_style),
                     Paragraph(B(item.get("extent_ha") or item.get("extent_str") or "-"), meta_val_style),
                     Paragraph(B(item.get("sq_meters") or "-"), meta_val_style),
@@ -1458,51 +1465,7 @@ def generate_ocr_pdf_report(data: Dict[str, Any], lang: str = "en") -> bytes:
         ]))
         elements.append(cad_table)
         elements.append(Spacer(1, 14))
-
-    # Document Verification Checklist
-    chk_title = "3. Document Verification Checklist" if (is_patta and cadastral_schedule) else "2. Document Verification Checklist"
-    checklist = fields.get("checklist") or ext.get("checklist") or data.get("checklist") or []
-    if checklist:
-        elements.append(Paragraph(chk_title, section_header_style))
-        chk_rows = [[
-            Paragraph("<b>Verification Item</b>", meta_label_style),
-            Paragraph("<b>Status</b>", meta_label_style),
-            Paragraph("<b>Details / Assessment</b>", meta_label_style)
-        ]]
-        for item in checklist:
-            if "is_valid" in item:
-                passed = bool(item.get("is_valid"))
-                status_word = "PASSED" if passed else "FLAGGED"
-            else:
-                raw_status = str(item.get("status", "REVIEW")).upper()
-                passed = raw_status in ("PASS", "PASSED")
-                status_word = "PASSED" if passed else ("FLAGGED" if raw_status in ("FAIL", "FLAGGED") else raw_status)
-            status_color = "#16a34a" if passed else "#dc2626"
-            status_html = f"<font color='{status_color}'><b>{status_word}</b></font>"
-            rule_name = item.get("title") or item.get("rule_name") or item.get("item", "")
-            remarks = item.get("details") or item.get("detail") or item.get("remarks", "")
-            if len(remarks) > 400:
-                remarks = remarks[:400] + "..."
-            chk_rows.append([
-                Paragraph(B(rule_name), meta_label_style),
-                Paragraph(status_html, meta_val_style),
-                Paragraph(B(remarks), meta_val_style)
-            ])
-
-        chk_table = Table(chk_rows, colWidths=[175, 65, 283], repeatRows=1)
-        chk_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('TOPPADDING', (0, 0), (-1, -1), 4),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f8fafc')])
-        ]))
-        elements.append(chk_table)
-        elements.append(Spacer(1, 14))
-
-    sec_counter = 4 if (is_patta and cadastral_schedule) else 3
+    sec_counter = 3 if (is_patta and cadastral_schedule) else 2
 
     # Registered Transactions (EC party table) — uses the pre-verified
     # bilingual Executant/Claimant records (deep_translate_verifier) instead

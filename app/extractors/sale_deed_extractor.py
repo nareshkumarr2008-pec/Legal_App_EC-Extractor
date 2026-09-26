@@ -931,6 +931,6 @@ class SaleDeedExtractor:
                 "details": f"Execution Date: {reg_date} (Registered within statutory period under Sec 23)"
             }
         ]
-        fields["checklist"] = checklist
+        fields["checklist"] = []
 
         return fields

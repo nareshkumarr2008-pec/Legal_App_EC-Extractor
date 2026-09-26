@@ -213,6 +213,7 @@ class PattaExtractor:
             ("பட்டா எஏண்", "பட்டா எண்"),
             ("பழய புல", "பழைய புல"),
             ("பழய", "பழைய"),
+            ("பழயை", "பழைய"),
             ("தர்வை", "தீர்வை"),
             ("ஹக் - ஏர்", "ஹெக் - ஏர்"),
             ("துண வட்டாட்சியர்", "துணை வட்டாட்சியர்"),
@@ -220,10 +221,26 @@ class PattaExtractor:
             ("மின்கயாப்பம்", "மின்கையொப்பம்"),
             ("கயாப்பம்", "கையொப்பம்"),
             ("இணய", "இணைய"),
+            ("இணயை", "இணைய"),
+            ("இவற்ற தாங்கள்", "இவற்றை தாங்கள்"),
             ("செைய்து", "செய்து"),
             ("சய்து", "செய்து"),
             ("மூுலம்", "மூலம்"),
             ("சேர்கப்பட்டுள்ளது", "சேர்க்கப்பட்டுள்ளது"),
+            ("சரே்கப்பட்டுள்ளது", "சேர்க்கப்பட்டுள்ளது"),
+            ("உரிமயைாளர்கள்", "உரிமையாளர்கள்"),
+            ("உரிமயைாளர்", "உரிமையாளர்"),
+            ("பயெர்்", "பெயர்"),
+            ("பயெர்", "பெயர்"),
+            ("ெபயர்்", "பெயர்"),
+            ("வகபை்பாடு", "வகைப்பாடு"),
+            ("மலோண்மதை்", "மேலாண்மைத்"),
+            ("பரேிடர்", "பேரிடர்"),
+            ("மனைை", "மனை"),
+            ("கப்பசேி", "கைபேசி"),
+            ("கமேராவின்", "கேமராவின்"),
+            ("மறே்கண்ட", "மேற்கண்ட"),
+            ("மறே்குறிப்பிட்டுள்ள", "மேற்குறிப்பிட்டுள்ள"),
         ]
 
         for old_p, new_p in phrase_replacements:
@@ -239,7 +256,7 @@ class PattaExtractor:
         s = re.sub(r'செங்கல்பட்ட[்ட்]+', 'செங்கல்பட்டு', s)
         s = re.sub(r'தாம்பரம்[்ட்]+', 'தாம்பரம்', s)
         s = re.sub(r'செம்பாக்கம்[்ட்]+', 'செம்பாக்கம்', s)
-        s = re.sub(r'உரிம[\u0b80-\u0bff\s]*?(?:ெபயர்|பெயர்)', 'உரிமையாளர்கள் பெயர்', s)
+        s = re.sub(r'உரிம[^\n\d]{0,25}?(?:பெயர்|ெபயர்|பயெர்|பயர்|பயெர்்|ெபயர்்|name)', 'உரிமையாளர்கள் பெயர்', s, flags=re.IGNORECASE)
 
         # 4. Normalized recovery for Chinnakannu variations (repair dropped சி or ணு)
         s = re.sub(r'(?<=[\s^])(?:சி)?ன்னக்கண்(?:ணு)?(?=[\s$])', 'சின்னக்கண்ணு', s)
@@ -448,35 +465,71 @@ class PattaExtractor:
         }
 
         # ── 4. REGISTERED OWNER(S) & KINSHIP ─────────────────────────────────
+        # ── 4. REGISTERED OWNER(S) & KINSHIP ─────────────────────────────────
         owner_raw_lines: List[str] = []
         in_owner_block = False
 
         for line in lines:
             l_low = line.lower()
-            if any(k in l_low for k in ["land ownership", "நில உரிமை"]):
+            if any(k in l_low for k in ["land ownership", "நில உரிமை விபர"]):
                 continue
-            if any(k in l_low for k in ["உரிமையாளர்கள் பெயர்", "உரிமையாளர் பெயர்", "owners name", "pattadhar name"]):
+            if not in_owner_block and (
+                any(k in l_low for k in ["உரிமையாளர்கள் பெயர்", "உரிமையாளர் பெயர்", "owners name", "pattadhar name", "owner name"])
+                or re.search(r'(?:உரிம|owner|pattadhar)[^\n\d]{0,20}(?:பெயர்|ெபயர்|பயெர்|பயர்|name)', l_low)
+            ):
                 in_owner_block = True
-                post = re.sub(r'^(?:(?:உரிமையாளர்கள்?\s*பெயர்|owners?\s*name)[^\w\d]*)+', '', line, flags=re.IGNORECASE).strip()
+                post = re.sub(r'^(?:(?:உரிமையாளர்கள்?\s*பெயர்|owners?\s*name|உரிம[^\n\d]{0,20}(?:பெயர்|ெபயர்|பயெர்|பயர்|name))[^\w\d]*)+', '', line, flags=re.IGNORECASE).strip()
                 if len(post) >= 2:
                     owner_raw_lines.append(post)
                 continue
             if in_owner_block:
-                if any(k in l_low for k in ["survey", "s.no", "புல எண்", "நத்தம் புல எண்", "வ.எண்", "நன்செய்", "நஞ்சை", "புன்செய்", "digital signature", "10(1)", "மாவட்டம்", "வட்டம்"]):
+                if any(k in l_low for k in ["survey", "s.no", "புல எண்", "நத்தம் புல எண்", "உட்பிரிவு", "பழைய", "வகைப்பாடு", "பரப்பு", "தீர்வை", "வ.எண்", "நன்செய்", "நஞ்சை", "புன்செய்", "digital signature", "10(1)", "மாவட்டம்", "வட்டம்", "குறிப்பு"]):
                     break
-                clean_item = re.sub(r'^\d+[\.\s\-]*$', '', line).strip()
-                if clean_item and len(clean_item) >= 2:
+                clean_item = line.strip()
+                if clean_item:
                     owner_raw_lines.append(clean_item)
-                if len(owner_raw_lines) >= 8:
+                if len(owner_raw_lines) >= 12:
                     break
 
-        raw_owner_str = "\n".join(owner_raw_lines).strip()
+        # Group multiline owner entries by list index number (e.g., "1.\nசின்னக்கண்ணு\nமகன்\nரங்கநாதன்" -> "1. சின்னக்கண்ணு மகன் ரங்கநாதன்")
+        grouped_owner_entries = []
+        curr_num = None
+        curr_entry = []
+        for l in owner_raw_lines:
+            m_num = re.match(r'^\s*(\d+)[\.\)\s\-]+(.*)$', l)
+            if m_num:
+                if curr_entry:
+                    prefix = f"{curr_num}. " if curr_num else ""
+                    grouped_owner_entries.append(f"{prefix}{' '.join(curr_entry)}".strip())
+                    curr_entry = []
+                curr_num = m_num.group(1)
+                rest = m_num.group(2).strip()
+                if rest:
+                    curr_entry.append(rest)
+            else:
+                curr_entry.append(l)
+        if curr_entry:
+            prefix = f"{curr_num}. " if curr_num else ""
+            grouped_owner_entries.append(f"{prefix}{' '.join(curr_entry)}".strip())
+
+        raw_owner_str = "\n".join(grouped_owner_entries).strip()
+
         if not raw_owner_str:
             # Scan for lines with kinship indicators
-            for line in lines[:40]:
+            for idx, line in enumerate(lines[:40]):
                 if any(k in line for k in ["மகன்", "மகள்", "மனைவி", "கணவர்", "த/பெ", "க/பெ", "Son of", "Wife of", "Daughter of"]):
                     clean_item = re.sub(r'^\d+[\.\s\-]*$', '', line).strip()
-                    if clean_item:
+                    # If this line is just the kinship term (e.g. "மகன்"), stitch with prev and next lines
+                    if len(clean_item) <= 6 and idx > 0 and (idx + 1) < len(lines):
+                        prev_l = re.sub(r'^\d+[\.\s\-]*', '', lines[idx - 1]).strip()
+                        next_l = re.sub(r'^\d+[\.\s\-]*', '', lines[idx + 1]).strip()
+                        clean_item = f"{prev_l} {clean_item} {next_l}".strip()
+                    elif not any(lines[idx].startswith(k) for k in ["மகன்", "மகள்", "மனைவி", "கணவர்"]) and len(clean_item.split()) < 3:
+                        if (idx + 1) < len(lines):
+                            next_l = re.sub(r'^\d+[\.\s\-]*', '', lines[idx + 1]).strip()
+                            if next_l and not any(k in next_l for k in ["புல", "எண்", "வகை"]):
+                                clean_item = f"{clean_item} {next_l}".strip()
+                    if clean_item and len(clean_item) >= 3:
                         owner_raw_lines.append(clean_item)
             if owner_raw_lines:
                 raw_owner_str = "\n".join(owner_raw_lines).strip()
@@ -518,8 +571,9 @@ class PattaExtractor:
         if not m_natham_sno and is_natham:
             m_natham_sno = re.search(r'\b(\d{1,4})\s*[\s\n/]\s*(\d{1,3}[A-Za-z]?)(?:\s+(\d{1,4}[A-Za-z\-]*)?)?\s*(?:\n|[\s\S]{0,40}?)(?:ரயத்துவாரி|மனை|0\s*-\s*\d)', clean_text)
 
-        # Check for Natham Extent pattern: "0 - 0.51" or "0.00.06" or "0 - 0.51 2.00"
-        m_next = re.search(r'(\d{1,2})\s*-\s*(\d{1,2}(?:\.\d{1,2})?|\d{1,2}\s*-\s*\d{1,2})(?:\s+(\d{1,3}(?:\.\d{2})?))?', clean_text)
+        # Check for Natham Extent pattern: strict boundary checks to avoid matching dates or unrelated numbers
+        ext_pat = r'(?<![\d/.-])\b(0\d?|\d)\s*-\s*(\d{1,2}(?:\.\d{1,2})?)(?:\s+(\d{1,3}(?:\.\d{2})?))?(?![\d/.-])'
+        ext_dot_pat = r'(?<![\d/.-])\b(\d{1,2})\.(\d{2})\.(\d{2})\b(?:\s+(?:Ha|Hectares?))?(?:\s+(\d{1,3}(?:\.\d{2})?))?'
 
         if is_natham and m_natham_sno:
             s_maj = m_natham_sno.group(1).strip()
@@ -530,22 +584,64 @@ class PattaExtractor:
             s_full = f"{s_maj}/{s_sub}"
             detected_surveys.append(s_full)
 
+            # Search extent first in table text around and following the survey number
+            table_slice = clean_text[m_natham_sno.start(): m_natham_sno.end() + 350]
+            m_next = re.search(ext_pat, table_slice)
+            if not m_next:
+                m_next = re.search(ext_dot_pat, table_slice)
+
+            # Fallback 1: search near land classification / extent keywords
+            if not m_next:
+                for kw in ["ரயத்துவாரி", "மனை", "பரப்பு", "ஹெக்", "ஹக்"]:
+                    kw_pos = clean_text.find(kw)
+                    if kw_pos != -1:
+                        kw_slice = clean_text[kw_pos: kw_pos + 250]
+                        m_next = re.search(ext_pat, kw_slice)
+                        if not m_next:
+                            m_next = re.search(ext_dot_pat, kw_slice)
+                        if m_next:
+                            break
+
+            # Fallback 2: search globally with strict boundary pattern
+            if not m_next:
+                m_next = re.search(ext_pat, clean_text)
+            if not m_next:
+                m_next = re.search(ext_dot_pat, clean_text)
+
             # Extent calculation
             if m_next:
-                raw_ext_ha = float(m_next.group(1).strip())
-                raw_ext_sub = m_next.group(2).strip().replace(' ', '')
-                ar_val = float(raw_ext_sub) if '.' in raw_ext_sub else (float(raw_ext_sub) / 100.0 if float(raw_ext_sub) > 5 else float(raw_ext_sub))
-                raw_ext_display = f"{m_next.group(1)} - {m_next.group(2)}"
-                sqm = round((raw_ext_ha * 10000.0) + (ar_val * 100.0)) if ar_val < 10 else round(ar_val)
+                if len(m_next.groups()) >= 3 and m_next.group(2) and len(m_next.group(2)) == 2 and m_next.group(3) and len(m_next.group(3)) == 2 and '.' in m_next.group(0):
+                    # Matched 0.00.06 format
+                    raw_ext_ha = float(m_next.group(1).strip())
+                    raw_ext_sub = f"{m_next.group(2)}.{m_next.group(3)}"
+                    ar_val = float(raw_ext_sub)
+                    raw_ext_display = f"{int(raw_ext_ha)}.{raw_ext_sub}"
+                    tax_cand = m_next.group(4) if len(m_next.groups()) >= 4 else None
+                else:
+                    raw_ext_ha = float(m_next.group(1).strip())
+                    raw_ext_sub = m_next.group(2).strip().replace(' ', '')
+                    if '.' in raw_ext_sub:
+                        ar_val = float(raw_ext_sub)
+                    elif raw_ext_sub.startswith('0') and len(raw_ext_sub) > 1:
+                        ar_val = float(raw_ext_sub) / 100.0
+                    elif float(raw_ext_sub) >= 10:
+                        ar_val = float(raw_ext_sub) / 100.0
+                    else:
+                        ar_val = float(raw_ext_sub)
+                    raw_ext_display = f"{m_next.group(1)} - {m_next.group(2)}"
+                    tax_cand = m_next.group(3) if len(m_next.groups()) >= 3 else None
+
+                sqm = round((raw_ext_ha * 10000.0) + (ar_val * 100.0))
                 sqft = round(sqm * 10.7639)
                 grounds = round(sqft / 2400.0, 2)
                 acres = round(sqft / 43560.0, 3)
 
-                tax_cand = m_next.group(3)
                 if tax_cand:
                     total_tax_str = f"Rs. {float(tax_cand):.2f}"
                 else:
                     m_tax_rev = re.search(r'(?:தீர்வை|ரூ\s*-\s*பை)[^\d\n]*(\d{1,2}\.\d{2})', clean_text)
+                    if not m_tax_rev:
+                        m_tax_rev = re.search(r'(?<![\d/.-])\b(\d{1,2}\.\d{2})\b(?![\d/.-])', table_slice)
                     total_tax_str = f"Rs. {float(m_tax_rev.group(1)):.2f}" if m_tax_rev else "Rs. 2.00"
 
                 extent_summary_str = f"{ar_val} Ares ({sqft:,} Sq.Ft / {sqm} Sq.M)"
@@ -864,9 +960,10 @@ class PattaExtractor:
         """
         lines = [l.strip() for l in raw_str.splitlines() if l.strip()]
 
-        # Only collapse if a single owner's name was wrapped across lines without numbers
+        # Only collapse if multiple lines exist without numbers AND without multiple distinct kinship indicators
         has_numbered_items = any(re.match(r'^\d+[\.\)\s\-]+', l) for l in lines)
-        if len(lines) > 1 and not has_numbered_items and any(k in raw_str for k in ["மகன்", "மகள்", "மனைவி", "கணவர்", "த/பெ", "க/பெ"]):
+        kinship_line_count = sum(1 for l in lines if any(k in l for k in ["மகன்", "மகள்", "மனைவி", "கணவர்", "த/பெ", "க/பெ"]))
+        if len(lines) > 1 and not has_numbered_items and kinship_line_count <= 1 and any(k in raw_str for k in ["மகன்", "மகள்", "மனைவி", "கணவர்", "த/பெ", "க/பெ"]):
             joined_candidate = " ".join([re.sub(r'^\d+[\.\s\-]+', '', l).strip() for l in lines])
             lines = [joined_candidate]
 
@@ -878,6 +975,10 @@ class PattaExtractor:
             clean_l = re.sub(r'\s+', ' ', clean_l)
 
             if not clean_l or len(clean_l) < 2:
+                continue
+
+            # Reject lone kinship terms
+            if clean_l in ("மகன்", "மகள்", "மனைவி", "கணவர்", "த/பெ", "க/பெ", "son", "daughter", "wife", "husband"):
                 continue
 
             # Auto-repair font glyph drops for common names & pullis
@@ -957,64 +1058,5 @@ class PattaExtractor:
         return "\n".join(formatted_owners) if formatted_owners else format_bilingual_owner(raw_str)
 
     def evaluate_checklist(self, fields: Dict[str, Any], text: str) -> List[Dict[str, Any]]:
-        """
-        Evaluate the exact 6 Patta legal verification checklist items matching the official standard:
-          1. Patta Number Validation (பட்டா எண்: {patta_no})
-          2. Owner & Kinship Authentication (பட்டாதாரர் & உறவுமுறை)
-          3. Survey Numbers Schedule (புல எண்கள்: {surveys})
-          4. Extent & Revenue Balance (பரப்பளவு & தீர்வை சரிபார்ப்பு)
-          5. Digital Signature & Authenticity (மின்கையொப்பம்)
-          6. TN e-Services Portal Verification (Ref: {portal_ref})
-        """
-        checklist = []
-
-        patta_val = fields.get("patta_number", {}).get("value", "") or "242"
-        checklist.append({
-            "item": "Patta Number Validation",
-            "title": f"Patta Number Validation (பட்டா எண்: {patta_val})",
-            "status": "PASSED",
-            "detail": f"Valid Patta number {patta_val} extracted and verified in Form 10(1) revenue heading."
-        })
-
-        owner_val = fields.get("owner_name", {}).get("value", "") or "Ranganathan, S/o Chinnakannu (சின்னக்கண்ணு மகன் ரங்கநாதன்)"
-        checklist.append({
-            "item": "Owner & Kinship Authentication",
-            "title": "Owner & Kinship Authentication (பட்டாதாரர் & உறவுமுறை)",
-            "status": "PASSED",
-            "detail": f"Registered Pattadhar authenticated: {owner_val}"
-        })
-
-        surveys_val = fields.get("survey_numbers", {}).get("value", "") or "128/7"
-        cnt = len([s for s in surveys_val.split(',') if s.strip()]) or 1
-        checklist.append({
-            "item": "Survey Numbers Schedule",
-            "title": f"Survey Numbers Schedule (புல எண்கள்: {surveys_val})",
-            "status": "PASSED",
-            "detail": f"All {cnt} cadastral survey number(s) identified ({surveys_val}) in revenue table."
-        })
-
-        checklist.append({
-            "item": "Extent & Revenue Balance",
-            "title": "Extent & Revenue Balance (பரப்பளவு & தீர்வை சரிபார்ப்பு)",
-            "status": "PASSED",
-            "detail": "Land area and cumulative totals verified mathematically across revenue table."
-        })
-
-        sig_signatory = fields.get("authorized_signatory", {}).get("value", "Kavitha S (Tahsildar)")
-        sig_ts = fields.get("digital_signature_timestamp", {}).get("value", "22/01/2024 at 05:47:27 PM")
-        checklist.append({
-            "item": "Digital Signature & Authenticity",
-            "title": "Digital Signature & Authenticity (மின்கையொப்பம்)",
-            "status": "PASSED",
-            "detail": f"Authorized Government Digital Signature confirmed: {sig_signatory} [{sig_ts}]."
-        })
-
-        portal_ref = fields.get("portal_reference", {}).get("value", "S/NA/35/05/128/00242/20878")
-        checklist.append({
-            "item": "TN e-Services Portal Verification",
-            "title": f"TN e-Services Portal Verification (Ref: {portal_ref})",
-            "status": "PASSED",
-            "detail": f"Online verification reference {portal_ref} active on official portal https://eservices.tn.gov.in."
-        })
-
-        return checklist
+        """Document Verification Checklist removed across all categories."""
+        return []

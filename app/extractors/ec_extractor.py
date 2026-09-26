@@ -2243,62 +2243,7 @@ class ECExtractor:
         
         fields["transactions_table"] = {"value": tx_list, "label": "Registered Entries Detail (Form 15)", "confidence": 0.98}
 
-        fields["checklist"] = [
-            {
-                "id": "search_period_30yr",
-                "title": "30-Year Search Period Standard (தேடல் காலம்)",
-                "is_valid": is_30_yr_compliant,
-                "detail": std_summary
-            },
-            {
-                "id": "open_mortgages",
-                "title": "Open / Unreleased Mortgages Check (நிலுவையில் உள்ள அடமானங்கள்)",
-                "is_valid": (open_mortgages_count == 0),
-                "detail": f"{open_mortgages_count} Open/Unreleased Mortgages found without registered discharge receipt." if open_mortgages_count > 0 else "No unreleased mortgages found."
-            },
-            {
-                "id": "closed_mortgages",
-                "title": "Closed / Discharged Mortgages (விடுதலை செய்யப்பட்ட அடமானங்கள்)",
-                "is_valid": True,
-                "detail": f"{closed_mortgages_count} mortgage(s) verified as satisfied and closed by registered discharge receipt."
-            },
-            {
-                "id": "court_attachments",
-                "title": "Court Attachments & Decrees (நீதிமன்ற பற்று உத்தரவுகள்)",
-                "is_valid": (len(court_docs) == 0),
-                "detail": court_val
-            },
-            {
-                "id": "partition_settlement",
-                "title": "Undisclosed Partition & Settlement Check (பாகப்பிரிவினை / செட்டில்மென்ட்)",
-                "is_valid": True,
-                "detail": partition_val
-            },
-            {
-                "id": "registered_leases",
-                "title": "Active Registered Leases (செயலில் உள்ள குத்தகை பதிவுகள்)",
-                "is_valid": (len(lease_docs) == 0),
-                "detail": lease_val
-            },
-            {
-                "id": "sr_no_continuity",
-                "title": "Serial Number Continuity (பதிவு வரிசை எண் தொடர்ச்சி)",
-                "is_valid": (len(sr_gaps) == 0),
-                "detail": gap_summary
-            },
-            {
-                "id": "rectification_deeds",
-                "title": "Rectification Instruments Scrutiny (பிழைதிருத்தல் ஆவணங்கள்)",
-                "is_valid": True,
-                "detail": rect_val
-            },
-            {
-                "id": "form_type_statutory",
-                "title": "Form Type & Statutory SRO Seal (படிவ வகை & சா.ப.அ முத்திரை)",
-                "is_valid": True,
-                "detail": report.form_type
-            }
-        ]
+        fields["checklist"] = []
 
         fields["verification_flags"] = {
             "mortgages_flags": mortgage_flags,
