@@ -1,3 +1,17 @@
+// ============================================================================
+// DOCUMENT CATEGORY FEATURE FLAGS (EASILY REVERSIBLE)
+// To activate any category when ready in the future, simply change true to false:
+//   "parent_docs": false,
+//   "rera": false,
+//   "loan_docs": false
+// ============================================================================
+const COMING_SOON_CATEGORIES = {
+    "parent_docs": true,
+    "rera": true,
+    "loan_docs": true
+};
+window.COMING_SOON_CATEGORIES = COMING_SOON_CATEGORIES;
+
 const DEFAULT_CATEGORIES = [
     {"id": "sale_deed", "name": "Sale deed / title deed", "tamil_name": "கிரையப் பத்திரம்", "key_fields": ["Vendor Details", "Purchaser Details", "History / Previous Owner Details", "Schedule of Property", "Survey Number / S No", "Land Extent", "Building Built-Up Area", "Apartment UDS & Floor", "Boundary", "SRO Details"]},
     {"id": "patta", "name": "Patta document", "tamil_name": "பட்டா ஆவணம்", "key_fields": ["Patta Number", "Pattadhar / Owner Name", "Survey Number / S No", "Extent", "Village / Taluk / District", "TSLR Town Survey No", "TSLR Ward + Block", "TSLR Town"]},
@@ -18,10 +32,11 @@ let state = {
     currentResult: null,
     currentPageIndex: 0,
     zoomLevel: 1.0,
-    showBBoxes: true,
+    showBBoxes: false, // Default: boxes toggled OFF
     activeTab: "fields",
     currentBundle: null
 };
+window.state = state;
 
 // Initialize Application
 document.addEventListener("DOMContentLoaded", async () => {
@@ -162,25 +177,35 @@ function renderCategoriesGrid() {
     grid.innerHTML = "";
 
     state.categories.forEach((cat, idx) => {
-        const isActive = cat.id === state.selectedCategoryId;
+        const isComingSoon = COMING_SOON_CATEGORIES[cat.id] === true;
+        const isActive = cat.id === state.selectedCategoryId && !isComingSoon;
         const card = document.createElement("div");
         card.id = `cat-card-${cat.id}`;
-        card.onclick = () => selectCategory(cat.id, true);
-        card.className = `cat-card ${isActive ? "cat-card-active" : ""} group`;
         card.setAttribute("data-category", cat.id);
 
+        if (isComingSoon) {
+            card.onclick = () => handleComingSoonCategory(cat.id, cat.name);
+            card.className = `cat-card cat-card-coming-soon group relative cursor-not-allowed opacity-75`;
+        } else {
+            card.onclick = () => selectCategory(cat.id, true);
+            card.className = `cat-card ${isActive ? "cat-card-active" : ""} group cursor-pointer`;
+        }
+
         const numStr = String(idx + 1).padStart(2, "0");
-        const iconName = cat.icon || (cat.id === "sale_deed" ? "file-text" : cat.id === "patta" ? "award" : cat.id === "parent_docs" ? "files" : cat.id === "ec" ? "shield-check" : cat.id === "tslr" ? "map-pin" : cat.id === "rera" ? "check-circle" : "landmark");
+        const iconName = cat.icon || (cat.id === "sale_deed" ? "file-text" : cat.id === "patta" ? "award" : cat.id === "parent_docs" ? "layers" : cat.id === "ec" ? "shield-check" : cat.id === "tslr" ? "map-pin" : cat.id === "rera" ? "check-circle" : "landmark");
 
         card.innerHTML = `
             <div class="flex items-start justify-between mb-2">
                 <div class="cat-icon-box bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400">
                     <i data-lucide="${iconName}" class="w-4 h-4"></i>
                 </div>
-                <span class="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500">#${numStr}</span>
+                ${isComingSoon 
+                    ? `<span class="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shadow-2xs">Soon</span>`
+                    : `<span class="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500">#${numStr}</span>`
+                }
             </div>
             <div>
-                <h4 class="text-xs font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight">${cat.name}</h4>
+                <h4 class="text-xs font-bold text-slate-900 dark:text-white ${isComingSoon ? '' : 'group-hover:text-blue-600 dark:group-hover:text-blue-400'} transition-colors leading-tight">${cat.name}</h4>
                 <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1 truncate">${cat.tamil_name}</p>
             </div>
         `;
@@ -189,8 +214,20 @@ function renderCategoriesGrid() {
     lucide.createIcons();
 }
 
+function handleComingSoonCategory(catId, catName) {
+    const cat = (state.categories || []).find(c => c.id === catId);
+    const displayName = catName || (cat ? cat.name : catId);
+    showToastNotification(`${displayName} is coming soon! This extractor is currently under development.`);
+}
+window.handleComingSoonCategory = handleComingSoonCategory;
+
 // 1. Select Document Category
 function selectCategory(catId, loadDoc = true) {
+    if (COMING_SOON_CATEGORIES[catId] === true) {
+        handleComingSoonCategory(catId);
+        return;
+    }
+
     state.selectedCategoryId = catId;
 
     // Synchronize dropdown
@@ -218,6 +255,11 @@ function selectCategory(catId, loadDoc = true) {
 
     if (!state.currentFile && loadDoc && state.currentResult) {
         loadSampleDocument(catId);
+    } else if (state.currentResult && catId === "ec") {
+        const { isECDoc } = getDocTypeContext();
+        if (isECDoc) {
+            switchTab("ec-status");
+        }
     }
 }
 
@@ -354,7 +396,11 @@ function updateCategoryInfo(catId) {
 
 // 2. Load Sample Document (NEVER recursively call selectCategory here!)
 async function loadSampleDocument(targetId = null) {
-    const effectiveId = targetId || state.selectedCategoryId || "sale_deed";
+    let effectiveId = targetId || state.selectedCategoryId || "sale_deed";
+    if (COMING_SOON_CATEGORIES[effectiveId] === true) {
+        handleComingSoonCategory(effectiveId);
+        return;
+    }
 
     showLoader(true, `Loading Document for ${effectiveId.replace('_', ' ').toUpperCase()}...`);
 
@@ -853,6 +899,7 @@ function renderDocumentResult() {
         }
     };
     safeRun("pages", () => renderAllDocumentPages(pages, extraction));
+    safeRun("ec-status", () => renderECStatusTab(extraction));
     safeRun("ec-analysis", () => renderECAnalysisTab(extraction));
     safeRun("fields", () => renderFieldsTab(extraction.fields || {}));
     safeRun("owners", () => renderOwnersTab(extraction));
@@ -870,7 +917,7 @@ function renderDocumentResult() {
     if (isSaleDeedDoc) {
         switchTab("fields");
     } else if (isECDoc) {
-        switchTab("ec-analysis");
+        switchTab("ec-status");
     } else {
         switchTab("fields");
     }
@@ -1212,6 +1259,693 @@ function sanitizeTxFinancials(tx) {
 }
 
 // =========================================================================
+// EC Status (Encumbrance Status & Transaction History) Tab Engine
+// =========================================================================
+
+function toggleEcStatusTable() {
+    const wrapper = document.getElementById("ec-status-table-wrapper");
+    const chevron = document.getElementById("chevron-ec-status-table");
+    if (!wrapper) return;
+    wrapper.classList.toggle("hidden");
+    if (chevron) {
+        chevron.setAttribute("data-lucide", wrapper.classList.contains("hidden") ? "chevron-down" : "chevron-up");
+        if (window.lucide) lucide.createIcons();
+    }
+}
+window.toggleEcStatusTable = toggleEcStatusTable;
+
+// Comprehensive Universal Mortgage & Charge Analyzer
+// Scans transactions across all English & Tamil deed natures, paired with discharge receipts
+function analyzeECMortgages(fields, txList) {
+    const mortgageKws = [
+        "mortgage", "modt", "deposit of title", 
+        "ஈடு", "அடமான", "அடைமானம்", 
+        "உரிமை வைப்பு", "ஒப்படைப்பு", "ஒப்பைடப்பு", "உரிமை ஆவண", "கடன் திரும்ப", "பணயம்"
+    ];
+    const dischargeKws = ["receipt", "discharge", "ரசீது", "மீட்சி"];
+
+    const mortgageTxs = (txList || []).filter(t => {
+        const nat = ((t.nature || "") + " " + (t.document_remarks || "") + " " + (t.remarks || "")).toLowerCase();
+        const isDischarge = dischargeKws.some(k => nat.includes(k)) || 
+            (nat.includes("விடுதலை") && (nat.includes("அடமான") || nat.includes("வங்கி") || nat.includes("bank") || nat.includes("கடன்")));
+        const isMortgage = mortgageKws.some(k => nat.includes(k));
+        return isMortgage && !isDischarge;
+    });
+
+    const dischargeTxs = (txList || []).filter(t => {
+        const nat = ((t.nature || "") + " " + (t.document_remarks || "") + " " + (t.remarks || "")).toLowerCase();
+        return dischargeKws.some(k => nat.includes(k)) || 
+            (nat.includes("விடுதலை") && (nat.includes("அடமான") || nat.includes("வங்கி") || nat.includes("bank") || nat.includes("கடன்")));
+    });
+
+    const closedMortgageIndices = new Set();
+    const usedDischargeIndices = new Set();
+
+    mortgageTxs.forEach((mTx, mIdx) => {
+        const mDocNo = (mTx.doc_no || mTx.doc_no_year || "").trim();
+        const mDocNumOnly = mDocNo.split("/")[0].replace(/\D/g, "");
+        const mYear = mDocNo.includes("/") ? mDocNo.split("/")[1] : "";
+        const mClaimants = (mTx.claimants || "").toLowerCase();
+        const mExecutants = (mTx.executants || "").toLowerCase();
+
+        for (let dIdx = 0; dIdx < dischargeTxs.length; dIdx++) {
+            if (usedDischargeIndices.has(dIdx)) continue;
+            const dTx = dischargeTxs[dIdx];
+            const dSearch = ((dTx.remarks || "") + " " + (dTx.document_remarks || "") + " " + (dTx.pr_numbers || "") + " " + (dTx.pr_number || "")).toLowerCase();
+            const dExec = (dTx.executants || "").toLowerCase();
+            const dClaim = (dTx.claimants || "").toLowerCase();
+
+            // Match 1: Explicit doc number reference
+            let isRefMatch = false;
+            if (mDocNo && dSearch.includes(mDocNo.toLowerCase())) {
+                isRefMatch = true;
+            } else if (mDocNumOnly && mYear && dSearch.includes(mDocNumOnly) && dSearch.includes(mYear)) {
+                isRefMatch = true;
+            }
+
+            // Match 2: Party cross-reference (lender executant, borrower claimant)
+            let isPartyMatch = false;
+            const lenderWords = mClaimants.split(/\s+/).filter(w => w.length > 3);
+            const hasLenderMatch = lenderWords.some(w => dExec.includes(w)) || (mClaimants.includes("bank") && dExec.includes("bank"));
+            const borrowerWords = mExecutants.split(/\s+/).filter(w => w.length > 3);
+            const hasBorrowerMatch = borrowerWords.some(w => dClaim.includes(w));
+            if (hasLenderMatch && hasBorrowerMatch) {
+                isPartyMatch = true;
+            }
+
+            if (isRefMatch || isPartyMatch) {
+                closedMortgageIndices.add(mIdx);
+                usedDischargeIndices.add(dIdx);
+                break;
+            }
+        }
+    });
+
+    // Pair remaining discharges with remaining mortgages if only 1-to-1 available
+    if (closedMortgageIndices.size < mortgageTxs.length && usedDischargeIndices.size < dischargeTxs.length) {
+        for (let mIdx = 0; mIdx < mortgageTxs.length; mIdx++) {
+            if (closedMortgageIndices.has(mIdx)) continue;
+            for (let dIdx = 0; dIdx < dischargeTxs.length; dIdx++) {
+                if (usedDischargeIndices.has(dIdx)) continue;
+                if (mortgageTxs.length === 1 && dischargeTxs.length === 1) {
+                    closedMortgageIndices.add(mIdx);
+                    usedDischargeIndices.add(dIdx);
+                    break;
+                }
+            }
+        }
+    }
+
+    const txActive = Math.max(0, mortgageTxs.length - closedMortgageIndices.size);
+    const txClosed = Math.max(closedMortgageIndices.size, dischargeTxs.length);
+
+    let activeCount = txActive;
+    let dischargedCount = txClosed;
+
+    // Harmonize with backend fields if present
+    if (fields && fields.active_mortgages) {
+        const beOpen = (typeof fields.active_mortgages.open_count === "number") ? fields.active_mortgages.open_count : null;
+        const beClosed = (typeof fields.active_mortgages.closed_count === "number") ? fields.active_mortgages.closed_count : null;
+
+        if (beOpen !== null && beOpen > 0) {
+            activeCount = Math.max(activeCount, beOpen);
+        }
+        if (beClosed !== null && beClosed > 0) {
+            dischargedCount = Math.max(dischargedCount, beClosed);
+        }
+
+        if (fields.active_mortgages.value) {
+            const val = fields.active_mortgages.value.toLowerCase();
+            const mOpen = val.match(/(\d+)\s*(?:open|active)/i);
+            if (mOpen && parseInt(mOpen[1]) > 0) {
+                activeCount = Math.max(activeCount, parseInt(mOpen[1]));
+            }
+            const mClosed = val.match(/(\d+)\s*(?:closed|discharged|released)/i);
+            if (mClosed && parseInt(mClosed[1]) > 0) {
+                dischargedCount = Math.max(dischargedCount, parseInt(mClosed[1]));
+            }
+        }
+    }
+
+    const openMortgageTxs = mortgageTxs.filter((_, idx) => !closedMortgageIndices.has(idx));
+    const closedMortgageTxs = mortgageTxs.filter((_, idx) => closedMortgageIndices.has(idx));
+
+    return {
+        activeCount,
+        dischargedCount,
+        totalMortgages: mortgageTxs.length,
+        mortgageTxs,
+        openMortgageTxs,
+        closedMortgageTxs,
+        dischargeTxs
+    };
+}
+
+// Comprehensive Universal Liens & Court Attachments Analyzer
+function analyzeECLiens(fields, txList) {
+    const attachmentKws = [
+        "court", "attachment", "injunction", "decree", "lis pendens", "stay",
+        "ஜப்தி", "நீதிமன்ற", "நீதிமன்றம்", "தீர்ப்பு", "தீர்ப்பாணை", "தடை", "வழக்கு", "பற்று"
+    ];
+
+    const attachmentTxs = (txList || []).filter(t => {
+        const rem = ((t.remarks || "") + " " + (t.document_remarks || "") + " " + (t.nature || "") + " " + (t.executants || "") + " " + (t.claimants || "")).toLowerCase();
+        return attachmentKws.some(k => rem.includes(k));
+    });
+
+    let activeLiensCount = attachmentTxs.length;
+
+    if (fields) {
+        const courtFld = fields.court_attachments_key || fields.court_attachments;
+        if (courtFld) {
+            if (typeof courtFld.count === "number" && courtFld.count > 0) {
+                activeLiensCount = Math.max(activeLiensCount, courtFld.count);
+            } else if (courtFld.value) {
+                const val = courtFld.value.toLowerCase();
+                const mAtt = val.match(/(\d+)\s*(?:court|attachment|decree)/i);
+                if (mAtt && parseInt(mAtt[1]) > 0) {
+                    activeLiensCount = Math.max(activeLiensCount, parseInt(mAtt[1]));
+                } else if (val.includes("flag:") && !val.includes("no court") && !val.includes("0 court")) {
+                    activeLiensCount = Math.max(activeLiensCount, 1);
+                }
+            }
+        }
+    }
+
+    return {
+        activeLiensCount,
+        attachmentTxs
+    };
+}
+
+function renderECStatusTab(extraction = null) {
+    const container = document.getElementById("ec-status-container");
+    if (!container) return;
+
+    extraction = extraction || (state.currentResult ? state.currentResult.extraction : null);
+    if (!extraction) {
+        container.innerHTML = `
+            <div class="p-8 text-center bg-tm-card rounded-2xl border border-dashed border-tm-border/80 shadow-2xs space-y-3">
+                <div class="w-14 h-14 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 flex items-center justify-center mx-auto shadow-2xs border border-emerald-200 dark:border-emerald-800">
+                    <i data-lucide="shield-check" class="w-6 h-6"></i>
+                </div>
+                <h4 class="font-bold text-sm text-tm-text-pri">Encumbrance Status & Transaction History</h4>
+                <p class="text-xs text-tm-text-sec max-w-md mx-auto leading-relaxed">
+                    Upload an Encumbrance Certificate (EC) PDF above or click a sample document to inspect active mortgages, court attachments, search period compliance, and complete devolution history.
+                </p>
+            </div>
+        `;
+        if (window.lucide) lucide.createIcons();
+        return;
+    }
+
+    const fields = extraction.fields || {};
+    const txList = (fields.transactions_table && Array.isArray(fields.transactions_table.value))
+        ? fields.transactions_table.value
+        : [];
+    const totalTx = txList.length;
+
+    // 1. Mortgages Check (Universal Transaction-Level Detection + Pairing)
+    const mortAnalysis = analyzeECMortgages(fields, txList);
+    const activeMortgagesCount = mortAnalysis.activeCount;
+    const dischargedMortgagesCount = mortAnalysis.dischargedCount;
+
+    // 2. Liens / Attachments Check
+    const lienAnalysis = analyzeECLiens(fields, txList);
+    const activeLiensCount = lienAnalysis.activeLiensCount;
+
+    // 3. Search Period & Years Analyzed
+    const searchPeriodRaw = (fields.search_period && fields.search_period.value && fields.search_period.value !== "-") 
+        ? fields.search_period.value 
+        : ((fields.search_period_standard && fields.search_period_standard.value && fields.search_period_standard.value !== "-") ? fields.search_period_standard.value : "");
+
+    let searchPeriodDateRange = "";
+    let yearsAnalyzedText = "Records analyzed";
+
+    const mDates = searchPeriodRaw ? searchPeriodRaw.match(/(\d{1,2}[-\/][A-Za-z0-9]+[-\/]\d{2,4})[^\w\n]+(?:to|-)[^\w\n]+(\d{1,2}[-\/][A-Za-z0-9]+[-\/]\d{2,4})/i) : null;
+    if (mDates) {
+        searchPeriodDateRange = `${mDates[1]} to ${mDates[2]}`;
+        const y1 = parseInt(mDates[1].split(/[-\/]/).pop());
+        const y2 = parseInt(mDates[2].split(/[-\/]/).pop());
+        if (!isNaN(y1) && !isNaN(y2)) {
+            const yrSpan = Math.abs(y2 - y1);
+            yearsAnalyzedText = `${yrSpan} years of records analyzed`;
+        }
+    } else if (searchPeriodRaw && searchPeriodRaw !== "-") {
+        searchPeriodDateRange = searchPeriodRaw.split("(")[0].trim();
+        const mYears = searchPeriodRaw.match(/(\d+)\s*(?:years?|வருட)/i);
+        if (mYears) {
+            yearsAnalyzedText = `${mYears[1]} years of records analyzed`;
+        }
+    }
+
+    // Universal fallback: derive date range from min/max transactions
+    const validDates = [];
+    txList.forEach(t => {
+        const dStr = t.date || t.execution_date || t.registration_date;
+        if (dStr && dStr !== "-") validDates.push(dStr);
+    });
+
+    if (!searchPeriodDateRange || searchPeriodDateRange === "-") {
+        if (validDates.length > 0) {
+            searchPeriodDateRange = `${validDates[0]} to ${validDates[validDates.length - 1]}`;
+            const mY1 = validDates[0].match(/\b(19\d\d|20\d\d)\b/);
+            const mY2 = validDates[validDates.length - 1].match(/\b(19\d\d|20\d\d)\b/);
+            if (mY1 && mY2) {
+                const yrSpan = Math.abs(parseInt(mY2[1]) - parseInt(mY1[1]));
+                yearsAnalyzedText = `${yrSpan} years of records analyzed (From Transaction Register)`;
+            }
+        } else {
+            searchPeriodDateRange = "Search period recorded in certificate";
+        }
+    }
+
+    let txDatesRangeText = "";
+    if (validDates.length > 0) {
+        txDatesRangeText = `Transaction Dates: ${validDates[0]} to ${validDates[validDates.length - 1]}`;
+    }
+
+    // 4. Patta Owner / Latest Title Holder Identification
+    // Scans backward from newest record; recognizes all title devolution forms in Tamil & English
+    let pattaOwnerRowIdx = -1;
+    for (let i = txList.length - 1; i >= 0; i--) {
+        const nat = (txList[i].nature || "").toLowerCase();
+        if (nat.includes("conveyance") || nat.includes("sale") || nat.includes("கிரைய") || 
+            nat.includes("விற்ப") || nat.includes("gift") || nat.includes("தான") || 
+            nat.includes("settlement") || nat.includes("செட்டில்மென்ட்") || nat.includes("ஏற்பாடு") || 
+            nat.includes("partition") || nat.includes("பாகப்பிரிவினை") || nat.includes("release") || 
+            nat.includes("விடுதலை") || nat.includes("விடுதைல") || nat.includes("உரிமை மாற்றம்")) {
+            pattaOwnerRowIdx = i;
+            break;
+        }
+    }
+    if (pattaOwnerRowIdx === -1 && txList.length > 0) {
+        pattaOwnerRowIdx = txList.length - 1;
+    }
+
+    // 5. Helper: Comprehensive Legal Nature Classifier
+    function getNatureDetails(rawNature) {
+        if (!rawNature || rawNature === "-" || rawNature === "*") {
+            return {
+                en: "Sale Deed",
+                ta: "கிரைய ஆவணம்",
+                badgeClass: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+            };
+        }
+        const n = rawNature.toLowerCase();
+
+        if (n.includes("விற்ப") || n.includes("கிரைய") || n.includes("கிைரய") || n.includes("sale deed")) {
+            return {
+                en: "Sale Deed",
+                ta: n.includes("விற்ப") ? "விற்பனை ஆவணம்" : "கிரைய ஆவணம்",
+                badgeClass: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+            };
+        }
+        if (n.includes("உரிமை மாற்றம்") || n.includes("conveyance")) {
+            return {
+                en: "Sale Deed (Conveyance)",
+                ta: n.includes("பெருநகர்") ? "உரிமை மாற்றம் - பெருநகர்" : "உரிமை மாற்றம்",
+                badgeClass: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+            };
+        }
+        if (n.includes("ஏற்பாடு") || n.includes("settlement") || n.includes("செட்டில்மென்ட்")) {
+            return {
+                en: "Settlement Deed",
+                ta: n.includes("குடும்ப") ? "குடும்ப ஏற்பாடு" : "ஏற்பாடு ஆவணம்",
+                badgeClass: "bg-violet-50 dark:bg-violet-950/40 text-violet-800 dark:text-violet-300 border-violet-200 dark:border-violet-800"
+            };
+        }
+        if (n.includes("விடுதலை") || n.includes("விடுதைல") || n.includes("release")) {
+            return {
+                en: "Release Deed",
+                ta: "விடுதலை ஆவணம்",
+                badgeClass: "bg-sky-50 dark:bg-sky-950/40 text-sky-800 dark:text-sky-300 border-sky-200 dark:border-sky-800"
+            };
+        }
+        if (n.includes("பிழைத்திருத்தல்") || n.includes("பிழை திருத்தல்") || n.includes("திருத்த") || n.includes("rectification")) {
+            return {
+                en: "Rectification Deed",
+                ta: "பிழைத்திருத்தல் ஆவணம்",
+                badgeClass: "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800"
+            };
+        }
+        if (n.includes("உரிமை வைப்பு") || n.includes("ஒப்படைப்பு") || n.includes("ஒப்பைடப்பு") || n.includes("modt") || n.includes("deposit of title")) {
+            return {
+                en: "Deposit of Title Deeds (MODT)",
+                ta: "உரிமை ஆவண ஒப்படைப்பு",
+                badgeClass: "bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800"
+            };
+        }
+        if (n.includes("அடமானம்") || n.includes("அடைமானம்") || n.includes("mortgage") || n.includes("ஈடு")) {
+            return {
+                en: "Mortgage Deed",
+                ta: "அடமான ஆவணம்",
+                badgeClass: "bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800"
+            };
+        }
+        if (n.includes("ரசீது") || n.includes("இரசீது") || n.includes("receipt") || n.includes("discharge") || n.includes("மீட்சி")) {
+            return {
+                en: "Receipt (Discharge)",
+                ta: "அடமான ரசீது / மீட்பு",
+                badgeClass: "bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-300 border-teal-200 dark:border-teal-800"
+            };
+        }
+        if (n.includes("பாகப்பிரிவினை") || n.includes("பாகப் பிரிவினை") || n.includes("partition")) {
+            return {
+                en: "Partition Deed",
+                ta: "பாகப்பிரிவினை ஆவணம்",
+                badgeClass: "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800"
+            };
+        }
+        if (n.includes("தான") || n.includes("gift")) {
+            return {
+                en: "Gift Deed",
+                ta: "தான ஆவணம்",
+                badgeClass: "bg-fuchsia-50 dark:bg-fuchsia-950/40 text-fuchsia-800 dark:text-fuchsia-300 border-fuchsia-200 dark:border-fuchsia-800"
+            };
+        }
+        if (n.includes("பொது அதிகார") || n.includes("பவர்") || n.includes("power of attorney")) {
+            return {
+                en: "Power of Attorney",
+                ta: "பொது அதிகார ஆவணம்",
+                badgeClass: "bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800"
+            };
+        }
+        const firstPart = rawNature.split(/[\/\n]/)[0].trim();
+        return {
+            en: firstPart,
+            ta: "",
+            badgeClass: "bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700"
+        };
+    }
+
+    // 6. Helper: Party Sanitizer and Value Bleed Detector
+    function cleanPartyInfo(rawParty, bilingualObj, tx, role) {
+        if (!rawParty && !bilingualObj) {
+            return { en: "-", ta: "" };
+        }
+
+        let rawStr = (typeof rawParty === "string") ? rawParty : "";
+        let enName = (bilingualObj && bilingualObj.english) ? bilingualObj.english : "";
+        let taName = (bilingualObj && bilingualObj.tamil) ? bilingualObj.tamil : "";
+
+        // Check if raw text is actually a consideration amount that bled into party
+        const mValBleed = rawStr.match(/(?:Value\s*Rs\.?|Consideration(?:\s*Value)?[:\s]*|கிரையத்\s*தொகை[:\s]*)\s*([0-9,]+(?:\.[0-9]{2})?(?:\/-)?)/i);
+        if (mValBleed && !tx._detected_val) {
+            tx._detected_val = mValBleed[1].replace(/\/-$/, '').trim();
+        }
+        if (/^(?:Value\s*Rs\.?|Consideration|கைமாற்றுத்|கிரையத்\s*தொகை|ரூ\.?|Rs\.?)\s*[:\s]*[\d,]+/i.test(rawStr.trim())) {
+            return {
+                en: role === "from" ? "(Vendor as per Doc)" : "-",
+                ta: role === "from" ? "(பத்திரத்தின்படி விற்பவர்)" : ""
+            };
+        }
+
+        // Helper to strip property metadata and stray numbers that bled into names
+        function sanitizeName(str) {
+            if (!str) return "";
+            // Detect specific property markers to save to tx._property_unit
+            const mProp = str.match(/\b(Site\s*No\.?:?\s*[^,;\n]+|Floor\s*No\.?:?\s*[^,;\n]+|Flat\s*No\.?:?\s*[^,;\n]+|தள\s*எண்:?\s*[^,;\n]+|அடுக்குமாடிக்?\s*குடியிருப்பு:?\s*[^,;\n]+)/i);
+            if (mProp && !tx._property_unit) {
+                let pClean = mProp[1].replace(/(?:தள\s*எண்|Floor\s*No\.?:?)/i, 'Floor')
+                                     .replace(/(?:Flat\s*No\.?:?|அடுக்குமாடிக்?\s*குடியிருப்பு:?)/i, 'Flat')
+                                     .replace(/Floo\b/i, 'Floor')
+                                     .trim();
+                tx._property_unit = pClean;
+            }
+
+            let s = str.replace(/^\d+[\.\s\-]+/, '')
+                       .replace(/\s*(?:Site\s*No|Floor\s*No|Flat\s*No|Door\s*No|Plot\s*No|S\.?No|Survey\s*No|Property\s*Extent|தள\s*எண்|அடுக்குமாடிக்?\s*குடியிருப்பு|மனை\s*எண்|புல\s*எண்)[^,;\n]*/gi, '')
+                       .replace(/\s*:\s*\d+[\w\/\-_]*\b/g, '')
+                       .replace(/\s*,?\s*\b\d{1,6}\/\d{4}(?:\s*,\s*\d{1,6}\/\d{4})*\b/g, '')
+                       .replace(/\([^\)]*(?:tamil|lessor|lessee|poa)[^\)]*\)/gi, '')
+                       .trim();
+            // Take first person if multiple separated by comma
+            s = s.split(/[,;\n]/)[0].trim();
+            return s;
+        }
+
+        let cleanEn = sanitizeName(enName || rawStr);
+        let cleanTa = sanitizeName(taName || (/[\u0B80-\u0BFF]/.test(rawStr) ? rawStr : ""));
+
+        // If English is identical to Tamil or empty, retain best readable
+        if (!cleanEn && cleanTa) cleanEn = cleanTa;
+        if (cleanEn === cleanTa) cleanTa = "";
+
+        return {
+            en: cleanEn || "-",
+            ta: cleanTa || ""
+        };
+    }
+
+    // 7. Helper: Accurate Consideration Value Formatter
+    function formatValue(tx) {
+        let cons = tx.consideration || (tx.consideration_norm && tx.consideration_norm.formatted) || "";
+        if ((!cons || cons === "-" || cons === "0" || cons === "None" || cons === "ரூ.") && tx._detected_val) {
+            cons = "₹" + tx._detected_val;
+        }
+        if (!cons || cons === "-" || cons === "0" || cons === "None" || cons === "ரூ.") {
+            if (tx.market_value && tx.market_value !== "-" && tx.market_value !== "ரூ.") {
+                let mv = tx.market_value.replace(/Rs\.?/i, "₹").replace(/ரூ\.?/i, "₹").trim();
+                if (!mv.startsWith("₹") && /\d/.test(mv)) mv = "₹" + mv;
+                return mv.replace(/\/-$/, "");
+            }
+            return "-";
+        }
+        cons = cons.replace(/Rs\.?/i, "₹").replace(/ரூ\.?/i, "₹").trim();
+        if (!cons.startsWith("₹") && /\d/.test(cons)) cons = "₹" + cons;
+        return cons.replace(/\/-$/, "");
+    }
+
+    // 8. Helper: Clean Property Extent & Survey Resolver
+    function getPropertyInfo(tx) {
+        let sNo = "";
+        let extent = "";
+        if (tx.schedules && tx.schedules.length > 0) {
+            const sch = tx.schedules[0];
+            sNo = sch.survey_no || sch.plot_no || "";
+            extent = sch.extent || "";
+        }
+        if (!sNo && (tx.remarks || tx.document_remarks)) {
+            const rem = (tx.remarks || "") + " " + (tx.document_remarks || "");
+            const mSNo = rem.match(/(?:Survey\s*No\.?|புல\s*எண்|S\.?No\.?)[^\w\d]*([A-Za-z0-9\/\-]+)/i);
+            if (mSNo) sNo = mSNo[1];
+            const mExt = rem.match(/(?:Property\s*Extent|விஸ்தீர்ணம்|Extent)[^:\n]*[:\s]+([^,\n]+)/i);
+            if (mExt) extent = mExt[1];
+        }
+        if (!sNo && fields.survey_searched && fields.survey_searched.value) {
+            sNo = fields.survey_searched.value;
+        }
+
+        // Clean up global extent fallback: eliminate spurious year or volume numbers
+        if (!extent && fields.property_extent && fields.property_extent.value) {
+            const rawExt = fields.property_extent.value;
+            const pieces = rawExt.split("|").map(p => p.trim());
+            const cleanPieces = pieces.filter(p => {
+                // Reject anything that looks like a year (e.g. 1986 Grounds) or volume > 100 grounds
+                const mG = p.match(/^(\d+(?:\.\d+)?)\s*grounds?/i);
+                if (mG) {
+                    const gVal = parseFloat(mG[1]);
+                    if (gVal >= 100 || (gVal >= 1900 && gVal <= 2099)) return false;
+                }
+                return true;
+            });
+            extent = cleanPieces.length > 0 ? cleanPieces[0] : (pieces[0] || "-");
+        }
+
+        // If specific unit metadata was extracted (Site No, Floor No, Flat), combine nicely
+        let finalExtent = extent || "-";
+        if (tx._property_unit) {
+            finalExtent = (finalExtent && finalExtent !== "-") 
+                ? `${tx._property_unit} | ${finalExtent}` 
+                : tx._property_unit;
+        }
+
+        return {
+            survey: sNo ? `S.No: ${sNo}` : "S.No: -",
+            extent: finalExtent
+        };
+    }
+
+    // 9. Generate rows
+    const totalPages = state.currentResult?.pages?.length || 1;
+
+    const rowsHtml = txList.map((tx, idx) => {
+        const isPattaOwnerRow = (idx === pattaOwnerRowIdx);
+        const natObj = getNatureDetails(tx.nature);
+        const date = tx.date || tx.execution_date || tx.registration_date || "-";
+        const docNo = tx.doc_no || tx.doc_no_year || "-";
+
+        const fromParty = cleanPartyInfo(
+            tx.executants, 
+            tx.executants_bilingual && tx.executants_bilingual[0], 
+            tx, 
+            "from"
+        );
+        const toParty = cleanPartyInfo(
+            tx.claimants, 
+            tx.claimants_bilingual && tx.claimants_bilingual[0], 
+            tx, 
+            "to"
+        );
+
+        const prop = getPropertyInfo(tx);
+        const val = formatValue(tx);
+
+        let targetPage = 0;
+        if (typeof tx.page_index === "number" && tx.page_index >= 0 && tx.page_index < totalPages) {
+            targetPage = tx.page_index;
+        } else {
+            targetPage = Math.min(totalPages - 1, Math.floor((idx / Math.max(1, totalTx)) * totalPages));
+        }
+        const pageBadgeNumber = targetPage + 1;
+
+        const rowBgClass = isPattaOwnerRow 
+            ? "bg-amber-50/70 dark:bg-amber-950/20 border-t border-b border-amber-200/80 dark:border-amber-800/40" 
+            : "border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors";
+
+        const docCopyBtn = isPattaOwnerRow
+            ? `<button type="button" onclick="jumpToPage(${targetPage})" class="px-2 py-1 rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer transition-colors shadow-2xs" title="Jump to Page ${pageBadgeNumber} in Document Viewer">
+                   <i data-lucide="file-text" class="w-3 h-3 text-amber-600 dark:text-amber-400"></i>
+                   <span>${pageBadgeNumber}</span>
+               </button>`
+            : `<button type="button" onclick="jumpToPage(${targetPage})" class="px-2 py-1 rounded-lg border border-orange-200 dark:border-orange-800/80 bg-orange-50/80 hover:bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300 text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer transition-colors shadow-2xs" title="Jump to Page ${pageBadgeNumber} in Document Viewer">
+                   <i data-lucide="file-text" class="w-3 h-3 text-orange-600 dark:text-orange-400"></i>
+                   <span>${pageBadgeNumber}</span>
+               </button>`;
+
+        return `
+            <tr class="${rowBgClass}">
+                <td class="py-3 px-3 text-center text-xs text-slate-500 font-mono font-medium">${idx + 1}</td>
+                <td class="py-3 px-3 text-xs whitespace-nowrap">
+                    <div class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold border ${natObj.badgeClass} mb-0.5">
+                        ${escapeHtml(natObj.en)}
+                    </div>
+                    ${natObj.ta ? `<div class="text-[11px] text-slate-500 dark:text-slate-400 font-normal leading-tight">${escapeHtml(natObj.ta)}</div>` : ''}
+                </td>
+                <td class="py-3 px-3 text-xs text-slate-600 dark:text-slate-300 font-mono whitespace-nowrap">${escapeHtml(date)}</td>
+                <td class="py-3 px-3 text-xs font-semibold text-slate-800 dark:text-slate-100 font-mono whitespace-nowrap">${escapeHtml(docNo)}</td>
+                <td class="py-3 px-3 text-xs">
+                    <div class="space-y-1">
+                        <div class="text-xs">
+                            <span class="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 mr-1 tracking-wider">FROM:</span>
+                            <span class="font-medium text-slate-800 dark:text-slate-200">${escapeHtml(fromParty.en)}</span>
+                            ${fromParty.ta ? `<span class="text-[11px] text-slate-500 dark:text-slate-400 ml-1">(${escapeHtml(fromParty.ta)})</span>` : ''}
+                        </div>
+                        <div class="text-xs flex items-center flex-wrap gap-1">
+                            <span class="text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400 mr-1 tracking-wider">TO:</span>
+                            <span class="font-bold text-emerald-700 dark:text-emerald-400">${escapeHtml(toParty.en)}</span>
+                            ${toParty.ta ? `<span class="text-[11px] text-emerald-600/70 dark:text-emerald-400/70 ml-1">(${escapeHtml(toParty.ta)})</span>` : ''}
+                            ${isPattaOwnerRow ? `<span class="ml-1.5 px-1.5 py-0.5 rounded bg-amber-600 text-white font-extrabold text-[9px] uppercase tracking-wider shadow-2xs">PATTA OWNER</span>` : ''}
+                        </div>
+                    </div>
+                </td>
+                <td class="py-3 px-3 text-xs">
+                    <div class="font-semibold text-slate-800 dark:text-slate-200">${escapeHtml(prop.survey)}</div>
+                    <div class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">${escapeHtml(prop.extent)}</div>
+                </td>
+                <td class="py-3 px-3 text-xs font-semibold text-slate-800 dark:text-slate-200 font-mono whitespace-nowrap">${escapeHtml(val)}</td>
+                <td class="py-3 px-3 text-center whitespace-nowrap">${docCopyBtn}</td>
+            </tr>
+        `;
+    }).join("");
+
+    // 7. Render Complete Tab Content
+    container.innerHTML = `
+        <div class="space-y-4">
+            <!-- Top Status Bar: ENCUMBRANCE STATUS & PILLS -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-tm-border">
+                <div class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                    ENCUMBRANCE STATUS
+                </div>
+                <div class="flex items-center gap-2.5 flex-wrap">
+                    <!-- Mortgages Pill -->
+                    <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg ${activeMortgagesCount === 0 ? 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 text-emerald-800 dark:text-emerald-300' : 'bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/80 text-red-800 dark:text-red-300'} text-xs font-medium shadow-2xs">
+                        <span>Mortgages</span>
+                        <span class="font-bold ${activeMortgagesCount === 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'} ml-2">
+                            ${activeMortgagesCount === 0 ? (dischargedMortgagesCount > 0 ? '0 Active (Cleared)' : 'None') : (activeMortgagesCount + ' Active' + (dischargedMortgagesCount > 0 ? ` (${dischargedMortgagesCount} Cleared)` : ''))}
+                        </span>
+                    </div>
+
+                    <!-- Liens / Attachments Pill -->
+                    <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg ${activeLiensCount === 0 ? 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 text-emerald-800 dark:text-emerald-300' : 'bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 text-amber-800 dark:text-amber-300'} text-xs font-medium shadow-2xs">
+                        <span>Liens/Attachments</span>
+                        <span class="font-bold ${activeLiensCount === 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'} ml-2">${activeLiensCount === 0 ? 'None' : activeLiensCount + ' Found'}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Big Metric & Search Period Card -->
+            <div class="space-y-2">
+                <div>
+                    <div class="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 leading-none">
+                        ${totalTx}
+                    </div>
+                    <div class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">
+                        TRANSACTIONS
+                    </div>
+                </div>
+
+                <!-- Green Search Period Card -->
+                <div class="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/90 dark:border-emerald-800/60 rounded-xl p-3.5 space-y-1">
+                    <div class="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                        <i data-lucide="calendar" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"></i>
+                        <span>EC Search Period</span>
+                    </div>
+                    <div class="text-sm font-bold text-slate-900 dark:text-slate-100">
+                        ${escapeHtml(searchPeriodDateRange)}
+                    </div>
+                    <div class="text-xs text-emerald-700 dark:text-emerald-400 font-semibold">
+                        ${escapeHtml(yearsAnalyzedText)}
+                    </div>
+                </div>
+
+                ${txDatesRangeText ? `<div class="text-xs text-slate-500 dark:text-slate-400 font-medium pl-0.5">${escapeHtml(txDatesRangeText)}</div>` : ''}
+            </div>
+
+            <!-- Transaction History Card -->
+            <div class="bg-tm-card rounded-xl border border-tm-border overflow-hidden shadow-2xs">
+                <!-- Section Header -->
+                <div class="px-4 py-3 flex items-center justify-between border-b border-tm-border bg-tm-panel/40">
+                    <div class="flex items-center gap-2.5">
+                        <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100">Transaction History</h3>
+                        <span class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold">
+                            ${totalTx} records
+                        </span>
+                    </div>
+                    <button type="button" onclick="toggleEcStatusTable()" class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer" id="btn-toggle-ec-status-table" title="Toggle Table">
+                        <i data-lucide="chevron-up" class="w-4 h-4" id="chevron-ec-status-table"></i>
+                    </button>
+                </div>
+
+                <!-- Table Container -->
+                <div id="ec-status-table-wrapper" class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-tm-border bg-slate-50/50 dark:bg-slate-900/30 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                <th class="py-2.5 px-3 text-center w-8">#</th>
+                                <th class="py-2.5 px-3">NATURE</th>
+                                <th class="py-2.5 px-3">DATE</th>
+                                <th class="py-2.5 px-3">DOC NO</th>
+                                <th class="py-2.5 px-3">FROM / TO</th>
+                                <th class="py-2.5 px-3">PROPERTY</th>
+                                <th class="py-2.5 px-3">VALUE</th>
+                                <th class="py-2.5 px-3 text-center">DOCUMENT COPY</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml || `<tr><td colspan="8" class="text-center py-8 text-xs text-tm-text-sec">No transactions recorded in this certificate.</td></tr>`}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+
+    if (window.lucide) lucide.createIcons();
+}
+
+// =========================================================================
 // EC Analysis (Encumbrance Certificate Overview) Tab Engine
 // =========================================================================
 
@@ -1274,18 +2008,22 @@ function renderECAnalysisTab(extraction = null) {
     const ownerDate = currentOwnerObj.date || "-";
     const ownerVendor = currentOwnerObj.vendor || "-";
 
-    const activeMort = fields.active_mortgages || {};
-    const openMortgages = activeMort.open_count || 0;
-    const closedMortgages = activeMort.closed_count || 0;
+    const txList = (fields.transactions_table && Array.isArray(fields.transactions_table.value))
+        ? fields.transactions_table.value
+        : [];
+    const mortAnalysis = analyzeECMortgages(fields, txList);
+    const openMortgages = mortAnalysis.activeCount;
+    const closedMortgages = mortAnalysis.dischargedCount;
 
     const poaObj = fields.active_poa || {};
     const hasPoa = poaObj.has_poa === true;
     const poaAgents = poaObj.agents || [];
     const poaStatusVal = poaObj.value || "No active POA entries found.";
 
+    const lienAnalysis = analyzeECLiens(fields, txList);
     const courtObj = fields.court_attachments_key || fields.court_attachments || {};
-    const hasCourt = courtObj.has_court === true || (courtObj.value && !courtObj.value.toLowerCase().includes("clear") && !courtObj.value.toLowerCase().includes("no court"));
-    const courtVal = courtObj.value || "Clear: No court decrees or attachment orders detected.";
+    const hasCourt = lienAnalysis.activeLiensCount > 0 || courtObj.has_court === true || (courtObj.value && !courtObj.value.toLowerCase().includes("clear") && !courtObj.value.toLowerCase().includes("no court"));
+    const courtVal = courtObj.value || (lienAnalysis.activeLiensCount > 0 ? `FLAG: ${lienAnalysis.activeLiensCount} Court Attachment / Decrees found` : "Clear: No court decrees or attachment orders detected.");
 
     const villageObj = fields.village_taluk || {};
     const village = villageObj.village || report.village || "-";
@@ -1713,9 +2451,30 @@ function renderECFieldsLayout(fields, container) {
     const applicantName = fields.applicant_name ? (fields.applicant_name.value || fields.applicant_name) : (currentOwnerObj.applicant_name || "-");
 
     // 2. Active Mortgages
+    const ecTxList = (fields.transactions_table && Array.isArray(fields.transactions_table.value))
+        ? fields.transactions_table.value
+        : [];
+    const mortAnalysis = analyzeECMortgages(fields, ecTxList);
     const mortgageObj = fields.active_mortgages || fields.mortgage_status || {};
-    const mortgageVal = mortgageObj.value || "0 Open/Unreleased Mortgages | 0 Closed Mortgage";
-    const mortgageFlags = mortgageObj.flags || (fields.verification_flags && fields.verification_flags.mortgages_flags) || [];
+    let mortgageVal = (mortAnalysis.activeCount > 0 || mortAnalysis.dischargedCount > 0)
+        ? `${mortAnalysis.activeCount} Open/Unreleased Mortgages | ${mortAnalysis.dischargedCount} Closed Mortgage(s)`
+        : (mortgageObj.value || "0 Open/Unreleased Mortgages | 0 Closed Mortgage");
+    let mortgageFlags = mortgageObj.flags || (fields.verification_flags && fields.verification_flags.mortgages_flags) || [];
+    if (mortgageFlags.length === 0 && mortAnalysis.totalMortgages > 0) {
+        mortgageFlags = [];
+        (mortAnalysis.openMortgageTxs || []).forEach(mTx => {
+            const dNo = mTx.doc_no || mTx.doc_no_year || "-";
+            const exec = mTx.executants || "-";
+            const claim = mTx.claimants || "-";
+            mortgageFlags.push(`[OPEN / UNRELEASED] Doc ${dNo} (${exec} → ${claim}) — NO registered discharge receipt found in this search window.`);
+        });
+        (mortAnalysis.closedMortgageTxs || []).forEach(mTx => {
+            const dNo = mTx.doc_no || mTx.doc_no_year || "-";
+            const exec = mTx.executants || "-";
+            const claim = mTx.claimants || "-";
+            mortgageFlags.push(`[CLOSED] Doc ${dNo} (${exec} → ${claim}) — CLOSED by registered discharge receipt.`);
+        });
+    }
 
     // 3. Active POA
     const poaObj = fields.active_poa || {};
@@ -5528,8 +6287,8 @@ function getDocTypeContext() {
     if (isSaleDeedDoc) {
         allowedTabs = ["fields"];
     } else if (isECDoc) {
-        // Retain full suite of tabs for EC
-        allowedTabs = ["ec-analysis", "fields", "owners", "property-filter", "table", "ocr"];
+        // Retain full suite of tabs for EC with ec-status as default
+        allowedTabs = ["ec-status", "ec-analysis", "fields", "owners", "property-filter", "table", "ocr"];
     } else {
         // General documents
         allowedTabs = ["fields", "ocr"];
@@ -5550,13 +6309,13 @@ function switchTab(tabName) {
         }
     }
 
-    // If target tab is not allowed for this document, default to first allowed tab
+    // If target tab is not allowed for this document, default to first allowed tab (ec-status for EC)
     if (!allowedTabs.includes(tabName)) {
-        tabName = isSaleDeedDoc ? "fields" : (isECDoc ? "ec-analysis" : (allowedTabs[0] || "fields"));
+        tabName = isSaleDeedDoc ? "fields" : (isECDoc ? "ec-status" : (allowedTabs[0] || "fields"));
     }
     state.activeTab = tabName;
 
-    const allTabs = ["ec-analysis", "fields", "owners", "property-filter", "table", "ocr"];
+    const allTabs = ["ec-status", "ec-analysis", "fields", "owners", "property-filter", "table", "ocr"];
     allTabs.forEach(t => {
         const btn = document.getElementById(`tab-btn-${t}`);
         const content = document.getElementById(`tab-content-${t}`);
@@ -5568,7 +6327,11 @@ function switchTab(tabName) {
             } else {
                 btn.classList.remove("hidden");
                 if (t === tabName) {
-                    btn.className = "px-3.5 py-1.5 text-xs font-bold rounded-lg bg-blue-600 text-white dark:bg-amber-500 dark:text-slate-950 shadow-xs flex items-center gap-1.5 shrink-0 transition-all";
+                    if (t === "ec-status") {
+                        btn.className = "px-3.5 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 text-white dark:bg-emerald-500 dark:text-slate-950 shadow-xs flex items-center gap-1.5 shrink-0 transition-all";
+                    } else {
+                        btn.className = "px-3.5 py-1.5 text-xs font-bold rounded-lg bg-blue-600 text-white dark:bg-amber-500 dark:text-slate-950 shadow-xs flex items-center gap-1.5 shrink-0 transition-all";
+                    }
                 } else {
                     btn.className = "px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-tm-panel/70 hover:bg-tm-panel text-tm-text-sec hover:text-tm-text-pri border border-tm-border/60 flex items-center gap-1.5 shrink-0 transition-all";
                 }
@@ -5584,7 +6347,9 @@ function switchTab(tabName) {
         }
     });
 
-    if (tabName === "ec-analysis" && isECDoc) {
+    if (tabName === "ec-status" && isECDoc) {
+        renderECStatusTab((state.currentResult && state.currentResult.extraction) ? state.currentResult.extraction : null);
+    } else if (tabName === "ec-analysis" && isECDoc) {
         renderECAnalysisTab((state.currentResult && state.currentResult.extraction) ? state.currentResult.extraction : null);
     }
 

@@ -33,7 +33,7 @@
         }
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="/static/style.css?v=73.0">
+    <link rel="stylesheet" href="/static/style.css?v=78.0">
     <script>
         function toggleTheme() {
             const html = document.documentElement;
@@ -321,21 +321,21 @@
                         </div>
                     </div>
 
-                    <!-- 3. Parent docs / mother copy -->
-                    <div id="cat-card-parent_docs" onclick="selectCategory('parent_docs', true)" class="cat-card group"
+                    <!-- 3. Parent docs / mother copy (Coming Soon) -->
+                    <div id="cat-card-parent_docs" onclick="handleComingSoonCategory('parent_docs', 'Parent docs / mother copy')" class="cat-card cat-card-coming-soon group relative cursor-not-allowed opacity-75"
                         data-category="parent_docs">
                         <div class="flex items-start justify-between mb-2">
                             <div
                                 class="cat-icon-box bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
                                 <i data-lucide="layers" class="w-4 h-4"></i>
                             </div>
-                            <span class="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500">#03</span>
+                            <span class="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shadow-2xs">Soon</span>
                         </div>
                         <div>
                             <h4
-                                class="text-xs font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight">
+                                class="text-xs font-bold text-slate-700 dark:text-slate-300 leading-tight">
                                 Parent docs / mother copy</h4>
-                            <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1 truncate">தாய்
+                            <p class="text-[11px] font-medium text-slate-400 dark:text-slate-500 mt-1 truncate">தாய்
                                 பத்திரம்</p>
                         </div>
                     </div>
@@ -377,39 +377,39 @@
                         </div>
                     </div>
 
-                    <!-- 6. Rera certificate approval certificate -->
-                    <div id="cat-card-rera" onclick="selectCategory('rera', true)" class="cat-card group"
+                    <!-- 6. Rera certificate approval certificate (Coming Soon) -->
+                    <div id="cat-card-rera" onclick="handleComingSoonCategory('rera', 'Rera certificate approval')" class="cat-card cat-card-coming-soon group relative cursor-not-allowed opacity-75"
                         data-category="rera">
                         <div class="flex items-start justify-between mb-2">
                             <div class="cat-icon-box bg-teal-50 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400">
                                 <i data-lucide="check-circle" class="w-4 h-4"></i>
                             </div>
-                            <span class="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500">#06</span>
+                            <span class="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shadow-2xs">Soon</span>
                         </div>
                         <div>
                             <h4
-                                class="text-xs font-bold text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors leading-tight">
+                                class="text-xs font-bold text-slate-700 dark:text-slate-300 leading-tight">
                                 Rera certificate approval</h4>
-                            <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1 truncate">TNRERA
+                            <p class="text-[11px] font-medium text-slate-400 dark:text-slate-500 mt-1 truncate">TNRERA
                                 சான்றிதழ்</p>
                         </div>
                     </div>
 
-                    <!-- 7. Loan documents (if applicable) -->
-                    <div id="cat-card-loan_docs" onclick="selectCategory('loan_docs', true)" class="cat-card group"
+                    <!-- 7. Loan documents (if applicable) (Coming Soon) -->
+                    <div id="cat-card-loan_docs" onclick="handleComingSoonCategory('loan_docs', 'Loan documents')" class="cat-card cat-card-coming-soon group relative cursor-not-allowed opacity-75"
                         data-category="loan_docs">
                         <div class="flex items-start justify-between mb-2">
                             <div
                                 class="cat-icon-box bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400">
                                 <i data-lucide="landmark" class="w-4 h-4"></i>
                             </div>
-                            <span class="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500">#07</span>
+                            <span class="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shadow-2xs">Soon</span>
                         </div>
                         <div>
                             <h4
-                                class="text-xs font-bold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors leading-tight">
+                                class="text-xs font-bold text-slate-700 dark:text-slate-300 leading-tight">
                                 Loan documents</h4>
-                            <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1 truncate">MODT /
+                            <p class="text-[11px] font-medium text-slate-400 dark:text-slate-500 mt-1 truncate">MODT /
                                 NOC வங்கி ஆவணம்</p>
                         </div>
                     </div>
@@ -479,11 +479,11 @@
                                 title="Target Document Type">
                                 <option value="sale_deed" selected>1. Sale deed / title deed</option>
                                 <option value="patta">2. Patta document</option>
-                                <option value="parent_docs">3. Parent docs / mother copy</option>
+                                <option value="parent_docs" disabled>3. Parent docs (Coming Soon)</option>
                                 <option value="ec">4. EC (Encumbrance Cert)</option>
                                 <option value="tslr">5. TSLR document</option>
-                                <option value="rera">6. Rera certificate</option>
-                                <option value="loan_docs">7. Loan documents (MODT)</option>
+                                <option value="rera" disabled>6. Rera certificate (Coming Soon)</option>
+                                <option value="loan_docs" disabled>7. Loan documents (Coming Soon)</option>
                             </select>
                             <i data-lucide="folder-check" class="w-3.5 h-3.5 text-blue-600 dark:text-amber-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
                             <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
@@ -652,12 +652,10 @@
                                         title="Reset Zoom / Fit"><i data-lucide="maximize"
                                             class="w-3.5 h-3.5"></i></button>
                                     <button id="btn-toggle-bbox" onclick="toggleBBoxes()"
-                                        class="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 dark:bg-amber-400/10 dark:text-amber-300 dark:border-amber-400/30 font-bold text-[11px] flex items-center gap-1.5 shadow-2xs cursor-pointer active:scale-95"
+                                        class="px-2.5 py-1 rounded-lg bg-tm-card text-tm-text-sec border border-tm-border hover:bg-tm-panel font-medium text-[11px] flex items-center gap-1.5 shadow-2xs cursor-pointer active:scale-95"
                                         title="Toggle OCR Word Bounding Boxes">
-                                        <span
-                                            class="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-amber-400 animate-pulse"></span>
                                         <i data-lucide="layers" class="w-3.5 h-3.5"></i>
-                                        <span>Boxes ON</span>
+                                        <span>Boxes OFF</span>
                                     </button>
                                 </div>
                             </div>
@@ -760,6 +758,10 @@
                             <!-- Modern Segmented Tab Navigation (Screen Only) -->
                             <div
                                 class="flex space-x-1.5 pt-3 pb-2 border-b border-tm-border text-xs overflow-x-auto shrink-0 no-print">
+                                <button id="tab-btn-ec-status" onclick="switchTab('ec-status')"
+                                    class="hidden px-3.5 py-1.5 font-bold rounded-lg bg-emerald-600 text-white dark:bg-emerald-500 dark:text-slate-950 shadow-xs flex items-center gap-1.5 shrink-0 transition-all cursor-pointer"><i
+                                        data-lucide="shield-check" class="w-3.5 h-3.5 text-white dark:text-slate-950"></i><span>EC
+                                        Status</span></button>
                                 <button id="tab-btn-ec-analysis" onclick="switchTab('ec-analysis')"
                                     class="hidden px-3 py-1.5 font-semibold rounded-lg bg-tm-panel text-tm-text-sec hover:text-tm-text-pri flex items-center gap-1.5 shrink-0 transition-all cursor-pointer"><i
                                         data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i><span>EC
@@ -794,7 +796,10 @@
 
                             <!-- Tab Contents Container -->
                             <div class="flex-1 overflow-y-auto pt-3 pr-1 space-y-3">
-                                <div id="tab-content-ec-analysis" class="space-y-3">
+                                <div id="tab-content-ec-status" class="space-y-4">
+                                    <div id="ec-status-container"></div>
+                                </div>
+                                <div id="tab-content-ec-analysis" class="hidden space-y-3">
                                     <div id="ec-analysis-container">
                                         <div
                                             class="p-8 text-center bg-tm-card rounded-2xl border border-dashed border-tm-border/80 shadow-2xs space-y-3 my-auto">
@@ -1093,7 +1098,7 @@
         </div>
     </footer>
 
-    <script src="/static/app.js?v=77.0"></script>
+    <script src="/static/app.js?v=81.0"></script>
 </body>
 
 </html>

@@ -423,6 +423,34 @@ body {
     display: none !important;
 }
 
+/* Coming Soon Category Cards */
+.cat-card.cat-card-coming-soon {
+    cursor: not-allowed !important;
+    opacity: 0.65;
+    background: #F8FAFC;
+    border-color: #E2E8F0;
+}
+
+.cat-card.cat-card-coming-soon:hover,
+.cat-card.cat-card-coming-soon:active {
+    transform: none !important;
+    box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.04) !important;
+    border-color: #CBD5E1 !important;
+}
+
+.dark .cat-card.cat-card-coming-soon {
+    background: #0B0F19;
+    border-color: #1E293B;
+    opacity: 0.55;
+}
+
+.dark .cat-card.cat-card-coming-soon:hover,
+.dark .cat-card.cat-card-coming-soon:active {
+    transform: none !important;
+    box-shadow: none !important;
+    border-color: #1E293B !important;
+}
+
 /* Base Active Elevation */
 .cat-card.cat-card-active {
     transform: translateY(-3px) !important;

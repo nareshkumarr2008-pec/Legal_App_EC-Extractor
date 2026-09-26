@@ -1,11 +1,10 @@
-// scratch/test_frontend_render.js
-// Simulate the browser environment to test renderDocumentResult and all tab rendering functions
+// scratch/test_sample_ec_status.js
+// Test sample EC rendering through EC status tab
 const fs = require('fs');
 const path = require('path');
 
-// 1. Create a minimal mock DOM
 function createElementMock(tag) {
-    const el = {
+    return {
         tagName: tag.toUpperCase(),
         classList: {
             classes: new Set(),
@@ -17,10 +16,7 @@ function createElementMock(tag) {
         style: {},
         dataset: {},
         children: [],
-        appendChild: function(child) {
-            this.children.push(child);
-            return child;
-        },
+        appendChild: function(child) { this.children.push(child); return child; },
         querySelectorAll: function(sel) { return []; },
         querySelector: function(sel) { return null; },
         innerHTML: '',
@@ -32,7 +28,6 @@ function createElementMock(tag) {
         setAttribute: function(k, v) { this[k] = v; },
         getAttribute: function(k) { return this[k] || null; }
     };
-    return el;
 }
 
 const elements = {};
@@ -44,12 +39,11 @@ function getOrCreateElement(id) {
     return elements[id];
 }
 
-// Pre-create elements referenced in app.js
 const elementIds = [
     "result-doc-type-title", "page-indicator", "btn-prev-page", "btn-next-page",
     "page-jump-select", "viewer-empty-state", "all-pages-container",
     "processing-loader", "processing-status-text", "step-2-completion-banner",
-    "workspace", "ec-analysis-content", "fields-content", "owners-content",
+    "workspace", "ec-status-content", "ec-analysis-content", "fields-content", "owners-content",
     "property-filter-content", "checklist-content", "ocr-text-content", "table-content",
     "tab-ec-status", "tab-btn-ec-status", "tab-content-ec-status", "ec-status-container",
     "tab-ec-analysis", "tab-btn-ec-analysis", "tab-content-ec-analysis", "ec-analysis-container",
@@ -70,10 +64,7 @@ global.document = {
     createElement: (tag) => createElementMock(tag),
     createDocumentFragment: () => {
         const frag = createElementMock('fragment');
-        frag.appendChild = function(child) {
-            this.children.push(child);
-            return child;
-        };
+        frag.appendChild = function(child) { this.children.push(child); return child; };
         return frag;
     },
     querySelectorAll: (sel) => [],
@@ -96,23 +87,12 @@ global.lucide = {
     createIcons: () => {}
 };
 
-console.log("Mock DOM initialized successfully.");
+async function testSampleEC() {
+    const res = await fetch('http://127.0.0.1:8000/api/sample/ec');
+    const data = await res.json();
+    console.log("Fetched sample EC from backend, status:", data.status);
 
-// 2. Load the 22-page test EC response
-const testResponsePath = path.join(__dirname, 'test_ec_response.json');
-if (!fs.existsSync(testResponsePath)) {
-    console.error("test_ec_response.json not found!");
-    process.exit(1);
-}
-
-const data = JSON.parse(fs.readFileSync(testResponsePath, 'utf8'));
-console.log(`Loaded EC response: ${data.pages ? data.pages.length : 0} pages, doc_type=${data.document_type_id}`);
-
-// 3. Test app.js functions in isolated context
-const appJsCode = fs.readFileSync(path.join(__dirname, '..', 'static', 'app.js'), 'utf8');
-
-// Test that script can evaluate in context
-try {
+    const appJsCode = fs.readFileSync(path.join(__dirname, '..', 'static', 'app.js'), 'utf8');
     const vm = require('vm');
     const context = vm.createContext({
         console,
@@ -131,73 +111,58 @@ try {
         Date,
         isNaN,
         encodeURIComponent,
-        decodeURIComponent,
-        state: {
-            currentResult: null,
-            currentPageIndex: 0,
-            showBBoxes: true,
-            selectedCategoryId: "ec",
-            categories: [{ id: "ec", name: "4. EC (Encumbrance Certificate)" }]
-        }
+        decodeURIComponent
     });
 
     vm.runInContext(appJsCode, context);
-    console.log("static/app.js evaluated cleanly in VM context!");
 
-    // Set state.currentResult
-    context.window.state.currentResult = data;
-    context.window.state.currentPageIndex = 0;
+    context.window.state.currentResult = {
+        filename: 'Sample_ec.pdf',
+        total_pages: 1,
+        pages: [data.simulated_page],
+        aggregated_text: data.raw_text,
+        extraction: data.extracted_data
+    };
     context.window.state.selectedCategoryId = "ec";
 
-    // Test renderDocumentResult
-    console.log("Executing renderDocumentResult()...");
     context.renderDocumentResult();
-    console.log("SUCCESS: renderDocumentResult() executed without throwing any errors!");
 
-    // Verify EC Status is default tab
-    console.log("Active tab after render:", context.window.state.activeTab);
+    console.log("Sample EC activeTab:", context.window.state.activeTab);
     if (context.window.state.activeTab !== "ec-status") {
         throw new Error(`Expected activeTab to be 'ec-status', but got '${context.window.state.activeTab}'`);
     }
-    console.log("SUCCESS: 'ec-status' is confirmed as the DEFAULT tab for EC category!");
 
-    // Verify EC Status content
-    const ecStatusContainer = elements["ec-status-container"];
-    console.log("EC Status container HTML length:", ecStatusContainer.innerHTML.length);
-    const requiredSnippets = [
+    const ecContainer = elements["ec-status-container"];
+    console.log("Sample EC container HTML length:", ecContainer.innerHTML.length);
+
+    // Print key sections
+    const checks = [
         "ENCUMBRANCE STATUS",
         "Mortgages",
+        "None",
+        "Liens/Attachments",
+        "4", // 4 transactions
         "TRANSACTIONS",
         "EC Search Period",
+        "01-Jan-1990 to 17-Oct-2023",
+        "33 years of records analyzed",
         "Transaction History",
-        "PATTA OWNER"
+        "4 records",
+        "PATTA OWNER",
+        "Classic Foundations",
+        "K. Rajendran",
+        "S. Lakshmi Priya"
     ];
-    requiredSnippets.forEach(snippet => {
-        if (!ecStatusContainer.innerHTML.includes(snippet)) {
-            throw new Error(`EC Status container HTML missing required snippet: '${snippet}'`);
+    checks.forEach(c => {
+        if (!ecContainer.innerHTML.includes(c)) {
+            throw new Error(`Sample EC output missing expected element: '${c}'`);
         }
     });
-    console.log("SUCCESS: All EC Status visual sections and badges verified in rendered HTML!");
 
-    // Test toggleEcStatusTable
-    console.log("Testing toggleEcStatusTable()...");
-    context.toggleEcStatusTable();
-    console.log("SUCCESS: toggleEcStatusTable() executed cleanly!");
-
-    // Test showStep2CompletionNotice
-    console.log("Executing showStep2CompletionNotice()...");
-    context.showStep2CompletionNotice(data);
-    const banner = elements["step-2-completion-banner"];
-    console.log("Banner HTML content length:", banner.innerHTML.length);
-    console.log("Banner classes:", Array.from(banner.classList.classes).join(", "));
-    console.log("SUCCESS: showStep2CompletionNotice() executed perfectly!");
-
-    // Test jumpToPage
-    console.log("Executing jumpToPage(5)...");
-    context.jumpToPage(5);
-    console.log("SUCCESS: jumpToPage(5) executed perfectly! Current page:", context.state.currentPageIndex);
-
-} catch (err) {
-    console.error("FATAL ERROR during test:", err);
-    process.exit(1);
+    console.log("ALL CHECKS PASSED FOR SAMPLE EC STATUS TAB RENDERING!");
 }
+
+testSampleEC().catch(e => {
+    console.error("FAIL:", e);
+    process.exit(1);
+});

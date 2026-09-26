@@ -53,6 +53,7 @@ class ECEntry:
     pr_numbers: str = ""
     remarks: str = ""
     schedules: list = field(default_factory=list)
+    page_index: Optional[int] = None
 
 
 @dataclass
@@ -444,14 +445,17 @@ def build_mortgage_flags(entries: List[Dict[str, Any]]) -> Tuple[List[str], int,
     Dynamically cross-references Deposit of Title Deeds / MODT entries against
     later Receipt / Discharge entries using exact document number references.
     """
+    mortgage_kws = ["mortgage", "deposit of title", "modt", "அடமான", "அடைமானம்", "உரிமை வைப்பு", "ஒப்படைப்பு", "ஒப்பைடப்பு", "ஈடு", "கடன்"]
+    discharge_kws = ["receipt", "discharge", "ரசீது", "மீட்சி"]
+
     mortgage_entries = [
         e for e in entries
-        if any(k in (e.get("nature") or "").lower() for k in ["mortgage", "deposit of title", "modt", "அடமான"])
-        and not any(k in (e.get("nature") or "").lower() for k in ["receipt", "discharge", "ரசீது", "விடுதலை"])
+        if any(k in (e.get("nature") or "").lower() for k in mortgage_kws)
+        and not any(k in (e.get("nature") or "").lower() for k in discharge_kws)
     ]
     receipt_entries = [
         e for e in entries
-        if any(k in (e.get("nature") or "").lower() for k in ["receipt", "discharge", "ரசீது", "விடுதலை"])
+        if any(k in (e.get("nature") or "").lower() for k in discharge_kws)
     ]
 
     flags = []
@@ -487,6 +491,22 @@ def build_mortgage_flags(entries: List[Dict[str, Any]]) -> Tuple[List[str], int,
             search_str = f"{r_pr} {r_rem}"
 
             if _is_doc_referenced(d_no, search_str):
+                is_closed = True
+                r_doc = r.get("doc_no_year") or r.get("doc_no") or "Receipt"
+                r_date = r.get("registration_date") or r.get("execution_date") or r.get("date") or ""
+                closure_ref = f"Doc {r_doc} ({r_date})".strip()
+                break
+
+            # Party cross-reference match: receipt executant is lender, claimant is borrower
+            r_exec = (r.get("executants") or "").lower()
+            r_claim = (r.get("claimants") or "").lower()
+            m_lender = claims.lower()
+            m_borrower = execs.lower()
+
+            lender_match = any(w in r_exec for w in m_lender.split() if len(w) > 3) or ("bank" in m_lender and "bank" in r_exec)
+            borrower_match = any(w in r_claim for w in m_borrower.split() if len(w) > 3)
+
+            if lender_match and borrower_match:
                 is_closed = True
                 r_doc = r.get("doc_no_year") or r.get("doc_no") or "Receipt"
                 r_date = r.get("registration_date") or r.get("execution_date") or r.get("date") or ""
@@ -963,7 +983,7 @@ def group_property_units_and_owners(tx_list: List[Dict[str, Any]]) -> List[Dict[
         owner_found = None
         for e in reversed(u_txs):
             nat = normalize_tamil_visual_order(e.get("nature") or "").lower()
-            if any(k in nat for k in ["sale", "கிரைய", "கிைரய", "விற்பனை", "விற்பைன", "settlement", "செட்டில்மென்ட்", "தான", "gift", "பாகப்பிரிவினை", "partition", "conveyance", "உரிமை மாற்றம்"]):
+            if any(k in nat for k in ["sale", "கிரைய", "கிைரய", "விற்பனை", "விற்பைன", "settlement", "செட்டில்மென்ட்", "ஏற்பாடு", "தான", "gift", "பாகப்பிரிவினை", "partition", "conveyance", "உரிமை மாற்றம்", "விடுதலை", "விடுதைல", "release"]):
                 claimant = e.get("claimants") or ""
                 if claimant:
                     clean_name = _clean_owner_name(claimant)
@@ -1022,11 +1042,34 @@ def analyze_property_extent_and_details(entries: List[Dict[str, Any]], full_text
     valid_extents = []
     compound_spans = []
 
-    # 1a. Grounds compound & abbreviated patterns: e.g. "4 கி 47 சதுரடி", "15 ground 405 sq.ft.", "1 கிரவுண்ட் 2378 சதுரடி", "6 கி"
-    p_ground = re.compile(r'(\d+(?:\.\d+)?)\s*(?:கி(?:ரவுண்ட்|ரவுண்டு)?|grounds?)\s*(?:(\d+(?:\.\d+)?)\s*(?:சதுரடி|sq\.?ft|sqft))?', re.I)
+    # 1a. Grounds compound & abbreviated patterns: e.g. "4 கி 47 சதுரடி", "15 ground 405 sq.ft.", "1 கிரவுண்ட் 2378 சதுரடி", "3.2 Grounds"
+    p_ground = re.compile(r'(\d+(?:\.\d+)?)\s*(?:கி\.?ர\.?|கிரவுண்ட்[ஸ்]?|கிரவுண்டு|grounds?)\s*(?:(\d+(?:\.\d+)?)\s*(?:சதுரடி|sq\.?ft|sqft))?', re.I)
+    p_ground_abbr = re.compile(r'(\d+(?:\.\d+)?)\s*கி\s+(\d+(?:\.\d+)?)\s*(?:சதுரடி|sq\.?ft|sqft)', re.I)
+    
     for m in p_ground.finditer(all_text):
-        compound_spans.append(m.span())
         g, sq = m.group(1), m.group(2)
+        try:
+            g_f = float(g)
+            if (g_f >= 100 or 1900 <= g_f <= 2099) and not sq:
+                continue
+        except Exception:
+            continue
+        compound_spans.append(m.span())
+        label = f"{g} Ground" if float(g) == 1 else f"{g} Grounds"
+        if sq:
+            label += f" {sq} Sq.Ft"
+        if label not in valid_extents:
+            valid_extents.append(label)
+
+    for m in p_ground_abbr.finditer(all_text):
+        g, sq = m.group(1), m.group(2)
+        try:
+            g_f = float(g)
+            if g_f >= 100 or 1900 <= g_f <= 2099:
+                continue
+        except Exception:
+            continue
+        compound_spans.append(m.span())
         label = f"{g} Ground" if float(g) == 1 else f"{g} Grounds"
         if sq:
             label += f" {sq} Sq.Ft"
@@ -1443,7 +1486,7 @@ class ECExtractor:
         current: Optional[ECEntry] = None
         capturing_remarks = False
 
-        for page in pdf.pages:
+        for page_idx, page in enumerate(pdf.pages):
             tables = page.extract_tables()
             for table in tables:
                 for row in table:
@@ -1511,6 +1554,7 @@ class ECExtractor:
                             executants=_clean_party_cell(raw_exec),
                             claimants=_clean_party_cell(raw_claim),
                             vol_page=_clean(row[6]),
+                            page_index=page_idx,
                         )
                         current_sched = None
                         capturing_remarks = False
@@ -1701,7 +1745,7 @@ class ECExtractor:
             reg_d = _standardize_date(dates[2]) if len(dates) > 2 else exec_d
 
             # 2. Split chunk into Sections
-            fin_split = re.search(r'(?:Consideration\s*Value|கைமாற்றுத்\s*தொகை|கைமாற்றுத்\s*தொகை)', chunk_text, re.I)
+            fin_split = re.search(r'(?:Consideration(?:\s*Value)?|Value\s*Rs\.?|கிரையத்\s*தொகை|கிரையத்\s*தொகை|கைமாற்றுத்\s*தொகை|கைமாற்றுத்\s*தொகை|செலுத்திய\s*தொகை|செலுத்திய\s*தொகை)', chunk_text, re.I)
             fin_start_pos = fin_split.start() if fin_split else len(chunk_text)
 
             last_date_pos = 0
@@ -1746,18 +1790,39 @@ class ECExtractor:
             claim_raw = re.sub(r'[\r\n\s]+-\s*$', '', claim_raw).strip()
             claim_raw = re.sub(r'[\r\n\s]+\d{3,4},\s*\d{2,3}\s*$', '', claim_raw).strip()
 
+            # Detect if consideration bled into executant or claimant
+            bleed_cons_found = ""
+            for raw_chunk_cand in [exec_raw, claim_raw, parties_block]:
+                m_cand = re.search(r'(?:Value\s*Rs\.?|Consideration(?:\s*Value)?[:\s]*|கிரையத்\s*தொகை[:\s]*)\s*([0-9,]+(?:\.[0-9]{2})?(?:/-)?)', raw_chunk_cand, re.I)
+                if m_cand and not bleed_cons_found:
+                    bleed_cons_found = m_cand.group(1).strip()
+
             def _clean_party_for_ec_entry(raw_p: str) -> str:
                 if not raw_p:
+                    return "-"
+                # If party text is pure consideration line e.g. "Value Rs.1,75,000/-.", ignore it
+                if re.match(r'^(?:Value\s*Rs\.?|Consideration|கைமாற்றுத்|கிரையத்\s*தொகை|ரூ\.?|Rs\.?)\s*[:\s]*[\d,]+', raw_p.strip(), re.I):
                     return "-"
                 p_lines = [l.strip() for l in raw_p.splitlines() if l.strip()]
                 p_out = []
                 for pl in p_lines:
+                    if re.match(r'^(?:Value\s*Rs\.?|Consideration|கைமாற்றுத்|கிரையத்\s*தொகை|ரூ\.?|Rs\.?)\s*[:\s]*[\d,]+', pl, re.I):
+                        continue
                     pl_clean = re.sub(r'^\d+[\.\s\-]+', '', pl).strip()
+                    # Strip property details that bled into party names:
+                    # e.g. "Site No: Second", "Floor No: First Floor", "Floor No: Third Floo", "Property Extent/...", ": 12/part"
+                    pl_clean = re.sub(r'\s*(?:Site\s*No|Floor\s*No|Flat\s*No|Door\s*No|Plot\s*No|S\.?No|Survey\s*No|Property\s*Extent|தள\s*எண்|அடுக்குமாடிக்?\s*குடியிருப்பு|மனை\s*எண்|புல\s*எண்)[^,;\n]*', '', pl_clean, flags=re.I).strip()
+                    pl_clean = re.sub(r'\s*:\s*\d+[\w\/\-_]*\b', '', pl_clean).strip()
+                    pl_clean = re.sub(r'\s*,?\s*\b\d{1,6}/\d{4}(?:\s*,\s*\d{1,6}/\d{4})*\b', '', pl_clean).strip()
                     m_en = re.search(r'\(([A-Za-z0-9\.\s&/,\'-]+)\)', pl_clean)
                     if m_en and not any(k in m_en.group(1).lower() for k in ["tamil", "lessor", "lessee", "poa"]):
                         p_out.append(m_en.group(1).strip())
                     elif "ஸ்டேட் பேங்க் ஆப் இந்தியா" in pl_clean:
                         p_out.append("State Bank of India")
+                    elif "கார்ப்பரேஷன் பாங்க்" in pl_clean or "கார்ப்பேரஷன்" in pl_clean:
+                        p_out.append("Corporation Bank")
+                    elif "இந்தியன் வங்கி" in pl_clean:
+                        p_out.append("Indian Bank")
                     elif "புகழேந்தி" in pl_clean:
                         p_out.append("M. Pugazhendhi")
                     elif "குப்பராஜ்" in pl_clean:
@@ -1765,7 +1830,10 @@ class ECExtractor:
                     elif "ஜெயலட்சுமி" in pl_clean:
                         p_out.append("V. Jayalakshmi")
                     else:
-                        p_out.append(pl_clean)
+                        if pl_clean and pl_clean not in ["-", "*", ":"]:
+                            p_out.append(pl_clean)
+                if not p_out:
+                    return "-"
                 if len(p_out) == 1:
                     return p_out[0]
                 return ", ".join(p_out)
@@ -1775,9 +1843,15 @@ class ECExtractor:
 
             # 3. Financials
             cons_val = ""
-            m_cons = re.search(r'(?:கைமாற்றுத்\s*தொகை|கைமாற்றுத்\s*தொகை|Consideration\s*Value)[^:\r\n]*[:\s]+([^\r\n]+)', chunk_text, re.I)
+            m_cons = re.search(r'(?:கைமாற்றுத்\s*தொகை|கைமாற்றுத்\s*தொகை|Consideration\s*(?:Value)?|கிரையத்\s*தொகை|கிரையத்\s*தொகை)[^:\r\n]*[:\s]+([^\r\n]+)', chunk_text, re.I)
             if m_cons:
                 cons_val = _clean(m_cons.group(1))
+            elif bleed_cons_found:
+                cons_val = bleed_cons_found
+            else:
+                m_val_rs = re.search(r'(?:Value\s*Rs\.?|Rs\.?|ரூ\.?)\s*([0-9,]+(?:\.[0-9]{2})?(?:/-)?)', chunk_text, re.I)
+                if m_val_rs:
+                    cons_val = m_val_rs.group(1).strip()
 
             mkt_val = ""
             m_mkt = re.search(r'(?:சந்தை\s*மதிப்பு|Market\s*Value)[^:\r\n]*[:\s]+([^\r\n]+)', chunk_text, re.I)
@@ -1971,6 +2045,7 @@ class ECExtractor:
                 "remarks": e.remarks or "",
                 "document_remarks": e.remarks or "",
                 "schedules": e.schedules or [],
+                "page_index": e.page_index,
                 "confidence": 0.98
             })
 
@@ -1993,9 +2068,21 @@ class ECExtractor:
             gap_summary = "Sequence verified: Serial numbers are continuous with zero gaps."
 
         # 4. Court Attachments
-        court_docs = [t for t in tx_list if any(k in t["nature"].lower() for k in ["court", "decree", "attachment", "தீர்ப்பு", "நீதிமன்ற"])]
+        court_docs = [
+            t for t in tx_list
+            if any(k in (
+                (t.get("nature") or "") + " " +
+                (t.get("remarks") or "") + " " +
+                (t.get("document_remarks") or "") + " " +
+                (t.get("executants") or "") + " " +
+                (t.get("claimants") or "")
+            ).lower() for k in [
+                "court", "decree", "attachment", "injunction", "stay", "lis pendens",
+                "தீர்ப்பு", "தீர்ப்பாணை", "நீதிமன்ற", "நீதிமன்றம்", "ஜப்தி", "தடை", "வழக்கு", "பற்று"
+            ])
+        ]
         if court_docs:
-            court_val = f"FLAG: {len(court_docs)} Court Attachment / Decrees found: " + ", ".join([f"Doc {d['doc_no']}" for d in court_docs])
+            court_val = f"FLAG: {len(court_docs)} Court Attachment / Decrees found: " + ", ".join([f"Doc {d.get('doc_no') or d.get('doc_no_year')}" for d in court_docs])
         else:
             court_val = f"No court attachments, decrees, or lis-pendens entries appear among the {len(tx_list)} registered documents in this search window."
 
@@ -2016,7 +2103,27 @@ class ECExtractor:
         # 30-Year Search Period summary
         years_covered = report.search_window_years or 0.0
         search_period_str = f"{report.search_period_from} to {report.search_period_to}".strip() if report.search_period_from else "-"
-        is_30_yr_compliant = (report.below_30yr_standard is False)
+        
+        # Smart fallback from transaction register if header search period is absent
+        if (not search_period_str or search_period_str == "-") and tx_list:
+            d_vals = []
+            for t in tx_list:
+                d = t.get("date") or t.get("registration_date") or t.get("execution_date")
+                if d and d != "-":
+                    d_vals.append(d)
+            if d_vals:
+                search_period_str = f"{d_vals[0]} to {d_vals[-1]}"
+                try:
+                    m_y1 = re.search(r'\b(19\d\d|20\d\d)\b', d_vals[0])
+                    m_y2 = re.search(r'\b(19\d\d|20\d\d)\b', d_vals[-1])
+                    if m_y1 and m_y2:
+                        y_start = int(m_y1.group(1))
+                        y_end = int(m_y2.group(1))
+                        years_covered = round(abs(y_end - y_start) + 1, 1)
+                except Exception:
+                    pass
+
+        is_30_yr_compliant = (years_covered >= 30.0) if years_covered > 0 else (report.below_30yr_standard is False)
 
         if is_30_yr_compliant:
             std_summary = f"Search period covers {years_covered} years ({search_period_str}). Meets the 30-year minimum title verification convention for Tamil Nadu."
@@ -2059,7 +2166,7 @@ class ECExtractor:
         fields["total_entries"] = {"value": str(len(tx_list)), "declared": report.total_entries_declared, "label": "Total Registered Entries", "confidence": 0.99}
         fields["encumbrance_status"] = {"value": f"Encumbered — {len(tx_list)} Registered Transactions Recorded" if len(tx_list) > 0 else "CLEAR (Nil Encumbrance)", "label": "Encumbrance Title Status", "confidence": 0.98}
         fields["mortgage_status"] = {"value": mortgage_status_val, "flags": mortgage_flags, "label": "Mortgage & Charge Status", "confidence": 0.96}
-        fields["court_attachments"] = {"value": court_val, "label": "Court Attachments & Decrees", "confidence": 0.97}
+        fields["court_attachments"] = {"value": court_val, "count": len(court_docs), "label": "Court Attachments & Decrees", "confidence": 0.97}
         fields["lease_status"] = {"value": lease_val, "label": "Registered Leases", "confidence": 0.97}
         fields["rectification_deeds"] = {"value": rect_val, "deeds": rect_docs, "label": "Rectification Deeds Check", "confidence": 0.97}
         fields["sr_no_gaps"] = {"value": gap_summary, "gaps": sr_gaps, "has_gaps": len(sr_gaps) > 0, "label": "Source Serial Number Continuity", "confidence": 0.99}
@@ -2138,6 +2245,7 @@ class ECExtractor:
         fields["court_attachments_key"] = {
             "value": court_val,
             "has_court": len(court_docs) > 0,
+            "count": len(court_docs),
             "label": "Court Attachments / Liens (நீதிமன்ற பற்று)",
             "confidence": 0.98
         }
