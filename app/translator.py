@@ -14,6 +14,7 @@ Examples:
 
 import re
 import logging
+from functools import lru_cache
 from typing import Optional, Tuple
 
 logger = logging.getLogger(__name__)
@@ -367,6 +368,7 @@ REAL_ESTATE_TERMS = {
     "அடுக்குமாடி": "Apartment / Flat", "flat": "அடுக்குமாடி குடியிருப்பு",
     "குடியிருப்பு": "Residential", "residential": "குடியிருப்பு",
     "கதவு": "Door", "door": "கதவு",
+    "ரயத்துவாரி மனை": "Ryotwari Residential Plot (House Site)", "ரயத்துவாரி": "Ryotwari", "ryotwari": "ரயத்துவாரி",
     "புதிய": "New", "new": "புதிய",
     "பழைய": "Old", "old": "பழைய",
     "பிளாக்": "Block", "block": "பிளாக்",
@@ -1415,6 +1417,7 @@ def format_bilingual_owner(raw_owner_str: str) -> str:
     return format_bilingual_entity(clean_str)
 
 
+@lru_cache(maxsize=16384)
 def translate_word_bilingual(word: str) -> str:
     """
     Translates a single word or token dynamically:

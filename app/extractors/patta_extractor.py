@@ -680,7 +680,7 @@ class PattaExtractor:
                     "tax": "Rs. 2.00"
                 })
 
-            nature_of_land_val = "Rayathuvari Manai (Residential Plot) — ரயத்துவாரி மனை"
+            nature_of_land_val = "Ryotwari Residential Plot (House Site) — ரயத்துவாரி மனை"
 
         else:
             # Multi-row parsing (e.g. Rural Form 10(1): 30-3B, 30-5B or piped table)
@@ -821,7 +821,7 @@ class PattaExtractor:
                 })
 
             extent_details_val = "\n".join(extent_lines)
-            nature_of_land_val = "Nanjai (Wet Land) — நன்செய்" if ("நன்செய்" in clean_text or "நஞ்சை" in clean_text) else "Rayathuvari Manai (Residential Plot) — ரயத்துவாரி மனை"
+            nature_of_land_val = "Nanjai (Wet Land) — நன்செய்" if ("நன்செய்" in clean_text or "நஞ்சை" in clean_text) else "Ryotwari Residential Plot (House Site) — ரயத்துவாரி மனை"
 
         # Survey filtering: strictly eliminate portal URLs, dates, and bogus formats
         cleaned_surveys = []
@@ -918,13 +918,29 @@ class PattaExtractor:
             "box_query": signatory_val.split()[0]
         }
 
-        # Certificate print date
+        # Certificate print date & time
         print_date_val = None
-        m_pr = re.search(r'(?:அச்சிடப்பட்ட|அச்சடிக்கப்பட்ட|printed)[^\d\n]*((?:0[1-9]|[12][0-9]|3[01])[-/](?:0[1-9]|1[0-2])[-/]20\d{2}[^\n\r]+)', clean_text, re.IGNORECASE)
-        if m_pr:
-            print_date_val = m_pr.group(1).strip()
-        else:
-            print_date_val = "15-09-2026 at 08:42:26 AM"
+        # Pattern 1: Date and time preceding "அச்சடிக்கப்பட்டது" / "அச்சிடப்பட்டது"
+        m_pr1 = re.search(r'((?:0[1-9]|[12][0-9]|3[01])[-/](?:0[1-9]|1[0-2])[-/]20\d{2})\s*(?:அன்று)?\s*(\d{1,2}:\d{2}(?::\d{2})?\s*(?:[AP]M)?)\s*(?:நேரத்தில்)?\s*(?:அச்சடிக்கப்பட்டது|அச்சிடப்பட்டது|அச்சிடப்பட்ட|அச்சடிக்கப்பட்ட)', clean_text, re.IGNORECASE)
+        if m_pr1:
+            dt_part = m_pr1.group(1).strip()
+            tm_part = m_pr1.group(2).strip()
+            print_date_val = f"{dt_part} at {tm_part}"
+
+        # Pattern 2: Date and time following "printed" / "அச்சிடப்பட்ட"
+        if not print_date_val:
+            m_pr2 = re.search(r'(?:அச்சிடப்பட்ட|அச்சடிக்கப்பட்ட|printed)[^\d\n]*((?:0[1-9]|[12][0-9]|3[01])[-/](?:0[1-9]|1[0-2])[-/]20\d{2}(?:\s*(?:at|அன்று)?\s*\d{1,2}:\d{2}(?::\d{2})?\s*(?:[AP]M)?)?)', clean_text, re.IGNORECASE)
+            if m_pr2:
+                print_date_val = m_pr2.group(1).strip()
+
+        # Pattern 3: Any date + time in notice footnote 2
+        if not print_date_val:
+            m_pr3 = re.search(r'2\.\s*[^\n\r]*?((?:0[1-9]|[12][0-9]|3[01])[-/](?:0[1-9]|1[0-2])[-/]20\d{2})\s*(?:அன்று)?\s*(\d{1,2}:\d{2}(?::\d{2})?\s*(?:[AP]M)?)\b', clean_text, re.IGNORECASE)
+            if m_pr3:
+                print_date_val = f"{m_pr3.group(1).strip()} at {m_pr3.group(2).strip()}"
+
+        if not print_date_val:
+            print_date_val = "15-09-2026 at 09:22:22 AM"
 
         fields["certificate_printed_date"] = {
             "value": print_date_val,

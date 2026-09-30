@@ -23,6 +23,25 @@ from reportlab.lib import colors
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
+import reportlab.platypus.paragraph as _rl_para
+
+# ReportLab's paragraph engine counts words via `nText = w[1][1]`, which is empty `''` for <img> tags.
+# When a line starts with images (such as rasterized Tamil runs), ReportLab thinks word count n == 0.
+# Because n == 0, ReportLab's line breaking logic `endLine = (newWidth > limWidth and n > 0)` will
+# NEVER break before the first textual word on that line, forcing the text word onto the same line
+# even if it overflows the cell width and collides with adjacent table columns.
+# We patch _getFragWords to assign an invisible zero-width space `\u200b` to image words so ReportLab
+# counts each image as a word token (n > 0), allowing clean line breaking without cell overflow.
+_orig_getFragWords = _rl_para._getFragWords
+
+def _patched_getFragWords(frags, maxWidth=None):
+    R = _orig_getFragWords(frags, maxWidth=maxWidth)
+    for w in R:
+        if len(w) >= 2 and hasattr(w[1][0], 'cbDefn') and w[1][1] == '':
+            w[1] = (w[1][0], '\u200b')
+    return R
+
+_rl_para._getFragWords = _patched_getFragWords
 
 # Pillow is used for one job only: shaping Tamil text runs into correctly
 # formed glyph images (see _tamil_run_to_img_tag below). This requires
@@ -182,6 +201,64 @@ _TAMIL_RANGE = range(0x0B80, 0x0C00)
 
 def _has_tamil(s: str) -> bool:
     return any(ord(c) in _TAMIL_RANGE for c in s)
+
+
+def _pick_lang_variant(s: str, lang: str = "en") -> str:
+    """
+    Fields like 'Chengalpattu (செங்கல்பட்டு)' or 'விற்பவர் விவரம் (Vendor Details)'
+    carry both English and Tamil. Pick the right side for the requested report
+    language:
+      - 'en': Latin-script side (or stripped Tamil).
+      - 'ta': Tamil-script side.
+      - 'both': the original string untouched (already bilingual).
+    """
+    s = str(s or "").strip()
+    if not s:
+        return s
+    lang = (lang or "en").lower()
+    if lang == "both":
+        return s
+
+    # 1. Separators: ' — ', ' • '
+    for sep in (' — ', ' • '):
+        if sep in s:
+            parts = [p.strip() for p in s.split(sep) if p.strip()]
+            if len(parts) == 2:
+                p1_ta, p2_ta = _has_tamil(parts[0]), _has_tamil(parts[1])
+                if p1_ta != p2_ta:
+                    if lang == "ta":
+                        return parts[0] if p1_ta else parts[1]
+                    else:
+                        return parts[1] if p1_ta else parts[0]
+
+    # 2. Trailing Tamil in parens: 'English (Extra Info) (Tamil)'
+    m_trail = re.search(r'\s*\(([\u0B80-\u0BFF\s.,\-/]+)\)\s*$', s)
+    if m_trail:
+        tamil_part = m_trail.group(1).strip()
+        eng_part = s[:m_trail.start()].strip()
+        if eng_part and not _has_tamil(eng_part):
+            if lang == "ta":
+                return tamil_part
+            else:
+                return eng_part
+
+    # 3. Simple 'A (B)'
+    m = re.match(r'^([^()]*?)\s*\(([^()]*)\)\s*$', s)
+    if m and m.group(1).strip():
+        a, b = m.group(1).strip(), m.group(2).strip()
+        a_has_ta, b_has_ta = _has_tamil(a), _has_tamil(b)
+        if lang == "ta":
+            if b_has_ta:
+                return b
+            if a_has_ta:
+                return a
+            return s
+        # lang == "en"
+        if a_has_ta and not b_has_ta:
+            return b
+        return a
+
+    return s
 
 
 # ---------------------------------------------------------------------------
@@ -552,20 +629,19 @@ def _sanitize_bilingual_cell(text: str) -> str:
     return s or "-"
 
 
-def _format_bilingual_party_list(bilingual: Any, raw_fallback: Any = None) -> str:
+def _format_bilingual_party_list(bilingual: Any, raw_fallback: Any = None, lang: str = "both") -> str:
     """
-    Renders a list of translate_and_verify()-shaped records (see
-    app.deep_translate_verifier.bilingual_party_list) as:
-        "English Name (Tamil Name) (Role); English Name (Tamil Name) (Role); ..."
-    -- the same "English (Tamil)" convention used everywhere else in this
-    report. Each record's `english`/`tamil` values are already the verified,
-    correctly-paired names (parsed straight from a "Name (Name)" pair in the
-    source OCR text where one was present), so no further translation is
-    applied here. Falls back to the raw OCR party string if no bilingual
-    records are available (e.g. this extractor didn't produce them).
+    Renders a list of translate_and_verify()-shaped records.
+    When lang == 'en', formats English names only (clean & compact).
+    When lang == 'ta', formats Tamil names only.
+    When lang == 'both', formats 'English (Tamil)' bilingual pairs.
     """
+    lang = (lang or "both").lower()
     if not bilingual or not isinstance(bilingual, list):
-        return str(raw_fallback).strip() if raw_fallback else "-"
+        raw = str(raw_fallback).strip() if raw_fallback else "-"
+        if lang in ("en", "ta"):
+            return _pick_lang_variant(raw, lang)
+        return raw
 
     pieces: List[str] = []
     for rec in bilingual:
@@ -573,11 +649,18 @@ def _format_bilingual_party_list(bilingual: Any, raw_fallback: Any = None) -> st
             continue
         eng = (rec.get("english") or rec.get("original") or "").strip()
         tam = (rec.get("tamil") or "").strip()
-        if eng and tam and eng.lower() != tam.lower():
-            piece = f"{eng} ({tam})"
-        else:
-            piece = eng or tam
         role = rec.get("role_english")
+
+        if lang == "en":
+            piece = eng or tam
+        elif lang == "ta":
+            piece = tam or eng
+        else:
+            if eng and tam and eng.lower() != tam.lower():
+                piece = f"{eng} ({tam})"
+            else:
+                piece = eng or tam
+
         if role and piece:
             piece = f"{piece} ({role})"
         if piece:
@@ -699,6 +782,19 @@ def generate_ec_extracted_report_pdf(ec_data: dict, lang: str = "en") -> bytes:
         return _tamilify_for_paragraph(
             _sanitize_text_for_pdf(text, default, lang=lang), size, bold=bold
         )
+
+    def B(text, default: str = "-", size: float = 6.8, bold: bool = False) -> str:
+        s = str(text).strip() if text is not None else ""
+        if not s:
+            s = default
+        s = re.sub(r'\s*\n\s*\(\s*', ' (', s)
+        s = re.sub(r'\s*\(\s*\n\s*', ' (', s)
+        if lang in ("en", "ta"):
+            s = _pick_lang_variant(s, lang)
+            return _tamilify_for_paragraph(
+                _sanitize_text_for_pdf(s, default=default, lang=lang), size, bold=bold
+            )
+        return _tamilify_for_paragraph(_sanitize_bilingual_cell(s), size, bold=bold)
 
     # Landscape A4 margins 28pt (width 841.89pt - 56pt = 785.89pt printable)
     doc = SimpleDocTemplate(
@@ -1091,42 +1187,6 @@ def generate_ec_extracted_report_pdf(ec_data: dict, lang: str = "en") -> bytes:
     return buffer.getvalue()
 
 
-def _pick_lang_variant(s: str, lang: str = "en") -> str:
-    """
-    Fields like "Chengalpattu (செங்கல்பட்டு)" already carry both an English
-    and a Tamil name, wrapped as "primary (secondary)". Pick the right side
-    for the requested report language, regardless of which side happens to
-    hold the Tamil script:
-      - "en":   the Latin-script side (legacy behaviour: text before the "(").
-      - "ta":   the Tamil-script side, if one exists.
-      - "both": the original string untouched (already bilingual).
-    """
-    s = str(s or "").strip()
-    if not s:
-        return s
-    lang = (lang or "en").lower()
-    if lang == "both":
-        return s
-    # Same tightened shape as _sanitize_text_for_pdf above: only a single,
-    # unambiguous "Name (Name)" pair qualifies -- not any string that merely
-    # contains parentheses somewhere inside a longer sentence.
-    m = re.match(r'^([^()]*?)\s*\(([^()]*)\)\s*$', s)
-    if not m or not m.group(1).strip():
-        return s
-    a, b = m.group(1).strip(), m.group(2).strip()
-    a_has_ta, b_has_ta = _has_tamil(a), _has_tamil(b)
-    if lang == "ta":
-        if b_has_ta:
-            return b
-        if a_has_ta:
-            return a
-        return s  # no Tamil side available -- best effort, keep as-is
-    # lang == "en"
-    if a_has_ta and not b_has_ta:
-        return b
-    return a
-
-
 def _prepare_ec_report_data(data: dict, fields: dict, ext: dict, lang: str = "en") -> dict:
     """Helper to extract and format EC fields for the report generator."""
     def _val(k, default=""):
@@ -1286,21 +1346,23 @@ def generate_ocr_pdf_report(data: Dict[str, Any], lang: str = "en") -> bytes:
     if lang in ("ta", "both") and not _tamil_font_available():
         lang = "en"
 
-    def S(text, default: str = "-", size: float = 9, bold: bool = False) -> str:
-        # 9pt matches meta_label_style / meta_val_style, which is where the
-        # large majority of S(...) values in this report end up; the title
-        # (16pt) is the one call site that needs a different size.
+    def S(text, default: str = "-", size: float = 8.5, bold: bool = False) -> str:
+        s = _pick_lang_variant(text, lang)
         return _tamilify_for_paragraph(
-            _sanitize_text_for_pdf(text, default, lang=lang), size, bold=bold
+            _sanitize_text_for_pdf(s, default, lang=lang), size, bold=bold
         )
 
-    def B(text, default: str = "-", size: float = 9, bold: bool = False) -> str:
+    def B(text, default: str = "-", size: float = 8.5, bold: bool = False) -> str:
         s = str(text).strip() if text is not None else ""
         if not s:
             s = default
-        # Clean up stray linebreaks before opening parens in labels e.g. "SRO Office\n( சார்பதிவாளர்...)" -> "SRO Office (சார்பதிவாளர்...)"
         s = re.sub(r'\s*\n\s*\(\s*', ' (', s)
         s = re.sub(r'\s*\(\s*\n\s*', ' (', s)
+        if lang in ("en", "ta"):
+            s = _pick_lang_variant(s, lang)
+            return _tamilify_for_paragraph(
+                _sanitize_text_for_pdf(s, default=default, lang=lang), size, bold=bold
+            )
         return _tamilify_for_paragraph(_sanitize_bilingual_cell(s), size, bold=bold)
 
     elements = []
@@ -1319,7 +1381,12 @@ def generate_ocr_pdf_report(data: Dict[str, Any], lang: str = "en") -> bytes:
         doc_type_disp = (doc_type or "Document").replace("_", " ").title()
         cat_subtitle = f"Document Category: {doc_type_disp} • ஆவண வகை: {doc_type_disp}"
 
-    elements.append(Paragraph("REAL ESTATE DOCUMENT OCR & INTELLIGENCE REPORT", title_style))
+    if lang == "ta":
+        report_title = "ரியல் எஸ்டேட் ஆவண OCR & பகுப்பாய்வு அறிக்கை"
+    else:
+        report_title = "REAL ESTATE DOCUMENT OCR & INTELLIGENCE REPORT"
+
+    elements.append(Paragraph(report_title, title_style))
     elements.append(Paragraph(B(cat_subtitle, size=9.5), subtitle_style))
 
     # Top Document Info Table (2 rows x 4 cols)
@@ -1327,22 +1394,56 @@ def generate_ocr_pdf_report(data: Dict[str, Any], lang: str = "en") -> bytes:
     raw_pages = data.get("page_count") or (len(ext.get("pages", [])) if ext.get("pages") else 2)
     total_pages_str = f"{raw_pages}"
     processed_date_str = datetime.datetime.now().strftime("%d %B %Y, %I:%M %p")
-    status_html = "<font color='#16a34a'><b>High Confidence (98%)</b></font>"
 
-    info_rows = [
-        [
-            Paragraph("<b>DOCUMENT FILE</b>", meta_label_style),
-            Paragraph("<b>TOTAL PAGES</b>", meta_label_style),
-            Paragraph("<b>PROCESSED DATE</b>", meta_label_style),
-            Paragraph("<b>STATUS</b>", meta_label_style),
-        ],
-        [
-            Paragraph(B(filename_str), meta_val_style),
-            Paragraph(total_pages_str, meta_val_style),
-            Paragraph(processed_date_str, meta_val_style),
-            Paragraph(status_html, meta_val_style),
+    if lang == "ta":
+        status_html = "<font color='#16a34a'><b>உயர் துல்லியம் (98%)</b></font>"
+        info_rows = [
+            [
+                Paragraph("<b>ஆவணக் கோப்பு</b>", meta_label_style),
+                Paragraph("<b>மொத்தப் பக்கங்கள்</b>", meta_label_style),
+                Paragraph("<b>செயலாக்கப்பட்ட தேதி</b>", meta_label_style),
+                Paragraph("<b>நிலை</b>", meta_label_style),
+            ],
+            [
+                Paragraph(B(filename_str), meta_val_style),
+                Paragraph(total_pages_str, meta_val_style),
+                Paragraph(processed_date_str, meta_val_style),
+                Paragraph(status_html, meta_val_style),
+            ]
         ]
-    ]
+    elif lang == "both":
+        status_html = "<font color='#16a34a'><b>High Confidence (98%)</b></font>"
+        info_rows = [
+            [
+                Paragraph("<b>DOCUMENT (ஆவணம்)</b>", meta_label_style),
+                Paragraph("<b>PAGES (பக்கங்கள்)</b>", meta_label_style),
+                Paragraph("<b>DATE (தேதி)</b>", meta_label_style),
+                Paragraph("<b>STATUS (நிலை)</b>", meta_label_style),
+            ],
+            [
+                Paragraph(B(filename_str), meta_val_style),
+                Paragraph(total_pages_str, meta_val_style),
+                Paragraph(processed_date_str, meta_val_style),
+                Paragraph(status_html, meta_val_style),
+            ]
+        ]
+    else:
+        status_html = "<font color='#16a34a'><b>High Confidence (98%)</b></font>"
+        info_rows = [
+            [
+                Paragraph("<b>DOCUMENT FILE</b>", meta_label_style),
+                Paragraph("<b>TOTAL PAGES</b>", meta_label_style),
+                Paragraph("<b>PROCESSED DATE</b>", meta_label_style),
+                Paragraph("<b>STATUS</b>", meta_label_style),
+            ],
+            [
+                Paragraph(B(filename_str), meta_val_style),
+                Paragraph(total_pages_str, meta_val_style),
+                Paragraph(processed_date_str, meta_val_style),
+                Paragraph(status_html, meta_val_style),
+            ]
+        ]
+
     info_table = Table(info_rows, colWidths=[170, 80, 140, 133])
     info_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
@@ -1372,13 +1473,47 @@ def generate_ocr_pdf_report(data: Dict[str, Any], lang: str = "en") -> bytes:
     is_sale_deed = doc_type_lower in ("sale_deed", "sale deed") or "sale" in doc_type_lower
 
     # 1. Extracted Key Legal Fields
-    elements.append(Paragraph("1. Extracted Key Legal Fields", section_header_style))
+    if lang == "ta":
+        elements.append(Paragraph("1. பிரித்தெடுக்கப்பட்ட முக்கிய சட்டப் புலங்கள்", section_header_style))
+        th_key = "<b>முக்கிய புலம்</b>"
+        th_val = "<b>பிரித்தெடுக்கப்பட்ட விவரம்</b>"
+        th_conf = "<b>நம்பகத்தன்மை</b>"
+    elif lang == "both":
+        elements.append(Paragraph("1. Extracted Key Legal Fields • முக்கிய சட்டப் புலங்கள்", section_header_style))
+        th_key = "<b>Key Field (முக்கிய புலம்)</b>"
+        th_val = "<b>Extracted Value & Schedule Breakdown</b>"
+        th_conf = "<b>Confidence (நம்பகத்தன்மை)</b>"
+    else:
+        elements.append(Paragraph("1. Extracted Key Legal Fields", section_header_style))
+        th_key = "<b>Key Field</b>"
+        th_val = "<b>Extracted Value & Schedule Breakdown</b>"
+        th_conf = "<b>Confidence</b>"
 
     rows = [[
-        Paragraph("<b>Key Field</b>", meta_label_style),
-        Paragraph("<b>Extracted Value & Schedule Breakdown</b>", meta_label_style),
-        Paragraph("<b>Confidence</b>", meta_label_style)
+        Paragraph(th_key, meta_label_style),
+        Paragraph(th_val, meta_label_style),
+        Paragraph(th_conf, meta_label_style)
     ]]
+
+    def format_row_label(label: str) -> str:
+        s = str(label or "").strip()
+        if not s:
+            return "-"
+        if lang in ("en", "ta"):
+            s_variant = _pick_lang_variant(s, lang)
+            return _tamilify_for_paragraph(
+                _sanitize_text_for_pdf(s_variant, default="-", lang=lang), 8.5, bold=True
+            )
+        # lang == "both":
+        # Check if label has a bilingual pattern like "Tamil (English)" or "English (Tamil)"
+        m = re.match(r'^([^()]*?)\s*\(([^()]*)\)\s*$', s)
+        if m:
+            p1, p2 = m.group(1).strip(), m.group(2).strip()
+            if p1 and p2 and _has_tamil(p1) != _has_tamil(p2):
+                p1_html = _tamilify_for_paragraph(p1, 8.0, bold=True)
+                p2_html = _tamilify_for_paragraph(p2, 7.0, bold=False)
+                return f"{p1_html}<br/><font size=\"7\" color=\"#475569\">({p2_html})</font>"
+        return _tamilify_for_paragraph(_sanitize_bilingual_cell(s), 8.5, bold=True)
 
     for k, v in fields.items():
         if k in _STRUCTURAL_FIELD_KEYS or isinstance(v, list):
@@ -1398,22 +1533,29 @@ def generate_ocr_pdf_report(data: Dict[str, Any], lang: str = "en") -> bytes:
         conf_pct = round(conf_raw * 100) if isinstance(conf_raw, (int, float)) and conf_raw <= 1 else round(conf_raw)
         conf_str = f"{conf_pct}%"
 
+        # Clean redundant label prefix from value if present
+        if k == "previous_doc_reference" or "mother deed" in label_str.lower():
+            val_str = re.sub(r'^(?:Mother\s+Deed|Parent\s+Doc(?:ument)?)\s*:\s*', '', val_str, flags=re.I).strip()
+
         if len(val_str) > 500:
             val_str = val_str[:500] + " ... (continued in detailed schedule / registry)"
 
         rows.append([
-            Paragraph(B(label_str), meta_label_style),
+            Paragraph(format_row_label(label_str), meta_label_style),
             Paragraph(B(val_str), meta_val_style),
             Paragraph(conf_str, meta_val_style)
         ])
 
-    table = Table(rows, colWidths=[155, 310, 58], repeatRows=1)
+    table = Table(rows, colWidths=[175, 295, 53], repeatRows=1)
+
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING', (0, 0), (-1, -1), 5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+        ('LEFTPADDING', (0, 0), (-1, -1), 5),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 5),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
         ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f8fafc')])
     ]))
@@ -1426,16 +1568,40 @@ def generate_ocr_pdf_report(data: Dict[str, Any], lang: str = "en") -> bytes:
 
     if is_patta and isinstance(cadastral_schedule, list) and cadastral_schedule:
         elements.append(PageBreak())
-        elements.append(Paragraph("2. Cadastral Survey Schedule & Area Normalization", section_header_style))
-        cad_rows = [[
-            Paragraph("<b>Sl</b>", meta_label_style),
-            Paragraph("<b>Survey No</b>", meta_label_style),
-            Paragraph("<b>Land Type</b>", meta_label_style),
-            Paragraph("<b>Extent (Ha)</b>", meta_label_style),
-            Paragraph("<b>Sq. Meters</b>", meta_label_style),
-            Paragraph("<b>Sq. Feet</b>", meta_label_style),
-            Paragraph("<b>Tax (தீர்வை)</b>", meta_label_style),
-        ]]
+        if lang == "ta":
+            elements.append(Paragraph("2. கிராமப் புல வரைபடம் & பரப்பளவு விவரம்", section_header_style))
+            cad_rows = [[
+                Paragraph("<b>வரிசை</b>", meta_label_style),
+                Paragraph("<b>புல எண்</b>", meta_label_style),
+                Paragraph("<b>நில வகை</b>", meta_label_style),
+                Paragraph("<b>பரப்பளவு (ஹெக்)</b>", meta_label_style),
+                Paragraph("<b>ச.மீட்டர்</b>", meta_label_style),
+                Paragraph("<b>ச.அடி</b>", meta_label_style),
+                Paragraph("<b>தீர்வை (ரூ)</b>", meta_label_style),
+            ]]
+        elif lang == "both":
+            elements.append(Paragraph("2. Cadastral Survey Schedule & Area Normalization", section_header_style))
+            cad_rows = [[
+                Paragraph("<b>Sl (வரிசை)</b>", meta_label_style),
+                Paragraph("<b>Survey No (புல எண்)</b>", meta_label_style),
+                Paragraph("<b>Land Type (நில வகை)</b>", meta_label_style),
+                Paragraph("<b>Extent (பரப்பு)</b>", meta_label_style),
+                Paragraph("<b>Sq. Meters (ச.மீ)</b>", meta_label_style),
+                Paragraph("<b>Sq. Feet (ச.அடி)</b>", meta_label_style),
+                Paragraph("<b>Tax (தீர்வை)</b>", meta_label_style),
+            ]]
+        else:
+            elements.append(Paragraph("2. Cadastral Survey Schedule & Area Normalization", section_header_style))
+            cad_rows = [[
+                Paragraph("<b>Sl</b>", meta_label_style),
+                Paragraph("<b>Survey No</b>", meta_label_style),
+                Paragraph("<b>Land Type</b>", meta_label_style),
+                Paragraph("<b>Extent (Ha)</b>", meta_label_style),
+                Paragraph("<b>Sq. Meters</b>", meta_label_style),
+                Paragraph("<b>Sq. Feet</b>", meta_label_style),
+                Paragraph("<b>Tax (INR)</b>", meta_label_style),
+            ]]
+
         for item in cadastral_schedule:
             if isinstance(item, dict):
                 s_val = str(item.get("survey_no") or item.get("survey_number") or "-")
@@ -1467,25 +1633,41 @@ def generate_ocr_pdf_report(data: Dict[str, Any], lang: str = "en") -> bytes:
         elements.append(Spacer(1, 14))
     sec_counter = 3 if (is_patta and cadastral_schedule) else 2
 
-    # Registered Transactions (EC party table) — uses the pre-verified
-    # bilingual Executant/Claimant records (deep_translate_verifier) instead
-    # of re-transliterating the raw OCR string, so names keep the actual
-    # English spelling that was present in the source bilingual PDF.
+    # Registered Transactions (EC party table)
     tx_field = fields.get("transactions_table") or {}
     tx_list = tx_field.get("value") if isinstance(tx_field, dict) else tx_field
     if isinstance(tx_list, list) and tx_list:
         elements.append(PageBreak())
-        elements.append(Paragraph(f"{sec_counter}. Registered Transactions", section_header_style))
-        sec_counter += 1
-
-        tx_rows = [[
-            Paragraph("<b>Sr.</b>", meta_label_style),
-            Paragraph("<b>Doc No/Year</b>", meta_label_style),
-            Paragraph("<b>Date</b>", meta_label_style),
-            Paragraph("<b>Nature</b>", meta_label_style),
-            Paragraph("<b>Executants</b>", meta_label_style),
-            Paragraph("<b>Claimants</b>", meta_label_style),
-        ]]
+        if lang == "ta":
+            elements.append(Paragraph(f"{sec_counter}. பதிவு செய்யப்பட்ட ஆவணப் பரிவர்த்தனைகள்", section_header_style))
+            tx_rows = [[
+                Paragraph("<b>வரிசை</b>", meta_label_style),
+                Paragraph("<b>ஆவண எண்/ஆண்டு</b>", meta_label_style),
+                Paragraph("<b>தேதி</b>", meta_label_style),
+                Paragraph("<b>தன்மை</b>", meta_label_style),
+                Paragraph("<b>எழுதிக்கொடுத்தவர்</b>", meta_label_style),
+                Paragraph("<b>எழுதிவாங்கியவர்</b>", meta_label_style),
+            ]]
+        elif lang == "both":
+            elements.append(Paragraph(f"{sec_counter}. Registered Transactions • பதிவுப் பரிவர்த்தனைகள்", section_header_style))
+            tx_rows = [[
+                Paragraph("<b>Sr (வரிசை)</b>", meta_label_style),
+                Paragraph("<b>Doc No/Year (ஆவண எண்)</b>", meta_label_style),
+                Paragraph("<b>Date (தேதி)</b>", meta_label_style),
+                Paragraph("<b>Nature (தன்மை)</b>", meta_label_style),
+                Paragraph("<b>Executants (எழுதிக்கொடுத்தவர்)</b>", meta_label_style),
+                Paragraph("<b>Claimants (எழுதிவாங்கியவர்)</b>", meta_label_style),
+            ]]
+        else:
+            elements.append(Paragraph(f"{sec_counter}. Registered Transactions", section_header_style))
+            tx_rows = [[
+                Paragraph("<b>Sr.</b>", meta_label_style),
+                Paragraph("<b>Doc No/Year</b>", meta_label_style),
+                Paragraph("<b>Date</b>", meta_label_style),
+                Paragraph("<b>Nature</b>", meta_label_style),
+                Paragraph("<b>Executants</b>", meta_label_style),
+                Paragraph("<b>Claimants</b>", meta_label_style),
+            ]]
 
         tx_val_style = ParagraphStyle(
             'TxVal', parent=meta_val_style, fontSize=8, leading=12.5
@@ -1493,10 +1675,10 @@ def generate_ocr_pdf_report(data: Dict[str, Any], lang: str = "en") -> bytes:
 
         for i, t in enumerate(tx_list, start=1):
             execs_str = _format_bilingual_party_list(
-                t.get("executants_bilingual"), t.get("executants")
+                t.get("executants_bilingual"), t.get("executants"), lang=lang
             )
             claims_str = _format_bilingual_party_list(
-                t.get("claimants_bilingual"), t.get("claimants")
+                t.get("claimants_bilingual"), t.get("claimants"), lang=lang
             )
             if len(execs_str) > 300:
                 execs_str = execs_str[:300] + "..."

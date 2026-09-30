@@ -925,6 +925,43 @@ body {
     position: absolute;
     inset: 0;
     pointer-events: auto;
+    display: none; /* Boxes OFF by default */
+}
+
+/* Field Hover Tooltip inside canvas box - hidden by default, visible on hover/active */
+.field-val-inside {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 0;
+    background: rgba(15, 23, 42, 0.96);
+    color: #f8fafc;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    line-height: 1.35;
+    max-width: 280px;
+    min-width: 140px;
+    white-space: normal;
+    z-index: 120;
+    pointer-events: none;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(4px);
+}
+
+.field-val-inside .field-hover-title {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #93c5fd;
+    margin-bottom: 2px;
+}
+
+.field-canvas-box:hover .field-val-inside,
+.field-canvas-box.active-field .field-val-inside {
+    display: block;
 }
 
 /* ==========================================================================

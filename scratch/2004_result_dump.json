@@ -1,0 +1,222 @@
+{
+  "document_type_id": "sale_deed",
+  "document_type_name": "Sale deed / title deed",
+  "tamil_name": "கிரையப் பத்திரம் / தாய் பத்திரம்",
+  "category_info": {
+    "id": "sale_deed",
+    "name": "Sale deed / title deed",
+    "tamil_name": "கிரையப் பத்திரம் / தாய் பத்திரம்",
+    "icon": "file-text",
+    "color": "emerald",
+    "description": "Vendor & Purchaser details, History/Previous owner, Schedule of property (Land, Land+Building, Apartment UDS), Boundary, and SRO details.",
+    "key_fields": [
+      "Present Owner (Document number, POA, Agent)",
+      "Previous Owner (Document number, POA, Agent)",
+      "Survey Number / Village / Taluk / District",
+      "Extent (Land) / Total Parent Site Area / Building (UDS & Built-up area)",
+      "Flat Number and Floor / Type of land",
+      "Boundaries",
+      "SRO Details"
+    ]
+  },
+  "fields": {
+    "registration_date": {
+      "value": "21-01-2004",
+      "confidence": 0.95,
+      "label": "பதிவு நாள் (Registration Date)",
+      "box_query": "21-01-2004",
+      "bilingual": {
+        "english": "21-01-2004",
+        "tamil": "21-01-2004"
+      }
+    },
+    "vendor_details": {
+      "value": "Mrs. RENUKA ANURADHAN, W/o. Anuradhan",
+      "confidence": 0.95,
+      "label": "விற்பவர் விவரம் (Vendor / Executant Details)",
+      "box_query": "Mrs. RENUKA ANURADHAN",
+      "bilingual": {
+        "english": "Mrs. RENUKA ANURADHAN, W/o. Anuradhan",
+        "tamil": "ம்ர்ஸ் ரெநுகா அநுரதன் வ்/ஒ அநுரதன்"
+      }
+    },
+    "purchaser_details": {
+      "value": "Mr. R. MAHALINGAM, S/o. Sri S. Raju",
+      "confidence": 0.95,
+      "label": "வாங்குபவர் விவரம் (Purchaser / Claimant Details)",
+      "box_query": "Mr. R. MAHALINGAM",
+      "bilingual": {
+        "english": "Mr. R. MAHALINGAM, S/o. Sri S. Raju",
+        "tamil": "ம்ர் ர் மஹலிஙம் ஸ்/ஒ ஸ்ரி ஸ் ரஜு"
+      }
+    },
+    "history_previous_owner": {
+      "value": "1) A.D.Balakrishnan, 2) D.B.Gopinath, 3) D.B.Balaji (Represented by POA: Mr.Jamal Asan Aliyar, Managing Director of M/s. Apollo Estates & Builders (P) Ltd)",
+      "confidence": 0.94,
+      "label": "முந்தைய உரிமையாளர் (Previous Owner / Title History)",
+      "box_query": "1) A.D.Balakrishnan, 2) D.B.Gopinath, 3) D.B.Balaji (Represented by POA: Mr.Jamal Asan Aliyar, Managing Director of M/s. Apollo Estates & Builders (P) Ltd)",
+      "bilingual": {
+        "english": "1) A.D.Balakrishnan, 2) D.B.Gopinath, 3) D.B.Balaji",
+        "tamil": "Represented by POA: Mr.Jamal Asan Aliyar, Managing Director of M/s. Apollo Estates & Builders (P) Ltd) (1 A.D. பலக்ரிஷனன் 2 D.B. கொபிநத 3 D.B. பாலாஜி ரெப்ரெஸெந்த்எட் ப்ய் பொஅ ம்ர்.ஜமல் அஸன் அலியர் மனகிங டிரெக்தொர் ஒப் ம்/ஸ் அபொல்லஒ எஸ்டேட்ஸ் & பில்டர்ஸ் ப் ல்ட்ட்"
+      }
+    },
+    "previous_doc_reference": {
+      "value": "Mother Deed: Doc No. 6027 of 1995 (Dated 26.10.1995) in Book 1, Volume 1752, Pages from 91 to 94 at SRO Kodambakkam",
+      "confidence": 0.94,
+      "label": "முந்தைய மூல ஆவணக் குறிப்பு (Mother Deed Reference)",
+      "box_query": "Mother Deed: Doc No. 6027 of 1995 (Dated 26.10.1995) in Book 1, Volume 1752, Pages from 91 to 94 at SRO Kodambakkam",
+      "bilingual": {
+        "english": "Mother Deed: Doc No. 6027 of 1995",
+        "tamil": "Dated 26.10.1995) in Book 1, Volume 1752, Pages from 91 to 94 at SRO Kodambakkam (மொதெர் பத்திரம் டொக் நொ 6027 ஒப் 1995 டதெட் 26.10.1995 இந் பூக் 1 வொலுமெ 1752 பகெஸ் ப்ரொம் 91 தொ 94 அட் சார்பதிவாளர் அலுவலகம் கொடம்பக்கம்"
+      }
+    },
+    "survey_number": {
+      "value": "T.S. No. 78, Block No. 1",
+      "confidence": 0.95,
+      "label": "புல எண் (Survey Number / S.No)",
+      "box_query": "Survey",
+      "bilingual": {
+        "english": "T.S. No. 78, Block No. 1",
+        "tamil": "த்.ஸ் நொ 78 பிளாக் நொ 1"
+      }
+    },
+    "schedule_property_type": {
+      "value": "Apartment / Flat (with UDS)",
+      "confidence": 0.95,
+      "label": "சொத்து விவரம் (Schedule of Property)",
+      "bilingual": {
+        "english": "Apartment / Flat",
+        "tamil": "with UDS) (அபர்ட்மெந்த் / அடுக்குமாடி குடியிருப்பு வித உட்ஸ்"
+      }
+    },
+    "flat_details": {
+      "value": "Flat No.C-1 at present B-6, First Floor",
+      "confidence": 0.94,
+      "label": "பிளாட் மற்றும் முகவரி (Flat & Building Details)",
+      "box_query": "Flat No",
+      "bilingual": {
+        "english": "Flat No.C-1 at present B-6, First Floor",
+        "tamil": "அடுக்குமாடி குடியிருப்பு நொ.க்-1 அட் ப்ரெஸெந்த் ப்-6 பிர்ஸ்ட் ப்லூர்"
+      }
+    },
+    "village_taluk_district": {
+      "value": "Puliyur Village (புலியுர் கிராமம்) / Egmore\nNungambakkam Taluk (எழும்பூர் நுஙம்பக்கம் வட்டம்) / Chennai District (சென்னை மாவட்டம்)",
+      "confidence": 0.94,
+      "label": "கிராமம் / வட்டம் / மாவட்டம் (Village / Taluk / District)",
+      "box_query": "Village | Taluk | District",
+      "bilingual": {
+        "english": "Puliyur Village (puliyur Kiraamam) / Egmore Nungambakkam Taluk (ezhumboor Nungambagkam Vadtam) / Chennai District (sennai Maavadtam) (Puliyur Village (புலியுர் கிராமம்) / Egmore\nNungambakkam Taluk (எழும்பூர் நுஙம்பக்கம் வட்டம்) / Chennai District (சென்னை மாவட்டம்))",
+        "tamil": "Puliyur Village (புலியுர் கிராமம்) / Egmore\nNungambakkam Taluk (எழும்பூர் நுஙம்பக்கம் வட்டம்) / Chennai District (சென்னை மாவட்டம்)"
+      }
+    },
+    "land_extent": {
+      "value": "2 Grounds and 2130 sq.ft (Total Land Extent: 6,930 sq.ft)",
+      "confidence": 0.93,
+      "label": "மொத்த நிலப் பரப்பு (Total Land Extent)",
+      "box_query": "extent | square feet | Ground",
+      "bilingual": {
+        "english": "2 Grounds and 2130 sq.ft",
+        "tamil": "Total Land Extent: 6,930 sq.ft) (2 க்ரௌந்த்ஸ் அந்த் 2130 சதுரடி தொதல் லந்த் விஸ்தீரணம் / பரப்பு 6,930 சதுரடி"
+      }
+    },
+    "apartment_uds_floor": {
+      "value": "UDS: 667 sq.ft | Built-up Area: 788 Sq.ft | Flat No.C-1 at present B-6, First Floor",
+      "confidence": 0.94,
+      "label": "பிரிக்கப்படா பங்கு / கட்டிடப் பரப்பு (UDS & Built-Up Area)",
+      "box_query": "667 sq.ft",
+      "bilingual": {
+        "english": "UDS: 667 sq.ft | Built-up Area: 788 Sq.ft | Flat No.C-1 at present B-6, First Floor",
+        "tamil": "உட்ஸ் 667 சதுரடி | புஇல்ட்-உப் அரெஅ 788 சதுரடி | அடுக்குமாடி குடியிருப்பு நொ.க்-1 அட் ப்ரெஸெந்த் ப்-6 பிர்ஸ்ட் ப்லூர்"
+      }
+    },
+    "boundaries": {
+      "value": "North: Land belonging to Duraisamy Pillai, | South: Public Road, | East: Land belonging to Manoharammal, | West: Land belonging to Kuppusamy Naicker,",
+      "confidence": 0.95,
+      "label": "நான்கு எல்லைகள் (Four Boundaries N/S/E/W)",
+      "structured_boundaries": {
+        "North": "Land belonging to Duraisamy Pillai,",
+        "South": "Public Road,",
+        "East": "Land belonging to Manoharammal,",
+        "West": "Land belonging to Kuppusamy Naicker,"
+      },
+      "box_query": "bounded on | North by | South by",
+      "bilingual": {
+        "english": "North: Land belonging to Duraisamy Pillai, | South: Public Road, | East: Land belonging to Manoharammal, | West: Land belonging to Kuppusamy Naicker,",
+        "tamil": "வடக்கு லந்த் பெலொஙிங தொ டுரைஸம்ய் பில்லஐ | தெற்கு பொது சாலை | கிழக்கு லந்த் பெலொஙிங தொ மனொஹரம்மஅல் | மேற்கு லந்த் பெலொஙிங தொ குப்புசாமி நைக்கஎர்"
+      }
+    },
+    "land_classification": {
+      "value": "House Site / Residential",
+      "confidence": 0.9,
+      "label": "நில வகைப்பாடு (Classification - Wet/Dry/House Site)",
+      "bilingual": {
+        "english": "House Site / Residential",
+        "tamil": "ஹௌஸெ ஸிதெ / குடியிருப்பு"
+      }
+    },
+    "sro_details": {
+      "value": "SRO Kodambakkam",
+      "confidence": 0.95,
+      "label": "பதிவாளர் அலுவலகம் (SRO Details)",
+      "box_query": "Sub-Registrar | SRO",
+      "bilingual": {
+        "english": "SRO Kodambakkam",
+        "tamil": "சார்பதிவாளர் அலுவலகம் கொடம்பக்கம்"
+      }
+    },
+    "document_number": {
+      "value": "Doc No. 188 of 2004 (Book 1)",
+      "confidence": 0.96,
+      "label": "ஆவண எண் (Document Number)",
+      "box_query": "188",
+      "bilingual": {
+        "english": "Doc No. 188 of 2004",
+        "tamil": "Book 1) (டொக் நொ 188 ஒப் 2004 பூக் 1"
+      }
+    },
+    "title_chain": {
+      "present_owner": {
+        "name": "Mr. R. MAHALINGAM, S/o. Sri S. Raju",
+        "doc_no": "Doc No. 188 of 2004 (Book 1)",
+        "poa": "Direct Execution / Self"
+      },
+      "previous_owner": {
+        "name": "Mrs. RENUKA ANURADHAN, W/o. Anuradhan",
+        "doc_no": "Mother Deed: Doc No. 6027 of 1995 (Dated 26.10.1995) in Book 1, Volume 1752, Pages from 91 to 94 at SRO Kodambakkam",
+        "poa": "Direct Execution / Self",
+        "prior_transferor": "1) A.D.Balakrishnan, 2) D.B.Gopinath, 3) D.B.Balaji (Represented by POA: Mr.Jamal Asan Aliyar, Managing Director of M/s. Apollo Estates & Builders (P) Ltd)",
+        "prior_poa": "Mr.Jamal Asan Aliyar, Managing Director of M/s. Apollo Estates & Builders (P) Ltd"
+      },
+      "prior_owners_b": {
+        "name": "1) A.D.Balakrishnan, 2) D.B.Gopinath, 3) D.B.Balaji (Represented by POA: Mr.Jamal Asan Aliyar, Managing Director of M/s. Apollo Estates & Builders (P) Ltd)",
+        "doc_no": "Mother Deed: Doc No. 6027 of 1995 (Dated 26.10.1995) in Book 1, Volume 1752, Pages from 91 to 94 at SRO Kodambakkam",
+        "poa": "Mr.Jamal Asan Aliyar, Managing Director of M/s. Apollo Estates & Builders (P) Ltd"
+      },
+      "flow_summary": "Mrs. RENUKA ANURADHAN ➔ Mr. R. MAHALINGAM"
+    }
+  },
+  "checklist": [],
+  "verification_flags": {},
+  "text_length": 12748,
+  "lines_count": 602,
+  "title_chain": {
+    "present_owner": {
+      "name": "Mr. R. MAHALINGAM, S/o. Sri S. Raju",
+      "doc_no": "Doc No. 188 of 2004 (Book 1)",
+      "poa": "Direct Execution / Self"
+    },
+    "previous_owner": {
+      "name": "Mrs. RENUKA ANURADHAN, W/o. Anuradhan",
+      "doc_no": "Mother Deed: Doc No. 6027 of 1995 (Dated 26.10.1995) in Book 1, Volume 1752, Pages from 91 to 94 at SRO Kodambakkam",
+      "poa": "Direct Execution / Self",
+      "prior_transferor": "1) A.D.Balakrishnan, 2) D.B.Gopinath, 3) D.B.Balaji (Represented by POA: Mr.Jamal Asan Aliyar, Managing Director of M/s. Apollo Estates & Builders (P) Ltd)",
+      "prior_poa": "Mr.Jamal Asan Aliyar, Managing Director of M/s. Apollo Estates & Builders (P) Ltd"
+    },
+    "prior_owners_b": {
+      "name": "1) A.D.Balakrishnan, 2) D.B.Gopinath, 3) D.B.Balaji (Represented by POA: Mr.Jamal Asan Aliyar, Managing Director of M/s. Apollo Estates & Builders (P) Ltd)",
+      "doc_no": "Mother Deed: Doc No. 6027 of 1995 (Dated 26.10.1995) in Book 1, Volume 1752, Pages from 91 to 94 at SRO Kodambakkam",
+      "poa": "Mr.Jamal Asan Aliyar, Managing Director of M/s. Apollo Estates & Builders (P) Ltd"
+    },
+    "flow_summary": "Mrs. RENUKA ANURADHAN ➔ Mr. R. MAHALINGAM"
+  }
+}

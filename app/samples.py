@@ -334,7 +334,7 @@ https://eservices.tn.gov.in""",
                 "label": "Extent (Ares ➔ Sq.Ft)"
             },
             "nature_of_land": {
-                "value": "Rayathuvari Manai (Residential Plot) — ரயத்துவாரி மனை",
+                "value": "Ryotwari Residential Plot (House Site) — ரயத்துவாரி மனை",
                 "confidence": 0.98,
                 "label": "Nature of Land"
             },

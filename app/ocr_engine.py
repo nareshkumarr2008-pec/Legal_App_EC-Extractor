@@ -161,23 +161,39 @@ class OCREngine:
             if self.device != "cpu":
                 logger.warning(f"GPU pipeline init failed for lang='{lang}' ({e}) — falling back to CPU.")
                 self.device = "cpu"
-                return _init_ocr("cpu")
-            raise
+                try:
+                    return _init_ocr("cpu")
+                except Exception as e_cpu:
+                    logger.warning(f"CPU pipeline init failed for lang='{lang}' ({e_cpu}).")
+                    return None
+            else:
+                logger.warning(f"PaddleOCR pipeline init failed for lang='{lang}' ({e}).")
+                return None
 
     def _get_pipeline_ta(self):
         """Primary Tamil pipeline: High-speed PaddleOCR PP-OCRv6_medium_det + ta_PP-OCRv5_mobile_rec."""
         if self._pipeline_ta is None and self.paddle_available:
-            logger.info(f"Loading high-speed Tamil OCR pipeline: PP-OCRv6_medium_det + ta_PP-OCRv5_mobile_rec on device='{self.device}'...")
-            self._pipeline_ta = self._load_pipeline("ta")
-            logger.info(f"High-speed Tamil OCR pipeline loaded on device='{self.device}'.")
+            try:
+                logger.info(f"Loading high-speed Tamil OCR pipeline: PP-OCRv6_medium_det + ta_PP-OCRv5_mobile_rec on device='{self.device}'...")
+                self._pipeline_ta = self._load_pipeline("ta")
+                if self._pipeline_ta:
+                    logger.info(f"High-speed Tamil OCR pipeline loaded on device='{self.device}'.")
+            except Exception as e:
+                logger.warning(f"Failed to load Tamil OCR pipeline: {e}")
+                self._pipeline_ta = None
         return self._pipeline_ta
 
     def _get_pipeline_en(self):
         """Secondary English pipeline: High-speed PaddleOCR PP-OCRv6_medium_det + PP-OCRv6_medium_rec."""
         if self._pipeline_en is None and self.paddle_available:
-            logger.info(f"Loading high-speed English pipeline: PP-OCRv6_medium_det + PP-OCRv6_medium_rec on device='{self.device}'...")
-            self._pipeline_en = self._load_pipeline("en")
-            logger.info(f"High-speed English pipeline loaded on device='{self.device}'.")
+            try:
+                logger.info(f"Loading high-speed English pipeline: PP-OCRv6_medium_det + PP-OCRv6_medium_rec on device='{self.device}'...")
+                self._pipeline_en = self._load_pipeline("en")
+                if self._pipeline_en:
+                    logger.info(f"High-speed English pipeline loaded on device='{self.device}'.")
+            except Exception as e:
+                logger.warning(f"Failed to load English OCR pipeline: {e}")
+                self._pipeline_en = None
         return self._pipeline_en
 
     # -- File Conversion --
@@ -235,9 +251,9 @@ class OCREngine:
     def image_to_base64(self, image, max_dim=1600, quality=85):
         img = image.copy()
         if max(img.size) > max_dim:
-            img.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
+            img.thumbnail((max_dim, max_dim), Image.Resampling.BILINEAR)
         buffered = io.BytesIO()
-        img.save(buffered, format="JPEG", quality=quality, optimize=True)
+        img.save(buffered, format="JPEG", quality=quality)
         encoded = base64.b64encode(buffered.getvalue()).decode("utf-8")
         return f"data:image/jpeg;base64,{encoded}"
 
@@ -642,8 +658,9 @@ class OCREngine:
 
             logger.info(f"PaddleOCR extracted: {len(lines_data)} lines")
 
-        # If low lines detected (e.g. degraded / heavily compressed scan), attempt adaptive enhancement
-        if len(lines_data) < 3 and self.paddle_available:
+        # If low lines detected on an image with clear text contrast (e.g. degraded scan, not a blank sheet), attempt adaptive enhancement
+        img_std = float(np.std(img_np))
+        if 1 <= len(lines_data) < 3 and self.paddle_available and img_std > 35.0:
             try:
                 from PIL import ImageEnhance
                 enh_img = ImageEnhance.Contrast(processed_img).enhance(1.8)
@@ -663,9 +680,9 @@ class OCREngine:
             except Exception as enh_err:
                 logger.warning(f"Adaptive enhancement pass error: {enh_err}")
 
-        # If Paddle pipeline returned 0 lines, invoke EasyOCR fallback
-        if not lines_data:
-            logger.info("PaddleOCR returned 0 lines. Invoking EasyOCR fallback...")
+        # If Paddle pipeline was unavailable, invoke EasyOCR fallback
+        if not lines_data and not self.paddle_available:
+            logger.info("PaddleOCR unavailable. Invoking EasyOCR fallback...")
             lines_data = self._run_easyocr_fallback(img_np, cur_w, cur_h, lang=lang)
 
         # Normalize Tamil OCR text in all lines
@@ -856,23 +873,32 @@ class OCREngine:
 
             target_indices = self.parse_page_indices(num_pages, page_range, max_pages) if num_pages > 0 else []
 
-            # Pre-render high-res page images safely via pypdfium2 (with pdfplumber fallback)
-            rendered_images = {}
             pdf_ium = None
             try:
-                pdf_ium = pdfium.PdfDocument(file_bytes)
-                total_ium = len(pdf_ium)
-                if num_pages == 0:
-                    num_pages = total_ium
-                    target_indices = self.parse_page_indices(num_pages, page_range, max_pages)
+                try:
+                    pdf_ium = pdfium.PdfDocument(file_bytes)
+                    total_ium = len(pdf_ium)
+                    if num_pages == 0:
+                        num_pages = total_ium
+                        target_indices = self.parse_page_indices(num_pages, page_range, max_pages)
+                except Exception as ium_err:
+                    logger.warning(f"pypdfium2 failed to load document ({ium_err}), using pdfplumber fallback...")
+                    pdf_ium = None
+                    total_ium = 0
 
-                for idx in target_indices:
-                    pil_img = None
-                    if idx < total_ium:
+                logger.info(f"Processing PDF '{filename}' ({num_pages} total pages). Target pages to extract ({len(target_indices)}): {[i+1 for i in target_indices]}")
+
+                for step_num, idx in enumerate(target_indices, start=1):
+                    page_start_time = time.time()
+                    plum_page = pdf_plum.pages[idx] if (pdf_plum and idx < len(pdf_plum.pages)) else None
+
+                    # Render page image on-demand to minimize peak memory consumption
+                    pil_image = None
+                    if pdf_ium and idx < total_ium:
                         try:
                             ium_page = pdf_ium[idx]
                             bitmap = ium_page.render(scale=1.5)
-                            pil_img = bitmap.to_pil().copy()
+                            pil_image = bitmap.to_pil().copy()
                             try:
                                 bitmap.close()
                             except (Exception, OSError):
@@ -884,37 +910,11 @@ class OCREngine:
                         except Exception as p_err:
                             logger.warning(f"pypdfium2 page {idx + 1} render failed: {p_err}")
 
-                    if pil_img is None and pdf_plum and idx < len(pdf_plum.pages):
+                    if pil_image is None and plum_page:
                         try:
-                            pil_img = pdf_plum.pages[idx].to_image(resolution=150).original.convert("RGB")
+                            pil_image = plum_page.to_image(resolution=150).original.convert("RGB")
                         except Exception as pl_err:
                             logger.warning(f"pdfplumber fallback page {idx + 1} render failed: {pl_err}")
-
-                    rendered_images[idx] = pil_img
-            except Exception as ium_err:
-                logger.warning(f"pypdfium2 failed to load document ({ium_err}), using pdfplumber fallback...")
-                if pdf_plum:
-                    for idx in target_indices:
-                        if idx < len(pdf_plum.pages):
-                            try:
-                                rendered_images[idx] = pdf_plum.pages[idx].to_image(resolution=150).original.convert("RGB")
-                            except Exception:
-                                rendered_images[idx] = None
-            finally:
-                if pdf_ium is not None:
-                    try:
-                        pdf_ium.close()
-                    except (Exception, OSError) as close_err:
-                        logger.debug(f"Safely suppressed pdf_ium close warning: {close_err}")
-                    pdf_ium = None
-
-            logger.info(f"Processing PDF '{filename}' ({num_pages} total pages). Target pages to extract ({len(target_indices)}): {[i+1 for i in target_indices]}")
-
-            try:
-                for step_num, idx in enumerate(target_indices, start=1):
-                    page_start_time = time.time()
-                    plum_page = pdf_plum.pages[idx] if (pdf_plum and idx < len(pdf_plum.pages)) else None
-                    pil_image = rendered_images.get(idx)
 
                     width_pt = float(plum_page.width) if plum_page else (pil_image.width if pil_image else 800.0)
                     height_pt = float(plum_page.height) if plum_page else (pil_image.height if pil_image else 1100.0)
@@ -995,7 +995,9 @@ class OCREngine:
                         if pil_image:
                             try:
                                 gray_arr = np.array(pil_image.convert('L'))
-                                if (np.mean(gray_arr) > 215 and np.std(gray_arr) < 22) or (np.mean(gray_arr) > 185 and np.std(gray_arr) < 14):
+                                mean_val = float(np.mean(gray_arr))
+                                std_val = float(np.std(gray_arr))
+                                if (mean_val > 240.0 and std_val < 32.0) or (mean_val > 215.0 and std_val < 26.0) or (mean_val > 185.0 and std_val < 14.0):
                                     is_blank = True
                             except Exception:
                                 pass
@@ -1028,6 +1030,12 @@ class OCREngine:
                     if page_res.get("full_text"):
                         all_text_parts.append(f"--- PAGE {idx + 1} ---\n" + page_res["full_text"])
             finally:
+                if pdf_ium is not None:
+                    try:
+                        pdf_ium.close()
+                    except (Exception, OSError) as close_err:
+                        logger.debug(f"Safely suppressed pdf_ium close warning: {close_err}")
+                    pdf_ium = None
                 if pdf_plum:
                     try:
                         pdf_plum.close()

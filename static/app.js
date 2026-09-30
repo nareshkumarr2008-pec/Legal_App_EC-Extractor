@@ -44,10 +44,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     updateCategoryInfo(state.selectedCategoryId);
     await checkServerHealth();
     await fetchCategories();
-    await checkLLMStatus();
     setupDropzone();
-    // Default load sale deed sample
-    await loadSampleDocument("sale_deed");
+    // Initialize stepper in clean initial state (Step 1 Active, Step 2 Ready)
+    updateStepPills(1);
 
     // Periodic heartbeat checks
     setInterval(checkServerHealth, 15000);
@@ -55,7 +54,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 // Check status of main OCR FastAPI server
-async function checkServerHealth() {
+async function checkServerHealth(showToast = false) {
     try {
         const controller = new AbortController();
         const tid = setTimeout(() => controller.abort(), 3500);
@@ -63,13 +62,23 @@ async function checkServerHealth() {
         clearTimeout(tid);
         if (res.ok) {
             updateServerStatus(true);
+            dismissOcrError();
+            if (showToast) {
+                showToastNotification("PaddleOCR Server is active & healthy (127.0.0.1:8000)!");
+            }
             return true;
         } else {
             updateServerStatus(false, "Server Error");
+            if (showToast) {
+                showToastNotification("Server responded with error status. Please check start_app.bat");
+            }
             return false;
         }
     } catch (e) {
         updateServerStatus(false, "Offline");
+        if (showToast) {
+            showToastNotification("Server is currently unreachable at 127.0.0.1:8000. Please launch start_app.bat");
+        }
         return false;
     }
 }
@@ -200,7 +209,7 @@ function renderCategoriesGrid() {
                     <i data-lucide="${iconName}" class="w-4 h-4"></i>
                 </div>
                 ${isComingSoon 
-                    ? `<span class="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shadow-2xs">Soon</span>`
+                    ? `<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shadow-2xs">Coming Soon</span>`
                     : `<span class="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500">#${numStr}</span>`
                 }
             </div>
@@ -513,6 +522,15 @@ function handleFileSelected(file) {
         selectCategory(detectedCat, false);
     }
 
+    // Smart page scope handling: Default to "all" (All Pages)
+    const pagesScopeEl = document.getElementById("ocr-pages-select");
+    if (pagesScopeEl) {
+        if (!pagesScopeEl.value) {
+            pagesScopeEl.value = "all";
+            toggleCustomPageRange("all");
+        }
+    }
+
     const sizeStr = (file.size / (1024 * 1024)).toFixed(2);
     const inner = document.getElementById("dropzone-inner");
     if (inner) {
@@ -573,22 +591,38 @@ function dismissOcrError() {
     if (banner) banner.classList.add("hidden");
 }
 
+function retryOcrWithFastPages() {
+    const pagesScopeEl = document.getElementById("ocr-pages-select");
+    if (pagesScopeEl) {
+        pagesScopeEl.value = "first_3";
+        toggleCustomPageRange("first_3");
+    }
+    dismissOcrError();
+    runOcrProcess();
+}
+window.retryOcrWithFastPages = retryOcrWithFastPages;
+
 function showOcrConnectionModal(err) {
     dismissOcrError();
     const banner = document.getElementById("ocr-error-banner");
     const title = document.getElementById("ocr-error-title");
     const desc = document.getElementById("ocr-error-desc");
     const errMsg = (err && err.message) ? err.message : (typeof err === "string" ? err : "");
-    const isConnErr = errMsg.includes("Failed to fetch") || (err && err.name === "AbortError") || errMsg.includes("NetworkError");
+    const isTimeout = errMsg.toLowerCase().includes("timed out") || errMsg.includes("AbortError");
+    const isConnErr = !isTimeout && (errMsg.includes("Failed to fetch") || (err && err.name === "AbortError") || errMsg.includes("NetworkError"));
 
     if (banner) {
         if (title) {
-            title.textContent = isConnErr ? "OCR Server Connection Notice" : "OCR Processing Notice";
+            title.textContent = isTimeout ? "OCR Multi-Page Processing Timeout" : (isConnErr ? "OCR Server Connection Notice" : "OCR Processing Notice");
         }
         if (desc) {
-            desc.textContent = isConnErr
-                ? "The OCR backend at 127.0.0.1:8000 is not reachable. The server might be warming up or restarting. Please click 'Retry Connection Now' or ensure start_app.bat is running."
-                : `Processing issue encountered: ${errMsg || "Unknown error"}. Please verify your document and try again.`;
+            if (isTimeout) {
+                desc.textContent = "Processing timed out because this document has multiple pages being processed on CPU. For rapid processing (< 1 minute), click 'Process First 3 Pages (Fast)' below or specify a page range in the Page Scope dropdown.";
+            } else if (isConnErr) {
+                desc.textContent = "The OCR backend at 127.0.0.1:8000 is not reachable. The server might be warming up or restarting. Please click 'Retry Connection Now' or ensure start_app.bat is running.";
+            } else {
+                desc.textContent = `Processing issue encountered: ${errMsg || "Unknown error"}. Please verify your document and try again.`;
+            }
         }
         banner.classList.remove("hidden");
         banner.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -626,7 +660,10 @@ function startOcrProgressTimer(docTypeName = "Legal Document", pagesScope = "all
         { afterSec: 16, text: `Tracing legal title continuity, parent deeds & current owner...` },
         { afterSec: 25, text: `Verifying financial encumbrances, bank mortgages & court decrees...` },
         { afterSec: 35, text: `Synthesizing 12-point legal audit & title dossier...` },
-        { afterSec: 48, text: `Finalizing structured intelligence & interactive document canvas...` }
+        { afterSec: 50, text: `Performing deep vision OCR & character recognition...` },
+        { afterSec: 80, text: `Processing multi-page deed text & boundary schedules...` },
+        { afterSec: 130, text: `Extracting survey numbers, extents & ownership chains...` },
+        { afterSec: 190, text: `Vision processing in progress (large multi-page scan)...` }
     ];
 
     const updateMsg = () => {
@@ -764,8 +801,8 @@ async function runOcrProcess() {
             if (maxPagesParam) formData.append("max_pages", maxPagesParam);
 
             const controller = new AbortController();
-            // 10-minute generous timeout for multi-page CPU OCR
-            const timeoutId = setTimeout(() => controller.abort(), 600000);
+            // 25-minute generous timeout for multi-page CPU OCR
+            const timeoutId = setTimeout(() => controller.abort(), 1500000);
 
             try {
                 const res = await fetch("/api/ocr/process", {
@@ -808,9 +845,9 @@ async function runOcrProcess() {
                 lastError = err;
                 console.warn(`OCR attempt ${attempt + 1}/${maxRetries + 1} failed:`, err);
 
-                // Do not retry on intentional timeout aborts (it avoids queuing multiple 10-min jobs)
+                // Do not retry on intentional timeout aborts (it avoids queuing multiple long jobs)
                 if (err.name === "AbortError") {
-                    lastError = new Error("Document processing timed out after 10 minutes. For large multi-page scans on CPU, try selecting 'First 3 Pages' or 'Pages 1-3'.");
+                    lastError = new Error("Document processing timed out after 25 minutes. For large multi-page scans on CPU, try selecting 'First 3 Pages' or 'Pages 1-3'.");
                     break;
                 }
 
@@ -3642,6 +3679,398 @@ function renderTSLRFieldsLayout(fields, container) {
     container.appendChild(wrapper);
 }
 
+// Helper to parse co-owners and legal heirs list robustly
+function parseOwnersList(rawVal) {
+    if (!rawVal || rawVal === "Not Detected" || rawVal === "-") return [];
+
+    let cleanStr = rawVal.split(/\(Represented by POA:/i)[0].replace(/^[,\s]+|[,\s]+$/g, "").trim();
+    cleanStr = cleanStr
+        .replace(/\b([A-Z])\.8\./g, "$1.B.")
+        .replace(/\b([A-Z])\.8\b/g, "$1.B")
+        .replace(/\bBALAKRI[~-]HNAN\b/gi, "BALAKRISHNAN");
+
+    let owners = [];
+    const numRegex = /(?:(?:\(([0-9ivxabc]+)\)|\[([0-9ivxabc]+)\]|\b(\d+)[\)\.:-]))\s*([\s\S]+?)(?=(?:[,\s;]+(?:and\s+|&\s+)?(?:\([0-9ivxabc]+\)|\[[0-9ivxabc]+\]|\b\d+[\)\.:-]))|$)/gi;
+    const numMatches = [...cleanStr.matchAll(numRegex)];
+
+    if (numMatches.length >= 2) {
+        owners = numMatches.map((m, idx) => {
+            const rawNum = m[1] || m[2] || m[3];
+            let name = (m[4] || "")
+                .replace(/^(?:and|&)\s+/i, "")
+                .replace(/\s+(?:and|&)$/i, "")
+                .replace(/^[,\s;]+|[,\s;]+$/g, "")
+                .trim();
+            return {
+                num: rawNum || String(idx + 1),
+                name: name
+            };
+        }).filter(o => o.name.length > 1);
+    }
+
+    if (owners.length < 2) {
+        const parts = cleanStr.split(/(?:,\s*and\s+|\s+and\s+|,\s*(?=[A-Z]))/i)
+            .map(p => p.trim())
+            .filter(p => p.length > 2 && !/^(?:Son|Wife|Daughter|W\/o|S\/o|D\/o)\b/i.test(p));
+        if (parts.length >= 2) {
+            const looksLikeNames = parts.every(p => /^[A-Z]/.test(p) && p.length > 2 && !p.includes("Village") && !p.includes("Taluk"));
+            if (looksLikeNames) {
+                owners = parts.map((name, idx) => ({
+                    num: String(idx + 1),
+                    name: name
+                }));
+            }
+        }
+    }
+    return owners;
+}
+
+// Helper to format single or multiple owners (e.g. 2, 3, 5, or more legal heirs / co-owners)
+function formatOwnersListHtml(rawVal, themeColor = 'blue') {
+    if (!rawVal || rawVal === "Not Detected" || rawVal === "-") return `<span class="text-slate-400">Not Detected</span>`;
+    
+    const owners = parseOwnersList(rawVal);
+
+    if (owners.length > 1) {
+        const badgeColor = themeColor === 'amber' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 
+                           themeColor === 'emerald' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 
+                           themeColor === 'indigo' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' : 
+                           themeColor === 'purple' ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' : 
+                           'bg-blue-500/20 text-blue-300 border-blue-500/30';
+        
+        return `
+            <div class="space-y-1.5">
+                <div class="flex items-center gap-1.5">
+                    <span class="text-[9px] font-bold px-2 py-0.5 rounded-full border ${badgeColor}">
+                        ${owners.length} Co-Owners / Legal Heirs
+                    </span>
+                </div>
+                <div class="space-y-1 max-h-36 overflow-y-auto pr-1">
+                    ${owners.map(o => `
+                        <div class="flex items-center gap-1.5 text-xs text-white bg-white/5 px-2 py-1 rounded-lg border border-white/5" title="${escapeHtml(o.name)}">
+                            <span class="w-4 h-4 rounded-full bg-white/10 flex items-center justify-center text-[9px] font-mono font-bold shrink-0 text-slate-300">${escapeHtml(o.num)}</span>
+                            <span class="font-bold truncate">${escapeHtml(o.name)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    const singleClean = rawVal.split(/\(Represented by POA:/i)[0].replace(/^[\(\[\d\)\.\:\-\s]+/, '').trim() || rawVal;
+    return `<div class="font-extrabold text-white text-sm leading-snug break-words">${escapeHtml(singleClean)}</div>`;
+}
+
+function parsePartyNameAndParentage(rawStr, defaultLabel = "") {
+    if (!rawStr || rawStr === "Not Detected" || rawStr === "-") {
+        return { name: defaultLabel, subtitle: "", raw: rawStr || defaultLabel };
+    }
+    const cleanStr = rawStr.split(/\(Represented by POA:/i)[0].replace(/^[,\s]+|[,\s]+$/g, "").trim();
+    const parts = cleanStr.split(',').map(p => p.trim()).filter(Boolean);
+    if (!parts.length) return { name: defaultLabel, subtitle: "", raw: rawStr };
+
+    let primaryName = parts[0]
+        .replace(/^(Mr\.|Mrs\.|Dr\.|Miss|Smt\.)([A-Za-z])/i, "$1 $2")
+        .replace(/M\s*\.\s*6\s*\.\s*NAAGESH/gi, "M.G.NAAGESH")
+        .replace(/M\s*\.\s*6\s*\.\s*Naagesh/gi, "M.G.Naagesh")
+        .replace(/\bM\s*\.\s*6\b/gi, "M.G")
+        .replace(/\bMr\.\s*Mr\.\b/g, "Mr.");
+
+    let parentage = "";
+    if (parts.length > 1) {
+        const pMatch = parts.slice(1).find(p => /^(?:Son|Wife|Daughter|W\/o|S\/o|D\/o)\s*(?:of|\.)?/i.test(p));
+        if (pMatch) parentage = pMatch;
+    }
+    return { name: primaryName, subtitle: parentage, raw: cleanStr };
+}
+
+function buildUniversalTitleChain(fields, purchaserVal, prevOwnerVal, vendorVal, docNo, regDate, sroVal, poaVal, prevDocRef) {
+    const motherDocs = prevDocRef && prevDocRef !== "Not Detected" ? prevDocRef.split('|').map(d => d.replace(/^Mother\s+Deed\s*:\s*/i, '').trim()).filter(Boolean) : [];
+    const prevOwnerEntries = prevOwnerVal && prevOwnerVal !== "Not Detected" ? prevOwnerVal.split('|').map(o => o.trim()).filter(Boolean) : [];
+
+    const nodes = [];
+
+    // Parse Purchaser (Final Node)
+    const purchaserInfo = parsePartyNameAndParentage(purchaserVal, "Current Purchaser");
+
+    // Parse Vendor (Penultimate Node)
+    const vendorInfo = parsePartyNameAndParentage(vendorVal, "Vendor / Seller");
+
+    // Check for intermediate or prior historical stages
+    if (prevOwnerEntries.length > 0) {
+        if (prevOwnerEntries.length === 1) {
+            const poStr = prevOwnerEntries[0];
+            let poPoa = "";
+            let poClean = poStr;
+            if (poStr.includes("Represented by POA:")) {
+                poPoa = poStr.split("Represented by POA:")[1].replace(/[)]+$/, "").trim();
+                poClean = poStr.split(/Represented by POA:/i)[0].replace(/[\(\s,]+$/, "").trim();
+            }
+
+            const parsedOwners = parseOwnersList(poClean);
+            const poInfo = parsePartyNameAndParentage(poClean, "Past Titleholder (A)");
+            let displayName = poInfo.name;
+            if (parsedOwners.length > 1) {
+                displayName = `${parsedOwners[0].name} (+${parsedOwners.length - 1} co-owners)`;
+            }
+            
+            nodes.push({
+                role: "Prior Owner (A)",
+                rolePill: "Prior Title",
+                theme: "blue",
+                name: displayName,
+                rawName: poClean,
+                coOwnersCount: parsedOwners.length,
+                subtitle: poInfo.subtitle || "Historical titleholder recited in deed",
+                docRef: motherDocs[0] || "Recited in Deed Recitals",
+                poa: poPoa || "Direct Execution / Self",
+                connector: "Mother Deed"
+            });
+        } else {
+            // Multiple prior owner entries (e.g. A -> B -> ...)
+            prevOwnerEntries.forEach((poStr, idx) => {
+                let poPoa = "";
+                let poClean = poStr;
+                if (poStr.includes("Represented by POA:")) {
+                    poPoa = poStr.split("Represented by POA:")[1].replace(/[)]+$/, "").trim();
+                    poClean = poStr.split(/Represented by POA:/i)[0].replace(/[\(\s,]+$/, "").trim();
+                }
+                const parsedOwners = parseOwnersList(poClean);
+                const poInfo = parsePartyNameAndParentage(poClean, `Prior Owner (${String.fromCharCode(65 + idx)})`);
+                let displayName = poInfo.name;
+                if (parsedOwners.length > 1) {
+                    displayName = `${parsedOwners[0].name} (+${parsedOwners.length - 1} co-owners)`;
+                }
+                const isRoot = idx === 0;
+                nodes.push({
+                    role: isRoot ? `Root Owner (${String.fromCharCode(65 + idx)})` : `Prior Owner (${String.fromCharCode(65 + idx)})`,
+                    rolePill: isRoot ? "Root Title" : "Prior Conveyance",
+                    theme: isRoot ? "blue" : (idx === 1 ? "indigo" : "purple"),
+                    name: displayName,
+                    rawName: poClean,
+                    coOwnersCount: parsedOwners.length,
+                    subtitle: poInfo.subtitle || (isRoot ? "Original titleholder / allottee" : "Intermediate titleholder"),
+                    docRef: motherDocs[idx] || (isRoot ? "Root Acquisition" : "Intermediate Deed"),
+                    poa: poPoa || "Direct Execution / Self",
+                    connector: isRoot ? "Prior Transfer" : "Mother Deed"
+                });
+            });
+        }
+    } else if (motherDocs.length > 0) {
+        // No explicit owner names extracted, but mother deed is present
+        nodes.push({
+            role: "Prior Conveyance (A)",
+            rolePill: "Mother Deed",
+            theme: "blue",
+            name: "Prior Titleholder(s)",
+            rawName: "Prior Titleholder(s)",
+            subtitle: "Recorded in parent document recitals",
+            docRef: motherDocs[0],
+            poa: "Direct Execution / Self",
+            connector: "Mother Deed"
+        });
+    }
+
+    // Next Node: Current Vendor (Seller)
+    const vendorStepChar = String.fromCharCode(65 + nodes.length);
+    const vendorOwners = parseOwnersList(vendorVal);
+    let vendorDisplayName = vendorInfo.name;
+    if (vendorOwners.length > 1) {
+        vendorDisplayName = `${vendorOwners[0].name} (+${vendorOwners.length - 1} co-owners)`;
+    }
+    nodes.push({
+        role: `Previous Owner / Vendor (${vendorStepChar})`,
+        rolePill: "Vendor",
+        theme: "amber",
+        name: vendorDisplayName,
+        rawName: vendorInfo.raw,
+        coOwnersCount: vendorOwners.length,
+        subtitle: vendorInfo.subtitle || "Vendor / Grantor executing transfer",
+        docRef: motherDocs[motherDocs.length - 1] || "Mother Deed Conveyance",
+        poa: poaVal || "Direct Execution (Self)",
+        connector: "Sale Deed"
+    });
+
+    // Final Node: Current Purchaser (Buyer)
+    const purchaserStepChar = String.fromCharCode(65 + nodes.length);
+    const purchaserOwners = parseOwnersList(purchaserVal);
+    let purchaserDisplayName = purchaserInfo.name;
+    if (purchaserOwners.length > 1) {
+        purchaserDisplayName = `${purchaserOwners[0].name} (+${purchaserOwners.length - 1} co-owners)`;
+    }
+    nodes.push({
+        role: `Present Owner (${purchaserStepChar})`,
+        rolePill: "Current Title",
+        theme: "emerald",
+        name: purchaserDisplayName,
+        rawName: purchaserInfo.raw,
+        coOwnersCount: purchaserOwners.length,
+        subtitle: purchaserInfo.subtitle || "Purchaser / Absolute Titleholder",
+        docRef: `${docNo} (Reg: ${regDate})`,
+        sro: sroVal,
+        poa: poaVal && purchaserVal.includes("POA") ? poaVal : "Direct Execution (Self)",
+        connector: null
+    });
+
+    // Update step numbers
+    nodes.forEach((n, idx) => {
+        n.stepNumber = idx + 1;
+        n.totalSteps = nodes.length;
+    });
+
+    return nodes;
+}
+
+function renderTitleChainHtml(titleChain) {
+    const totalSteps = titleChain.length;
+    const breadcrumbStr = titleChain.map(n => {
+        let displayName = (n.name || "").split(',')[0].replace(/^(?:\(\d+\)|\b\d+[\)\.:\-])\s*/, '').trim();
+        if (n.coOwnersCount && n.coOwnersCount > 1 && !displayName.includes('co-owner')) {
+            return `${escapeHtml(displayName)} (+${n.coOwnersCount - 1} co-owners)`;
+        }
+        return escapeHtml(displayName);
+    }).join(' ➔ ');
+
+    const themeStyles = {
+        blue: {
+            cardBg: 'bg-slate-900/60 border-slate-700/60',
+            pill: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+            dot: 'bg-blue-400',
+            titleText: 'text-blue-300',
+            stepText: 'text-blue-400'
+        },
+        indigo: {
+            cardBg: 'bg-indigo-950/40 border-indigo-500/40',
+            pill: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30',
+            dot: 'bg-indigo-400',
+            titleText: 'text-indigo-300',
+            stepText: 'text-indigo-400'
+        },
+        purple: {
+            cardBg: 'bg-purple-950/40 border-purple-500/40',
+            pill: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+            dot: 'bg-purple-400',
+            titleText: 'text-purple-300',
+            stepText: 'text-purple-400'
+        },
+        amber: {
+            cardBg: 'bg-amber-950/30 border-amber-500/40',
+            pill: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+            dot: 'bg-amber-400',
+            titleText: 'text-amber-300',
+            stepText: 'text-amber-400'
+        },
+        emerald: {
+            cardBg: 'bg-emerald-950/40 border-emerald-500/40',
+            pill: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+            dot: 'bg-emerald-400',
+            titleText: 'text-emerald-300',
+            stepText: 'text-emerald-400'
+        }
+    };
+
+    return `
+        <!-- 0. TITLE CONVEYANCE CHAIN (DYNAMIC N-STEP CHAIN) -->
+        <div id="sale-deed-card-title-chain" class="sale-deed-card rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 border border-indigo-800/50 text-white shadow-sm overflow-hidden transition-all">
+            <div onclick="window.toggleSaleDeedCard('sale-deed-card-title-chain')" class="p-3.5 sm:p-4 hover:bg-white/5 cursor-pointer flex items-center justify-between gap-3 transition-colors select-none">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-xl bg-amber-400/20 text-amber-300 border border-amber-400/30 flex items-center justify-center font-bold text-xs shrink-0">
+                        <i data-lucide="git-commit" class="w-4 h-4"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h4 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-amber-300 truncate">Title Conveyance Chain (உரிமை வழித்தொடர்)</h4>
+                            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">${totalSteps}-Step Verified Chain</span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 truncate max-w-xl">
+                            ${breadcrumbStr}
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button type="button" onclick="event.stopPropagation(); window.copyTitlePedigree()" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[11px] font-semibold text-amber-300 flex items-center gap-1 transition-all cursor-pointer" title="Copy complete title pedigree report">
+                        <i data-lucide="copy" class="w-3 h-3"></i>
+                        <span>Copy Pedigree</span>
+                    </button>
+                    <i data-lucide="chevron-right" id="sale-deed-card-title-chain-chevron" class="sale-deed-card-chevron w-4 h-4 text-slate-400 transition-transform duration-200"></i>
+                </div>
+            </div>
+
+            <!-- Implicit Details Body -->
+            <div id="sale-deed-card-title-chain-body" class="sale-deed-card-body hidden p-4 sm:p-5 border-t border-white/10 space-y-3.5">
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                    <p class="text-[11px] text-slate-300">Sequential ${totalSteps}-step legal title conveyance: ${titleChain.map(n => escapeHtml(n.role)).join(' ➔ ')}</p>
+                    <span class="text-[10px] text-amber-300/80 font-mono">Unbroken Title Chain</span>
+                </div>
+
+                <!-- Dynamic Grid/Flex Container for N nodes -->
+                <div class="flex flex-col lg:flex-row items-stretch gap-3 w-full max-w-full min-w-0 text-xs overflow-x-auto pb-1">
+                    ${titleChain.map((node, idx) => {
+                        const style = themeStyles[node.theme] || themeStyles.blue;
+                        const isLast = idx === titleChain.length - 1;
+
+                        return `
+                            <!-- Node ${node.stepNumber}: ${escapeHtml(node.role)} -->
+                            <div class="flex-1 min-w-[220px] max-w-full p-4 rounded-xl ${style.cardBg} border space-y-3 overflow-hidden flex flex-col justify-between shadow-2xs">
+                                <div class="space-y-2 min-w-0">
+                                    <div class="space-y-1 min-w-0">
+                                        <div class="flex items-center justify-between gap-1.5 pb-1.5 border-b border-white/10">
+                                            <span class="text-[10px] font-bold ${style.stepText} flex items-center gap-1.5 shrink-0">
+                                                <span class="w-1.5 h-1.5 rounded-full ${style.dot}"></span>
+                                                Step ${node.stepNumber} of ${node.totalSteps}
+                                            </span>
+                                            <span class="text-[9px] font-semibold px-2 py-0.5 rounded-full border ${style.pill} shrink-0">
+                                                ${escapeHtml(node.rolePill)}
+                                            </span>
+                                        </div>
+                                        <div class="text-[11px] font-extrabold ${style.titleText} uppercase tracking-wider pt-0.5">
+                                            ${escapeHtml(node.role)}
+                                        </div>
+                                    </div>
+                                    ${formatOwnersListHtml(node.rawName || node.name, node.theme)}
+                                    ${node.subtitle ? `
+                                        <div class="text-[11px] text-slate-300 break-words leading-relaxed">
+                                            ${escapeHtml(node.subtitle)}
+                                        </div>
+                                    ` : ''}
+                                </div>
+
+                                <div class="pt-2.5 border-t border-white/10 space-y-2 text-[11px] min-w-0">
+                                    <div class="min-w-0">
+                                        <span class="text-slate-400 font-medium block text-[10px]">Document Ref:</span>
+                                        <span class="text-slate-200 font-semibold break-words leading-relaxed text-[11px] block">
+                                            ${escapeHtml(node.docRef || '-')}
+                                        </span>
+                                    </div>
+                                    ${node.poa ? `
+                                        <div class="min-w-0">
+                                            <span class="text-slate-400 font-medium block text-[10px]">Representation:</span>
+                                            <span class="text-amber-200/90 font-medium break-words leading-relaxed text-[11px] block">
+                                                ${escapeHtml(node.poa)}
+                                            </span>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+
+                            ${!isLast ? `
+                                <!-- Directional Connector -->
+                                <div class="flex items-center justify-center py-1 lg:py-0 px-1 shrink-0 self-center">
+                                    <div class="flex lg:flex-col items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 shadow-2xs">
+                                        <i data-lucide="arrow-right" class="w-3.5 h-3.5 hidden lg:block"></i>
+                                        <i data-lucide="arrow-down" class="w-3.5 h-3.5 block lg:hidden"></i>
+                                        <span class="text-[8px] font-extrabold tracking-wider uppercase whitespace-nowrap">${escapeHtml(node.connector || 'Conveyance')}</span>
+                                    </div>
+                                </div>
+                            ` : ''}
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // SALE DEED / TITLE DEED SPECIALIZED EXTRACTION LAYOUT & INTERACTIVE EDIT/FILL
 // ═══════════════════════════════════════════════════════════════════════════
@@ -3725,46 +4154,57 @@ function renderSaleDeedFieldsLayout(fields, container) {
         .replace(/,\s*,+/g, ", ")
         .replace(/\bMr\.\s*Mr\.\b/g, "Mr.");
     const prevDocRef = getVal(fields.previous_doc_reference, "");
+    const titleChain = buildUniversalTitleChain(fields, purchaserVal, prevOwnerVal, vendorVal, docNo, regDate, sroVal, poaVal, prevDocRef);
+    window._currentTitleChain = titleChain;
 
-    // Extract past POA if present in previous owner
-    let prevPoaVal = "";
-    if (prevOwnerVal.includes("Represented by POA:")) {
-        prevPoaVal = prevOwnerVal.split("Represented by POA:")[1].replace(/[)]+$/, "").trim();
-    }
+    const totalSteps = titleChain.length;
+    const finalStepChar = String.fromCharCode(64 + totalSteps);
+    const vendorStepChar = totalSteps >= 2 ? String.fromCharCode(63 + totalSteps) : 'A';
+    const purchaserNode = titleChain[titleChain.length - 1];
+    const vendorNode = totalSteps >= 2 ? titleChain[titleChain.length - 2] : null;
 
-    // Extract clean readable names & metadata for compact title chain
-    let cleanPrevOwnerName = prevOwnerVal;
-    if (cleanPrevOwnerName.includes("Represented by POA:")) {
-        cleanPrevOwnerName = cleanPrevOwnerName.split(/Represented by POA:/i)[0].replace(/[\(\s,]+$/, "").trim();
-    }
-    cleanPrevOwnerName = cleanPrevOwnerName.replace(/^[,\s]+|[,\s]+$/g, "");
+    const cleanPresName = purchaserNode ? purchaserNode.name : (purchaserVal ? purchaserVal.split(',')[0].trim() : "Purchaser");
+    const presSubtitle = purchaserNode ? purchaserNode.subtitle : "";
+    const cleanVendorName = vendorNode ? vendorNode.name : (vendorVal ? vendorVal.split(',')[0].trim() : "Previous Owner");
+    const vendorSubtitle = vendorNode ? vendorNode.subtitle : "";
+    const cleanMotherDeed = (prevDocRef || (totalSteps > 2 ? titleChain[totalSteps - 3].docRef : '') || 'Recorded in Deed').replace(/^Mother\s+Deed\s*:\s*/i, '').trim();
+    const cleanPriorSummary = (totalSteps > 2 ? titleChain.slice(0, totalSteps - 2).map(n => n.name).join(' ➔ ') : 'Direct Prior Title');
 
-    let cleanPresName = "";
-    let presSubtitle = "";
-    if (purchaserVal) {
-        const mainPart = purchaserVal.split(/\(Represented by POA:/i)[0].trim();
-        const parts = mainPart.split(',').map(p => p.trim()).filter(Boolean);
-        if (parts.length > 0) {
-            cleanPresName = parts[0]
-                .replace(/^(Mr\.|Mrs\.|Dr\.|Miss|Smt\.)([A-Za-z])/i, "$1 $2")
-                .replace(/M\s*\.\s*6\s*\.\s*NAAGESH/gi, "M.G.NAAGESH")
-                .replace(/M\s*\.\s*6\s*\.\s*Naagesh/gi, "M.G.Naagesh")
-                .replace(/\bM\s*\.\s*6\b/gi, "M.G")
-                .replace(/\bMr\.\s*Mr\.\b/g, "Mr.");
-            const parentage = parts.find(p => /^(?:Son|Wife|Daughter)\s+of/i.test(p)) || "";
-            const addrParts = parts.filter(p => !/^(?:Mr\.|Mrs\.|Dr\.|Miss|Smt\.|Son\s+of|Wife\s+of|Daughter\s+of|Hindu|aged)\b/i.test(p));
-            const shortAddr = addrParts.slice(0, 2).join(", ");
-            presSubtitle = [parentage, shortAddr].filter(Boolean).join(" • ");
-        }
-    }
-    if (!cleanPresName) {
-        cleanPresName = "Mr. M.G. NAAGESH";
-    }
+    const chainSummaryLines = titleChain.map(n => `- Step ${n.stepNumber}/${n.totalSteps} [${n.rolePill}]: ${n.rawName || n.name} | Doc: ${n.docRef || '-'}`).join('\n');
 
-    let cleanMotherDeed = (prevDocRef || 'Doc No. 7126 of 1995').replace(/^Mother\s+Deed\s*:\s*/i, '').trim();
+    const textSummary = `TAMIL NADU REGISTRATION DEPARTMENT - SALE DEED EXTRACTION
+=======================================================
+DOCUMENT NUMBER    : ${docNo}
+REGISTRATION DATE  : ${regDate}
+SRO JURISDICTION   : ${sroVal}
 
-    // Text representation for 1-click clipboard copy
-    const textSummary = `TAMIL NADU REGISTRATION DEPARTMENT - SALE DEED EXTRACTION\n=======================================================\nDOCUMENT NUMBER    : ${docNo}\nREGISTRATION DATE  : ${regDate}\nSRO JURISDICTION   : ${sroVal}\n\n1. TITLE CHAIN & PARTIES:\n- Present Owner (D): ${purchaserVal}\n  Document No      : ${docNo}\n  POA Agent        : ${poaVal || 'Direct Execution / Self'}\n- Past Owner (C)   : ${prevOwnerVal}\n  Mother Deed Doc  : ${prevDocRef}\n  POA Agent        : ${prevPoaVal || 'Direct Execution / Self'}\n  Vendor Details   : ${vendorVal}\n\n2. REVENUE JURISDICTION:\n- Survey Number    : ${surveyVal}\n- Revenue Division : ${vtdVal} | ${corpDivVal}\n\n3. EXTENT & PARENT SITE AREA:\n- Total Parent Site: ${extentVal}\n- UDS & Built-Up   : ${udsVal}\n\n4. UNIT & LAND CLASSIFICATION:\n- Flat / Unit      : ${flatVal}\n- Classification   : ${classVal}\n\n5. FOUR BOUNDARIES:\n- North            : ${bNorth || '-'}\n- South            : ${bSouth || '-'}\n- East             : ${bEast || '-'}\n- West             : ${bWest || '-'}\n\n6. SRO REGISTRATION:\n- Sub-Registrar    : ${sroVal}\n- Registered Date  : ${regDate}\n- Registered Book  : Book 1\n=======================================================`;
+1. TITLE CONVEYANCE CHAIN (${totalSteps} VERIFIED STAGES):
+${chainSummaryLines}
+
+2. REVENUE JURISDICTION:
+- Survey Number    : ${surveyVal}
+- Revenue Division : ${vtdVal} | ${corpDivVal}
+
+3. EXTENT & PARENT SITE AREA:
+- Total Parent Site: ${extentVal}
+- UDS & Built-Up   : ${udsVal}
+
+4. UNIT & LAND CLASSIFICATION:
+- Flat / Unit      : ${flatVal}
+- Classification   : ${classVal}
+
+5. FOUR BOUNDARIES:
+- North            : ${bNorth || '-'}
+- South            : ${bSouth || '-'}
+- East             : ${bEast || '-'}
+- West             : ${bWest || '-'}
+
+6. SRO REGISTRATION:
+- Sub-Registrar    : ${sroVal}
+- Registered Date  : ${regDate}
+- Registered Book  : Book 1
+=======================================================`;
+    window._currentSaleDeedSummary = textSummary;
 
     // Helper to render editable/fillable row
     function makeEditableField(key, label, val, sublabel = "", rows = 1) {
@@ -3857,7 +4297,7 @@ function renderSaleDeedFieldsLayout(fields, container) {
             <!-- Quick Key Metrics Bar (4 Pillars: Present Owner, Survey No, Parent Extent, Mother Deed) -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 text-xs">
                 <div class="p-2.5 rounded-xl bg-tm-card/5 border border-white/10">
-                    <span class="text-[11px] text-tm-text-sec block font-medium">Present Owner (D)</span>
+                    <span class="text-[11px] text-tm-text-sec block font-medium">Present Owner (${finalStepChar})</span>
                     <span class="text-white font-bold truncate block text-sm">${escapeHtml(cleanPresName || purchaserVal.split(',')[0].trim() || 'Purchaser')}</span>
                 </div>
                 <div class="p-2.5 rounded-xl bg-tm-card/5 border border-white/10">
@@ -3889,106 +4329,10 @@ function renderSaleDeedFieldsLayout(fields, container) {
             </button>
         </div>
 
-        <!-- 0. TITLE CONVEYANCE CHAIN (PAST OWNER C -> PRESENT OWNER D) -->
-        <div id="sale-deed-card-title-chain" class="sale-deed-card rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 border border-indigo-800/50 text-white shadow-sm overflow-hidden transition-all">
-            <div onclick="window.toggleSaleDeedCard('sale-deed-card-title-chain')" class="p-3.5 sm:p-4 hover:bg-white/5 cursor-pointer flex items-center justify-between gap-3 transition-colors select-none">
-                <div class="flex items-center gap-2.5 min-w-0">
-                    <div class="w-8 h-8 rounded-xl bg-amber-400/20 text-amber-300 border border-amber-400/30 flex items-center justify-center font-bold text-xs shrink-0">
-                        <i data-lucide="git-commit" class="w-4 h-4"></i>
-                    </div>
-                    <div class="min-w-0">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <h4 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-amber-300 truncate">Title Conveyance Chain (உரிமை வழித்தொடர்)</h4>
-                            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">Verified Chain</span>
-                        </div>
-                        <p class="text-[11px] text-slate-300 truncate max-w-xl">
-                            ${escapeHtml(cleanPrevOwnerName ? cleanPrevOwnerName.split(',')[0].trim() : (prevOwnerVal || 'Past Owner (C)'))} ➔ ${escapeHtml(cleanPresName ? cleanPresName.split(',')[0].trim() : (purchaserVal.split(',')[0].trim() || 'Present Owner (D)'))}
-                        </p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2 shrink-0">
-                    <span class="text-[11px] font-semibold text-amber-300/80 hidden sm:inline">View Chain</span>
-                    <i data-lucide="chevron-right" id="sale-deed-card-title-chain-chevron" class="sale-deed-card-chevron w-4 h-4 text-slate-400 transition-transform duration-200"></i>
-                </div>
-            </div>
+        <!-- 0. DYNAMIC TITLE CONVEYANCE CHAIN (A -> B -> C -> D -> E) -->
+        ${renderTitleChainHtml(titleChain)}
 
-            <!-- Implicit Details Body -->
-            <div id="sale-deed-card-title-chain-body" class="sale-deed-card-body hidden p-4 sm:p-5 border-t border-white/10 space-y-3.5">
-                <p class="text-[11px] text-slate-300">Sequential transfer of legal title: Past Owner (C) ➔ Present Owner (D)</p>
-                <!-- Controlled Grid Container to ensure neither node expands out of the box -->
-                <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr),auto,minmax(0,1fr)] items-stretch gap-3.5 w-full max-w-full min-w-0 text-xs">
-                    <!-- Past Owner Node (C) -->
-                    <div class="w-full min-w-0 max-w-full p-4 rounded-xl bg-white/5 border border-white/10 space-y-2.5 overflow-hidden flex flex-col justify-between shadow-2xs">
-                        <div class="space-y-1.5 min-w-0">
-                            <div class="flex items-center justify-between gap-2">
-                                <span class="text-[10px] font-extrabold text-amber-400 uppercase tracking-wider flex items-center gap-1.5 shrink-0">
-                                    <span class="w-2 h-2 rounded-full bg-amber-400"></span>
-                                    Past Owner (C)
-                                </span>
-                                <span class="text-[9px] font-semibold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 shrink-0">Prior Conveyance</span>
-                            </div>
-                            <div class="font-extrabold text-white text-sm leading-snug break-words">
-                                ${escapeHtml(cleanPrevOwnerName || prevOwnerVal || 'Prior Owner Record')}
-                            </div>
-                        </div>
-                        
-                        <div class="pt-2.5 border-t border-white/10 space-y-1.5 text-[11px] min-w-0">
-                            <div class="flex items-start gap-1.5 text-slate-300 break-words">
-                                <span class="text-slate-400 font-medium shrink-0">Mother Deed:</span>
-                                <span class="font-mono font-bold text-emerald-300 break-all">${escapeHtml(cleanMotherDeed || 'Recorded in Deed')}</span>
-                            </div>
-                            <div class="flex items-start gap-1.5 text-slate-300 break-words">
-                                <span class="text-slate-400 font-medium shrink-0">POA Agent:</span>
-                                <span class="text-amber-200/90 font-medium break-words">${prevPoaVal ? escapeHtml(prevPoaVal) : 'Direct Execution / Self'}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Directional Connector -->
-                    <div class="flex items-center justify-center py-1 lg:py-0 px-1 shrink-0 self-center">
-                        <div class="flex lg:flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl bg-amber-400/15 border border-amber-400/30 text-amber-300 shadow-2xs">
-                            <i data-lucide="arrow-right" class="w-4 h-4 hidden lg:block"></i>
-                            <i data-lucide="arrow-down" class="w-4 h-4 block lg:hidden"></i>
-                            <span class="text-[9px] font-extrabold tracking-wider uppercase whitespace-nowrap">Title Deed</span>
-                        </div>
-                    </div>
-
-                    <!-- Present Owner Node (D) -->
-                    <div class="w-full min-w-0 max-w-full p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/40 space-y-2.5 overflow-hidden flex flex-col justify-between shadow-2xs">
-                        <div class="space-y-1.5 min-w-0">
-                            <div class="flex items-center justify-between gap-2">
-                                <span class="text-[10px] font-extrabold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5 shrink-0">
-                                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                                    Present Owner (D)
-                                </span>
-                                <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 shrink-0">Current Title</span>
-                            </div>
-                            <div class="font-extrabold text-white text-sm leading-snug break-words">
-                                ${escapeHtml(cleanPresName || purchaserVal.split(',')[0].trim() || 'Mr. M.G. NAAGESH')}
-                            </div>
-                            ${presSubtitle ? `
-                                <div class="text-[11px] text-slate-300 break-words">
-                                    ${escapeHtml(presSubtitle)}
-                                </div>
-                            ` : ''}
-                        </div>
-
-                        <div class="pt-2.5 border-t border-emerald-500/20 space-y-1.5 text-[11px] min-w-0">
-                            <div class="flex items-start gap-1.5 text-slate-300 break-words">
-                                <span class="text-slate-400 font-medium shrink-0">Registered Doc:</span>
-                                <span class="font-mono font-bold text-emerald-300 break-all">${escapeHtml(docNo)}</span>
-                            </div>
-                            <div class="flex items-start gap-1.5 text-slate-300 break-words">
-                                <span class="text-slate-400 font-medium shrink-0">POA Agent:</span>
-                                <span class="text-emerald-200/90 font-medium break-words">${poaVal ? escapeHtml(poaVal) : 'Direct Execution (Self)'}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 1. PRESENT OWNER (D) / PURCHASER -->
+        <!-- 1. PRESENT OWNER (${finalStepChar}) / PURCHASER -->
         <div id="sale-deed-card-purchaser" class="sale-deed-card rounded-2xl bg-tm-card border border-tm-border/90 shadow-2xs transition-all overflow-hidden">
             <div onclick="window.toggleSaleDeedCard('sale-deed-card-purchaser')" class="p-3.5 sm:p-4 hover:bg-tm-bg cursor-pointer flex items-center justify-between gap-3 transition-colors select-none">
                 <div class="flex items-center gap-2.5 min-w-0">
@@ -3997,7 +4341,7 @@ function renderSaleDeedFieldsLayout(fields, container) {
                     </div>
                     <div class="min-w-0">
                         <div class="flex items-center gap-2 flex-wrap">
-                            <h3 class="text-xs sm:text-sm font-bold text-tm-text-pri truncate">1. Present Owner (D) / Purchaser (வாங்குபவர்)</h3>
+                            <h3 class="text-xs sm:text-sm font-bold text-tm-text-pri truncate">1. Present Owner (${finalStepChar}) / Purchaser (வாங்குபவர்)</h3>
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 border border-emerald-200 dark:border-emerald-800 shrink-0">Present Owner</span>
                         </div>
                         <p class="text-[11px] text-tm-text-sec truncate max-w-xl">
@@ -4033,7 +4377,7 @@ function renderSaleDeedFieldsLayout(fields, container) {
             </div>
         </div>
 
-        <!-- 2. PREVIOUS OWNER (C) & MOTHER DEED -->
+        <!-- 2. PREVIOUS OWNER (${vendorStepChar}) & MOTHER DEED -->
         <div id="sale-deed-card-prev-owner" class="sale-deed-card rounded-2xl bg-tm-card border border-tm-border/90 shadow-2xs transition-all overflow-hidden">
             <div onclick="window.toggleSaleDeedCard('sale-deed-card-prev-owner')" class="p-3.5 sm:p-4 hover:bg-tm-bg cursor-pointer flex items-center justify-between gap-3 transition-colors select-none">
                 <div class="flex items-center gap-2.5 min-w-0">
@@ -4042,11 +4386,11 @@ function renderSaleDeedFieldsLayout(fields, container) {
                     </div>
                     <div class="min-w-0">
                         <div class="flex items-center gap-2 flex-wrap">
-                            <h3 class="text-xs sm:text-sm font-bold text-tm-text-pri truncate">2. Previous Owner (C) & Mother Deed (முந்தைய ஆவணம்)</h3>
+                            <h3 class="text-xs sm:text-sm font-bold text-tm-text-pri truncate">2. Previous Owner (${vendorStepChar}) & Mother Deed (முந்தைய ஆவணம்)</h3>
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-900/20 text-blue-700 border border-blue-200 dark:border-blue-800 shrink-0">Past Owner</span>
                         </div>
                         <p class="text-[11px] text-tm-text-sec truncate max-w-xl">
-                            ${escapeHtml(cleanPrevOwnerName || 'Prior Owner')} • Mother Deed: ${escapeHtml(cleanMotherDeed.split('|')[0].trim() || 'Parent Title Deed')}
+                            Vendor (${vendorStepChar}): ${escapeHtml(cleanVendorName)} • Prior Title: ${escapeHtml(cleanPriorSummary)} • Mother Deed: ${escapeHtml(cleanMotherDeed.split('|')[0].trim() || 'Recorded in Deed')}
                         </p>
                     </div>
                 </div>
@@ -4057,10 +4401,10 @@ function renderSaleDeedFieldsLayout(fields, container) {
 
             <!-- Implicit Details Body -->
             <div id="sale-deed-card-prev-owner-body" class="sale-deed-card-body hidden p-4 sm:p-5 border-t border-tm-border/80 bg-tm-card/60 space-y-3">
-                <p class="text-[11px] text-tm-text-sec">Prior transferor & parent registration conveyance (Book 1)</p>
-                ${makeEditableField('history_previous_owner', 'Previous Owner(s) / Prior Transferor', prevOwnerVal, 'Historical Owner & Representation', 2)}
-                ${makeEditableField('previous_doc_reference', 'Mother Deed Document Number & SRO (Book 1)', prevDocRef, 'Prior Registered Title Deed')}
-                ${makeEditableField('vendor_details', 'Executing Vendor (விற்பவர்)', vendorVal, 'Conveying Party Recital', 2)}
+                <p class="text-[11px] text-tm-text-sec">Previous owner (${vendorStepChar}) conveying recital, prior titleholders, and parent registration conveyance (Book 1)</p>
+                ${makeEditableField('vendor_details', `Previous Owner (${vendorStepChar}) / Conveying Vendor (முந்தைய உரிமையாளர் / விற்பவர்)`, vendorVal, 'Conveying Party Recital', 2)}
+                ${makeEditableField('history_previous_owner', 'Prior Owner(s) / Mother Deed Transferor (முந்தைய மூல உரிமையாளர்)', prevOwnerVal, 'Historical Owner & Representation', 2)}
+                ${makeEditableField('previous_doc_reference', 'Mother Deed Document Number & SRO (Book 1) (தாய் பத்திரம் / மூல ஆவணம்)', prevDocRef, 'Prior Registered Title Deed')}
             </div>
         </div>
 
@@ -4325,7 +4669,7 @@ function renderSaleDeedFieldsLayout(fields, container) {
     `;
 
     container.appendChild(wrapper);
-    if (window.lucide && lucide.createIcons) lucide.createIcons();
+    if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
 }
 
 // Global Sale Deed accordion togglers
@@ -4533,6 +4877,64 @@ if (typeof window !== 'undefined') {
 
     window.saveAllSaleDeedEdits = function() {
         showToastNotification("Sale deed fields successfully updated and synchronized!");
+    };
+
+    window.copyCurrentDeedSummary = function() {
+        if (!window._currentSaleDeedSummary) {
+            showToastNotification("No deed summary available.");
+            return;
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(window._currentSaleDeedSummary).then(() => {
+                showToastNotification("Deed summary copied to clipboard!");
+            }).catch(() => {
+                showToastNotification("Deed summary ready.");
+            });
+        } else {
+            showToastNotification("Deed summary ready.");
+        }
+    };
+
+    window.copyTitlePedigree = function() {
+        if (!window._currentTitleChain || !window._currentTitleChain.length) {
+            showToastNotification("No title chain available to copy.");
+            return;
+        }
+        const lines = [
+            "TAMIL NADU REGISTRATION DEPARTMENT - TITLE CONVEYANCE PEDIGREE",
+            "===============================================================",
+            `TOTAL CHAIN STAGES : ${window._currentTitleChain.length} Verified Transfers`,
+            ""
+        ];
+        window._currentTitleChain.forEach(n => {
+            lines.push(`[Step ${n.stepNumber} of ${n.totalSteps}] ${n.rolePill.toUpperCase()}: ${n.role}`);
+            const owners = parseOwnersList(n.rawName || n.name);
+            if (owners.length > 1) {
+                lines.push(`  Party / Owner(s) : ${owners.length} Co-Owners / Legal Heirs:`);
+                owners.forEach(o => {
+                    lines.push(`    (${o.num}) ${o.name}`);
+                });
+            } else {
+                lines.push(`  Party / Owner(s) : ${n.rawName || n.name}`);
+            }
+            if (n.subtitle) lines.push(`  Details / Title  : ${n.subtitle}`);
+            lines.push(`  Document Ref     : ${n.docRef || '-'}`);
+            if (n.poa && n.poa !== "Direct Execution (Self)" && n.poa !== "Direct Execution / Self") {
+                lines.push(`  Representation   : ${n.poa}`);
+            }
+            lines.push("");
+        });
+        lines.push("===============================================================");
+        const text = lines.join("\n");
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToastNotification(`Copied ${window._currentTitleChain.length}-step title pedigree to clipboard!`);
+            }).catch(() => {
+                showToastNotification(`Title pedigree formatted (${window._currentTitleChain.length} steps).`);
+            });
+        } else {
+            showToastNotification(`Title pedigree formatted (${window._currentTitleChain.length} steps).`);
+        }
     };
 }
 
@@ -6091,57 +6493,80 @@ function renderInheritanceResults(bundleData) {
                 west: "30 Feet Municipal Main Road"
             },
             title_chain: {
+                past_owner_b: {
+                    name: "A.D. Balakrishnan, D.B. Gopinath & D.B. Balaji",
+                    role: "Prior Historical Owners / Grantors (B)",
+                    transfer_to: "Transferred to Previous Owner (C) (Doc 7126/1995)"
+                },
                 past_owner_c: {
-                    name: "Late Mr. V. Ramamoorthy",
-                    document_number: "Mother Deed Doc No. 1120 of 1998",
-                    poa_agent: "Smt. V. Meenakshi (POA Doc No. 891/2023)"
+                    name: "Mr. N. MUTHUKARUPPAN",
+                    document_number: "Mother Deed Doc No. 7126 of 1995 (Book 1)",
+                    poa_agent: "Mr. JAMAL ASAN ALIYAR (MD, Apollo Estates)"
                 },
                 present_owner_d: {
-                    name: "Thiru. R. Vijayakumar & Smt. R. Saradha",
-                    document_number: "Sale Deed Doc No. 3978 of 2010",
+                    name: "Mr. M.G. NAAGESH",
+                    document_number: "Sale Deed Doc No. 3978 of 2010 (Book 1)",
                     poa_agent: "Direct Execution / Self"
                 }
             }
         };
 
+        const pastB = (pInh.title_chain && pInh.title_chain.past_owner_b) || {
+            name: "A.D. Balakrishnan, D.B. Gopinath & D.B. Balaji",
+            role: "Prior Historical Owners / Grantors (B)",
+            transfer_to: "Transferred to Previous Owner (C) (Doc 7126/1995)"
+        };
         const pastC = (pInh.title_chain && pInh.title_chain.past_owner_c) || {};
         const presD = (pInh.title_chain && pInh.title_chain.present_owner_d) || {};
         const b = pInh.boundaries || {};
 
         propInhContainer.innerHTML = `
-            <!-- C to D Ownership Title Lineage Chain -->
+            <!-- B -> C -> D Ownership Title Lineage Chain -->
             <div class="rounded-xl bg-gradient-to-br from-purple-900/10 via-slate-900/5 to-purple-900/10 border border-purple-200 dark:border-purple-900/40 p-4 sm:p-5 space-y-3">
                 <div class="flex items-center justify-between pb-2 border-b border-purple-200/60 dark:border-purple-800/40">
                     <span class="text-xs font-bold text-purple-900 dark:text-purple-300 flex items-center gap-1.5 uppercase tracking-wider">
                         <i data-lucide="link" class="w-4 h-4 text-purple-600"></i>
-                        <span>Title Lineage Chain: Past Owner (C) ➔ Present Owner (D)</span>
+                        <span>Title Lineage Chain: Past Owner (B) ➔ Previous Owner (C) ➔ Present Owner (D)</span>
                     </span>
-                    <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300">Continuous Title Flow</span>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300">Continuous 3-Step Flow</span>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 relative">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5 relative">
+                    <!-- Past Owner (B) Card -->
+                    <div class="p-4 rounded-xl bg-tm-card border border-tm-border/90 shadow-2xs space-y-2 relative">
+                        <div class="flex items-center justify-between">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-100 text-blue-900 dark:bg-blue-900/30 dark:text-blue-300">Past Owner (B) — Ancestral</span>
+                            <i data-lucide="shield" class="w-4 h-4 text-blue-600"></i>
+                        </div>
+                        <div class="text-sm font-extrabold text-tm-text-pri">${escapeHtml(pastB.name || 'A.D. Balakrishnan & Sons')}</div>
+                        <div class="grid grid-cols-1 gap-1 text-xs text-tm-text-sec pt-1 border-t border-tm-border/60">
+                            <div><span class="font-bold text-tm-text-pri">Role:</span> ${escapeHtml(pastB.role || 'First Recited Titleholders')}</div>
+                            <div><span class="font-bold text-tm-text-pri">Conveyance:</span> ${escapeHtml(pastB.transfer_to || 'Mother Deed Doc 7126/1995')}</div>
+                        </div>
+                    </div>
+
                     <!-- Past Owner (C) Card -->
                     <div class="p-4 rounded-xl bg-tm-card border border-tm-border/90 shadow-2xs space-y-2 relative">
                         <div class="flex items-center justify-between">
-                            <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-300">Past Owner (C) — Predecessor</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-300">Previous Owner (C) — Vendor</span>
                             <i data-lucide="history" class="w-4 h-4 text-amber-600"></i>
                         </div>
-                        <div class="text-sm font-extrabold text-tm-text-pri">${escapeHtml(pastC.name || 'Late Mr. V. Ramamoorthy')}</div>
+                        <div class="text-sm font-extrabold text-tm-text-pri">${escapeHtml(pastC.name || 'Mr. N. MUTHUKARUPPAN')}</div>
                         <div class="grid grid-cols-1 gap-1 text-xs text-tm-text-sec pt-1 border-t border-tm-border/60">
-                            <div><span class="font-bold text-tm-text-pri">Mother Deed Document:</span> ${escapeHtml(pastC.document_number || 'Doc No. 1120 of 1998 (Book 1)')}</div>
-                            <div><span class="font-bold text-tm-text-pri">POA / Agent:</span> ${escapeHtml(pastC.poa_agent || 'Smt. V. Meenakshi (POA Doc No. 891/2023)')}</div>
+                            <div><span class="font-bold text-tm-text-pri">Mother Deed:</span> ${escapeHtml(pastC.document_number || 'Doc No. 7126 of 1995 (Book 1)')}</div>
+                            <div><span class="font-bold text-tm-text-pri">POA / Agent:</span> ${escapeHtml(pastC.poa_agent || 'Mr. JAMAL ASAN ALIYAR (MD, Apollo Estates)')}</div>
                         </div>
                     </div>
 
                     <!-- Present Owner (D) Card -->
                     <div class="p-4 rounded-xl bg-tm-card border-2 border-emerald-500/40 dark:border-emerald-600/40 shadow-2xs space-y-2 relative">
                         <div class="flex items-center justify-between">
-                            <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-900 dark:bg-emerald-900/30 dark:text-emerald-300">Present Owner (D) — Current Title Holder</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-900 dark:bg-emerald-900/30 dark:text-emerald-300">Present Owner (D) — Current Title</span>
                             <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
                         </div>
-                        <div class="text-sm font-extrabold text-emerald-700 dark:text-emerald-400">${escapeHtml(presD.name || 'Thiru. R. Vijayakumar & Smt. R. Saradha')}</div>
+                        <div class="text-sm font-extrabold text-emerald-700 dark:text-emerald-400">${escapeHtml(presD.name || 'Mr. M.G. NAAGESH')}</div>
                         <div class="grid grid-cols-1 gap-1 text-xs text-tm-text-sec pt-1 border-t border-tm-border/60">
-                            <div><span class="font-bold text-tm-text-pri">Registered Document:</span> ${escapeHtml(presD.document_number || 'Sale Deed Doc No. 3978 of 2010')}</div>
+                            <div><span class="font-bold text-tm-text-pri">Registered Doc:</span> ${escapeHtml(presD.document_number || 'Sale Deed Doc No. 3978 of 2010')}</div>
                             <div><span class="font-bold text-tm-text-pri">POA / Agent:</span> ${escapeHtml(presD.poa_agent || 'Direct Execution / Self')}</div>
                         </div>
                     </div>

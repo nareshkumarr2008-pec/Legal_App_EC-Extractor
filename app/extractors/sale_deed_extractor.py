@@ -68,7 +68,7 @@ class SaleDeedExtractor:
         return t.strip()
 
     def _clean_owner_names(self, s: Optional[str]) -> str:
-        """Fixes OCR typos and stray noise in owner names (e.g. BALAKRI~HNAN -> BALAKRISHNAN, M.6 -> M.G)."""
+        """Fixes OCR typos and stray noise in owner names (e.g. BALAKRI~HNAN -> BALAKRISHNAN, M.6 -> M.G, D.8 -> D.B)."""
         if not s:
             return ""
         # 1. OCR misread 'S' as tilde '~' inside uppercase words
@@ -79,8 +79,13 @@ class SaleDeedExtractor:
         t = re.sub(r'M\s*\.\s*6\s*\.\s*Naagesh', 'M.G.Naagesh', t)
         t = re.sub(r'\bM\s*\.\s*6\b', 'M.G', t)
         t = re.sub(r'\bMr\.\s*Mr\.\b', 'Mr.', t)
+        # Fix OCR misreading 'B' as '8' in initials e.g. D.8.Gopinath -> D.B.Gopinath
+        t = re.sub(r'\b([A-Z])\.8\.', r'\1.B.', t)
+        t = re.sub(r'\b([A-Z])\.8\b', r'\1.B', t)
         # 3. Stray OCR divider 'I' or '|' before initials e.g. '(1) I A.D.' -> '(1) A.D.'
         t = re.sub(r'\b[I|]\s+([A-Z]\.)', r'\1', t)
+        t = re.sub(r'([A-Za-z0-9\)])\s*,\s*([0-9]\))', r'\1, \2', t)
+        t = re.sub(r'([A-Za-z0-9])\s+([0-9]\))', r'\1, \2', t)
         t = re.sub(r'\s+', ' ', t)
         return t.strip()
 
@@ -91,36 +96,85 @@ class SaleDeedExtractor:
         t = re.sub(r'--- PAGE \d+ ---.*?(?=[A-Z])', ' ', str(raw), flags=re.DOTALL)
         t = re.sub(r'[\.]{2,}[^\w]*', ' ', t)
         t = self._clean_str(t)
-        t = re.sub(r'[•,~_\'\"`\^]+', ' ', t)
+        # Strip stray OCR characters but preserve commas and periods
+        t = re.sub(r'[•~_\'\"`\^]+', ' ', t)
         t = re.sub(r'\s+', ' ', t).strip()
 
-        # Check if Corporate / Builder entity + Managing Director / Representative
+        # Pattern 1: Person, Managing Director / Power Agent of Company
+        # e.g., "Mr.Jamal Asan Aliyar, Managing Director of M/s.Apollo 'Estates & Builders (P) .Ltd"
+        rev_m = re.search(
+            r'((?:Mr\.?|Mrs\.?|Dr\.?|Thiru\.?|Selvi|Miss)?\s*[A-Za-z\.\s]+?)[,\s]+(?:Managing\s+Director|MD|Director|Proprietor|Partner|Power\s+Agent)\s+of\s+((?:M/s|H/s|His)[\.\s]*[A-Za-z0-9\s&\'\(\)\.-]+?(?:Ltd|Limited|Builders|Estates)[^\n,]*)',
+            t,
+            re.IGNORECASE
+        )
+        if rev_m:
+            person = self._clean_str(rev_m.group(1)).strip(' ,')
+            comp = self._clean_str(rev_m.group(2)).strip(' ,')
+            comp = re.sub(r'^(?:His|H/s|M/s)[\.\s]*', 'M/s. ', comp, flags=re.I)
+            comp = re.sub(r'\bPrivated\b', 'Private', comp, flags=re.I)
+            comp = re.sub(r'\s+\.Ltd\b', ' Ltd', comp, flags=re.I)
+            comp = re.sub(r'\s+\(P\)\s*', ' (P) ', comp, flags=re.I)
+            if person:
+                return f"{person}, Managing Director of {comp}"
+            return comp
+
+        # Pattern 2: Corporate entity represented by person
         corp_m = re.search(
             r'((?:M/s|H/s|His)[\.\s]*[A-Za-z0-9\s&\'\(\)\.-]+?(?:Ltd|Limited|Builders|Estates)[^\n,]*)(?:.*?represented\s+by\s+(?:its\s+)?(?:Managing\s+director|MD|Director|Power\s+Agent|their\s+Power\s+of\s+Attorney\s+Agent)?[\s,:]*([A-Za-z\.\s]+))?',
             t,
             re.IGNORECASE
         )
         if corp_m:
-            comp = self._clean_str(corp_m.group(1)).strip(',').strip()
+            comp = self._clean_str(corp_m.group(1)).strip(' ,')
             comp = re.sub(r'^(?:His|H/s|M/s)[\.\s]*', 'M/s. ', comp, flags=re.I)
             comp = re.sub(r'\bPrivated\b', 'Private', comp, flags=re.I)
-            rep = self._clean_str(corp_m.group(2)).strip(',').strip() if corp_m.group(2) else ""
+            comp = re.sub(r'\s+\.Ltd\b', ' Ltd', comp, flags=re.I)
+            rep = self._clean_str(corp_m.group(2)).strip(' ,') if corp_m.group(2) else ""
             if rep:
                 rep = re.sub(r'^(?:their\s+)?(?:Power\s+of\s+Attorney\s+Agent|Power\s+Agent)?[\s,:]*', '', rep, flags=re.I).strip()
-                rep = re.split(r'\b(?:having|residing|son|wife|daughter|aged|door|No\b)\b', rep, flags=re.I)[0].strip(',').strip()
+                rep = re.split(r'\b(?:having|residing|son|wife|daughter|aged|door|No\b)\b', rep, flags=re.I)[0].strip(' ,')
                 if rep:
                     return f"{comp} (Represented by {rep})"
             return comp
 
-        # Strip personal address, door number, street, parentage, age
+        # Pattern 3: Individual Person
         cut = re.split(
             r'\b(?:Son\s+of|S/o\.?|Wife\s+of|W/o\.?|Daughter\s+of|D/o\.?|aged\s+about|aged\s+\d+|residing\s+at|residing|door\s*no|No\.?\s*\d+|having\s+its)\b',
             t,
             flags=re.I
         )[0]
-        cut = self._clean_str(cut).strip(',').strip()
+        cut = self._clean_str(cut).strip(' ,')
         cut = re.sub(r'[^A-Za-z0-9\.\s\(\)&/-]', '', cut).strip()
         return cut
+
+    def _strip_party_address(self, val: Optional[str]) -> Optional[str]:
+        """Strips residential addresses, door numbers, streets, and pincodes from party names, keeping Name + Parentage/Spouse."""
+        if not val or val == "Not Detected":
+            return val
+        poa_part = ""
+        if " (Represented by POA:" in val:
+            v, p = val.split(" (Represented by POA:", 1)
+            val = v
+            poa_part = f" (Represented by POA:{p}"
+        
+        val = re.sub(r'[\r\n]+', ' ', val)
+        val = re.sub(r'\s{2,}', ' ', val).strip(' ,')
+        
+        m = re.search(r'(?:,\s*|\s+)(?:aged\s+(?:about\s+)?(?:\d+|[a-z0-9\s]+years)|all\s+residing|residing\s+at)\b.*', val, re.I)
+        if m:
+            val = val[:m.start()].strip(' ,')
+        else:
+            m2 = re.search(r',\s*(?:door\s*no|flat\s*no|old\s*door|new\s*door|No\.?\s*\d+)\b.*', val, re.I)
+            if m2:
+                val = val[:m2.start()].strip(' ,')
+
+        val = re.sub(r'M\s*\.\s*6\s*\.\s*NAAGESH', 'M.G.NAAGESH', val, flags=re.I)
+        val = re.sub(r'M\s*\.\s*6\s*\.\s*Naagesh', 'M.G.Naagesh', val)
+        val = re.sub(r'\bM\s*\.\s*6\b', 'M.G', val)
+        val = re.sub(r'([A-Za-z])\.(?=[A-Za-z])', r'\1. ', val)
+        val = re.sub(r'\bSri\.\s*[sS]\.?\s*', 'Sri S. ', val)
+        val = re.sub(r'\s+', ' ', val).strip(' ,')
+        return f"{val}{poa_part}"
 
     def _find_value(self, text: str, patterns: List[str], flags=re.IGNORECASE) -> Optional[str]:
         for pat in patterns:
@@ -143,6 +197,8 @@ class SaleDeedExtractor:
         # 1. Pre-process text: normalize line-wraps, hyphenated word breaks, and joined digit-words
         text = raw_text.replace('\r\n', '\n').replace('\r', '\n')
         norm_text = re.sub(r'(\w+)-\s*\n\s*(\w+)', r'\1\2', text)
+        # Fix OCR date typo like 199s / 199S -> 1995 before digit-word splitting
+        norm_text = re.sub(r'(\b\d{1,2}[\./-]\d{1,2}[\./-]19\d)[sS]\b', r'\g<1>5', norm_text)
         norm_text = re.sub(r'(\d+)([a-zA-Z]+)', r'\1 \2', norm_text)
 
         # Locate beginning of operative conveyance (after stamp paper vendor noise on Page 1)
@@ -156,15 +212,21 @@ class SaleDeedExtractor:
         # 1. DEED EXECUTION DATE
         # ═══════════════════════════════════════════════════════════════════
         reg_date = None
-        exec_m = re.search(r'(?:THIS\s+(?:DEED|INDENTURE)[\s\S]*?(?:executed|[eo]xe[ce]uted|made)\s+[\s\S]*?on\s+this\s+(?:the\s+)?[^\w]*(\d{1,2})\s*(?:st|nd|rd|th)?\s*d[a-z0-9]y\s+of\s+([A-Za-z]+)[,\s]+(\d{4})|(?:executed|[eo]xe[ce]uted|made)\s+at[\s\S]*?this\s+(\d{1,2})\s*(?:st|nd|rd|th)?\s*day\s+of\s+([A-Za-z]+)[,\s]+(\d{4}))', op_text, re.IGNORECASE)
+        exec_m = re.search(r'(?:THIS\s+(?:DEED|INDENTURE)[\s\S]*?(?:executed|[eo]xe[ce]uted|made)\s+[\s\S]*?on\s+this\s+(?:the\s+)?[^\w]*([0-9A-Za-z\.]+)?\s*(?:st|nd|rd|th)?\s*d[a-z0-9]*y\s+of\s+([A-Za-z]+)[,\s]+(\d{4})|(?:executed|[eo]xe[ce]uted|made)\s+at[\s\S]*?this\s+([0-9A-Za-z\.]+)?\s*(?:st|nd|rd|th)?\s*day\s+of\s+([A-Za-z]+)[,\s]+(\d{4}))', op_text, re.IGNORECASE)
         if exec_m:
             g1, g2, g3, g4, g5, g6 = (list(exec_m.groups()) + [None]*6)[:6]
-            raw_d = g1 or g4
+            raw_d = g1 or g4 or ""
             raw_m = (g2 or g5 or "").lower()
             yr = g3 or g6
             m_num = MONTH_MAP.get(raw_m, MONTH_MAP.get(raw_m[:3]))
-            if m_num and raw_d and yr and self._is_valid_date(raw_d, m_num, yr):
-                reg_date = f"{raw_d.zfill(2)}-{m_num}-{yr}"
+            d_clean = re.sub(r'[^\d]', '', raw_d)
+            if m_num and d_clean and yr and self._is_valid_date(d_clean, m_num, yr):
+                reg_date = f"{d_clean.zfill(2)}-{m_num}-{yr}"
+            elif m_num and yr:
+                # Fallback to stamp/endorsement date matching the execution year
+                dt_m = re.search(r'\b(\d{1,2})[/.-](\d{1,2})[/.-](?:' + yr[-2:] + r'|' + yr + r')\b', text)
+                if dt_m and self._is_valid_date(dt_m.group(1), dt_m.group(2), yr):
+                    reg_date = f"{dt_m.group(1).zfill(2)}-{dt_m.group(2).zfill(2)}-{yr}"
 
         if not reg_date:
             # Check registration endorsement / stamp dates
@@ -252,6 +314,7 @@ class SaleDeedExtractor:
                 doc_str = f" - POA Doc: {poa_doc}" if poa_doc else ""
                 vendor_details = f"{v_princ} (Represented by POA: {poa_name}{doc_str})"
 
+        vendor_details = self._strip_party_address(vendor_details)
         fields["vendor_details"] = {
             "value": vendor_details or "Not Detected",
             "confidence": 0.95 if vendor_details else 0.0,
@@ -340,6 +403,7 @@ class SaleDeedExtractor:
                     sro_part = f", SRO {poa_hdr.group(3).strip()}" if poa_hdr.group(3) else ""
                     poa_doc = f"Doc No. {poa_hdr.group(2).strip()}{sro_part}"
 
+        purchaser_details = self._strip_party_address(purchaser_details)
         fields["purchaser_details"] = {
             "value": purchaser_details or "Not Detected",
             "confidence": 0.95 if purchaser_details else 0.0,
@@ -438,6 +502,9 @@ class SaleDeedExtractor:
         # 5. PREVIOUS DOCUMENT REFERENCE (Mother Deed & Prior Titles Only - Never POA)
         # ═══════════════════════════════════════════════════════════════════
         mother_docs = []
+        # Pre-clean OCR date typo e.g. 199s / 199S -> 1995 before matching
+        norm_text = re.sub(r'(\d{1,2}[\./-]\d{1,2}[\./-]19\d)[sS]\b', r'\g<1>5', norm_text)
+
         pdr_matches = re.finditer(
             r'(?:(?:registered\s+as\s+|vide\s+)?(?:Doc\.?\s*No\.?|Document\s*No\.?|Doc\.No\.|ஆவண\s*எண்)\s*[:\s]*(\d{1,5})[\.,\s]*(?:of|/|\s+of\s+)\s*(\d{2,4}))',
             norm_text,
@@ -448,7 +515,7 @@ class SaleDeedExtractor:
             if len(dyr) == 2: dyr = f"19{dyr}" if int(dyr) > 25 else f"20{dyr}"
 
             c_start = max(0, pm.start() - 160)
-            c_end = min(len(norm_text), pm.end() + 160)
+            c_end = min(len(norm_text), pm.end() + 200)
             ctx = norm_text[c_start:c_end]
 
             # Strictly exclude POA registration deeds (Book 4 / Power of Attorney)
@@ -470,7 +537,14 @@ class SaleDeedExtractor:
             dt_p = re.search(r'(?:dated|on)\s*([0-9./-]+)', ctx, re.IGNORECASE)
             dt_str = f" (Dated {dt_p.group(1)})" if dt_p else ""
 
-            entry = f"Doc No. {dno} of {dyr}{dt_str}{sro_str}"
+            vol_p = re.search(r'(?:in\s+)?(Book[- ]?\d+)[,\s]+(Volume\s*\d+)[,\s]+(Pages?(?:\s+from\.?)?\s*\d+\s*(?:to|-)\s*\d+)', ctx, re.IGNORECASE)
+            vol_str = ""
+            if vol_p:
+                bk = vol_p.group(1).replace("-", " ")
+                pg = re.sub(r'from\.\s*', 'from ', vol_p.group(3), flags=re.I)
+                vol_str = f" in {bk}, {vol_p.group(2)}, {pg}"
+
+            entry = f"Doc No. {dno} of {dyr}{dt_str}{vol_str}{sro_str}"
             mother_entry = f"Mother Deed: {entry}"
             if mother_entry not in mother_docs:
                 mother_docs.append(mother_entry)
@@ -487,13 +561,22 @@ class SaleDeedExtractor:
         # 6. SURVEY NUMBER & SUB-DIVISION
         # ═══════════════════════════════════════════════════════════════════
         survey = None
-        sy_m = re.search(r'\b((?:Town\s+Survey\s*No\.?|T\.?\s*S\.?\s*No\.?|Survey\s*Nos?\.?|Sy\.?\s*Nos?\.?|S\.?\s*Nos?\.?|R\.?\s*S\.?\s*No\.?|New\s*Survey\s*No\.?|Old\s*Survey\s*No\.?|புல\s*எண்)\s*[:\s]*[0-9A-Za-z/,\s-]+?(?:\s+of\s+Block\s*(?:No\.?)?\s*[0-9A-Za-z]+)?(?=\s+(?:measuring|extent|admeasuring|bounded|adjoined|situat|totaling|presently|\Z)))', norm_text, re.IGNORECASE)
+        sy_m = re.search(r'\b((?:Town\s+Survey\s*No\.?|T\.?\s*S\.?\s*No\.?|New\s+Survey\s*No\.?|Survey\s*Nos?\.?|Sy\.?\s*Nos?\.?|S\.?\s*Nos?\.?|R\.?\s*S\.?\s*No\.?|Old\s*Survey\s*No\.?|புல\s*எண்)\s*[:\s]*\d+[A-Za-z0-9/]*(?:\s*,\s*\d+[A-Za-z0-9/]*)*(?:\s*(?:,|of|\s)\s*Block\s*(?:No\.?)?\s*[0-9A-Za-z]+)?)', norm_text, re.IGNORECASE)
+        if not sy_m:
+            sy_m = re.search(r'\b((?:Town\s+Survey\s*No\.?|T\.?\s*S\.?\s*No\.?|Survey\s*Nos?\.?|Sy\.?\s*Nos?\.?|S\.?\s*Nos?\.?|R\.?\s*S\.?\s*No\.?|New\s*Survey\s*No\.?|Old\s*Survey\s*No\.?|புல\s*எண்)\s*[:\s]*[0-9A-Za-z/,\s-]+?(?:\s+of\s+Block\s*(?:No\.?)?\s*[0-9A-Za-z]+)?(?=\s+(?:measuring|extent|admeasuring|bounded|adjoined|situat|totaling|presently|\Z)))', norm_text, re.IGNORECASE)
         pm_m = re.search(r'\b((?:(?:Old\s+)?Paimash\s*Nos?\.?|பைமாஷ்\s*எண்)\s*[:\s]*[0-9A-Za-z/,\s-]+?(?=\s+(?:Survey|measuring|extent|admeasuring|situat|\Z)))', norm_text, re.IGNORECASE)
 
         sy_cand = self._clean_str(sy_m.group(1)).strip().rstrip(',') if sy_m else None
         if sy_cand:
             sy_cand = re.sub(r'\s+(?:of|in|at|and)$', '', sy_cand, flags=re.I)
+            sy_cand = re.sub(r'T\.?\s*S\.?\s*No\.?\s*', 'T.S. No. ', sy_cand, flags=re.I)
+            sy_cand = re.sub(r'New\s+Survey\s*No\.?\s*', 'New Survey No. ', sy_cand, flags=re.I)
+            sy_cand = re.sub(r'Survey\s*Nos?\.?\s*', 'Survey Nos. ', sy_cand, flags=re.I)
+            sy_cand = re.sub(r'\bBlocK\b', 'Block', sy_cand)
+            sy_cand = re.sub(r'Block\s*No\.?\s*', 'Block No. ', sy_cand, flags=re.I)
             sy_cand = re.sub(r'(\d+(?:/\d+)?)\s+(?=\d)', r'\1, ', sy_cand)
+            sy_cand = re.sub(r'(\d+)\s*,\s*Block', r'\1, Block', sy_cand)
+            sy_cand = re.sub(r'\s+', ' ', sy_cand).strip()
 
         pm_cand = self._clean_str(pm_m.group(1)).strip().rstrip(',') if pm_m else None
         if pm_cand:
@@ -551,6 +634,8 @@ class SaleDeedExtractor:
         fl_m = re.search(r'(Flat\s*No\.?\s*[A-Za-z0-9-]+[^\n\.;]+?(?:(?:Ground|First|Second|Third|Fourth|\d+(?:st|nd|rd|th))\s*Floor)?[^\n\.;]+?(?:Chennai\s*\d{6}|[A-Za-z0-9\s]+Twins|[A-Za-z0-9\s]+Apartments?|[A-Za-z0-9\s]+Enclave|Floor))', norm_text, re.IGNORECASE)
         if fl_m:
             flat_desc = self._clean_str(fl_m.group(1))
+            flat_desc = re.sub(r'\bprosent\b', 'present', flat_desc, flags=re.I)
+            flat_desc = re.sub(r'\bPirst\b', 'First', flat_desc, flags=re.I)
 
         if flat_desc:
             fields["flat_details"] = {
@@ -575,7 +660,9 @@ class SaleDeedExtractor:
         dist_m = re.search(r'(?:Registration\s+District\s+of\s+([A-Za-z-]+)|([A-Za-z\s]+?)\s+District)', norm_text, re.IGNORECASE)
         corp_m = re.search(r'(?:Chennai\s+Corporation\s+(?:division|divn)|Corporation\s+Division)\s*(?:No\.?)?\s*(\d+(?:\s*(?:and|&)\s*\d+)?)', norm_text, re.IGNORECASE)
 
-        tal_name = f"{tal_m.group(1).strip()} Taluk" if tal_m else (f"{sub_d.group(1).strip()} Sub-District" if sub_d else None)
+        tal_raw = tal_m.group(1).strip() if tal_m else (sub_d.group(1).strip() if sub_d else "")
+        tal_raw = re.sub(r'\bEgmoro\b', 'Egmore', tal_raw, flags=re.I)
+        tal_name = f"{tal_raw} Taluk" if tal_m else (f"{tal_raw} Sub-District" if sub_d else None)
         dist_name = f"{dist_m.group(1).strip()} District" if (dist_m and dist_m.group(1)) else (f"{dist_m.group(2).strip()} District" if (dist_m and dist_m.group(2)) else None)
 
         vtd_parts = []
@@ -808,12 +895,18 @@ class SaleDeedExtractor:
         }
 
         # ═══════════════════════════════════════════════════════════════════
-        # 15. TITLE CHAIN FLOW (Previous Owner -> Present Owner)
+        # 15. TITLE CHAIN FLOW (Previous Owner C -> Present Owner D, with Prior Owner B)
         # ═══════════════════════════════════════════════════════════════════
         present_poa = fields.get("poa_agent_details", {}).get("value")
+        vendor_poa = None
+        if "Represented by POA:" in (vendor_details or ""):
+            vendor_poa = vendor_details.split("Represented by POA:")[1].strip(" )")
+
         past_poa = None
         if "Represented by POA:" in (prev_owner_val or ""):
             past_poa = prev_owner_val.split("Represented by POA:")[1].strip(" )")
+
+        past_c_name = vendor_details or prev_owner_val or "Prior Registered Owner"
 
         fields["title_chain"] = {
             "present_owner": {
@@ -822,11 +915,18 @@ class SaleDeedExtractor:
                 "poa": present_poa or "Direct Execution / Self"
             },
             "previous_owner": {
-                "name": prev_owner_val or "Prior Registered Owner",
+                "name": past_c_name,
                 "doc_no": prev_doc_ref or "Prior Title Deed (Book 1)",
+                "poa": vendor_poa or "Direct Execution / Self",
+                "prior_transferor": prev_owner_val,
+                "prior_poa": past_poa
+            },
+            "prior_owners_b": {
+                "name": prev_owner_val or "Mother Deed Transferor",
+                "doc_no": prev_doc_ref or "Mother Deed (Book 1)",
                 "poa": past_poa or "Direct Execution / Self"
             },
-            "flow_summary": f"{prev_owner_val or 'Prior Owner'} ➔ {purchaser_details or 'Current Purchaser'}"
+            "flow_summary": f"{past_c_name.split(',')[0]} ➔ {purchaser_details.split(',')[0] if purchaser_details else 'Current Purchaser'}"
         }
 
         # ═══════════════════════════════════════════════════════════════════

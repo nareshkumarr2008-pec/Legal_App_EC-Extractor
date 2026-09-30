@@ -190,12 +190,12 @@ def _indictrans2_translate(text: str, source: str, target: str) -> Optional[str]
         return None
 
 
-def _translate_cached(text: str, source: str, target: str) -> Tuple[str, str]:
+def _translate_cached(text: str, source: str, target: str, allow_online: bool = False) -> Tuple[str, str]:
     """
     Returns (translation, engine). engine is one of:
-    'cache', 'indictrans2', 'local'. Never returns None — always falls
-    back to the local rule-based engine so the app keeps working even
-    before the IndicTrans2 models are downloaded.
+    'cache', 'indictrans2', 'deeptranslator', 'local'. Never returns None — always falls
+    back to the local rule-based engine.
+    `allow_online`: set to False (default) for bulk lists to prevent blocking HTTP timeouts.
     """
     text = (text or "").strip()
     if not text:
@@ -211,8 +211,8 @@ def _translate_cached(text: str, source: str, target: str) -> Tuple[str, str]:
     result = _indictrans2_translate(text, source, target)
     engine = "indictrans2"
 
-    # Try deep-translator / neural engine if IndicTrans2 is not running
-    if not result:
+    # Try deep-translator ONLY if allow_online is explicitly True and IndicTrans2 is not running
+    if not result and allow_online:
         try:
             from app.translator import translate_legal_phrase_deeptranslator
             res_dt = translate_legal_phrase_deeptranslator(text, source=source, target=target)
@@ -468,11 +468,12 @@ KNOWN_INSTITUTIONS: Dict[str, Tuple[str, str]] = {
 }
 
 
-def translate_and_verify(raw_text: str) -> Dict:
+def translate_and_verify(raw_text: str, allow_online: bool = False) -> Dict:
     """
     Takes one name (Tamil, English, or already-bilingual "X (Y)") and returns
     a bilingual, back-translation-verified record:
         {original, english, tamil, verified, confidence, engine}
+    `allow_online`: set to False by default for fast bulk extraction.
     """
     raw = (raw_text or "").strip()
     if not raw or raw in ("-", "Not Detected"):
@@ -533,18 +534,18 @@ def translate_and_verify(raw_text: str) -> Dict:
         has_en = bool(LATIN_RE.search(raw_clean))
         if has_en and not has_ta:
             english = _titlecase_name(raw_clean)
-            tamil, engine = _translate_cached(english, "en", "ta")
+            tamil, engine = _translate_cached(english, "en", "ta", allow_online=allow_online)
             tamil = clean_initials_and_dots(tamil)
         else:
             # Pure Tamil, or mixed (e.g. "G. ராமானுஜம்") — treat as
             # Tamil-primary and translate to English.
             tamil = normalize_tamil_visual_order(raw_clean)
-            english, engine = _translate_cached(tamil, "ta", "en")
+            english, engine = _translate_cached(tamil, "ta", "en", allow_online=allow_online)
             english = _titlecase_name(english)
 
     # --- Back-translation verification: translate the English form back
     # to Tamil and compare it to the Tamil form we're actually reporting.
-    back_tamil, _ = _translate_cached(english, "en", "ta")
+    back_tamil, _ = _translate_cached(english, "en", "ta", allow_online=allow_online)
     back_tamil = clean_initials_and_dots(back_tamil)
     confidence = round(_similarity(tamil, back_tamil) * 100)
     verified = confidence >= VERIFY_THRESHOLD
@@ -627,7 +628,7 @@ def bilingual_party_list(raw_field: str) -> List[Dict]:
         part_clean_name, role_en, role_ta = _strip_trailing_roles(part)
         if not part_clean_name.strip():
             continue
-        rec = translate_and_verify(part_clean_name)
+        rec = translate_and_verify(part_clean_name, allow_online=False)
         rec["index"] = i
         rec["role_english"] = role_en
         rec["role_tamil"] = role_ta
